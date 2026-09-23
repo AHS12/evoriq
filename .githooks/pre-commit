@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+echo "==> pre-commit: PHP formatting (staged files)"
+php vendor/bin/pint --test --dirty
+
+echo "==> pre-commit: frontend format, lint and types"
+npm run check
+
+echo "All pre-commit checks passed."

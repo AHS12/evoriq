@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+echo "==> pre-push: running the full quality gate (composer check)"
+composer check
+
+echo "All pre-push checks passed."
