@@ -54,14 +54,16 @@ function announce(
     item: NotificationItem,
     preferences: NotificationPreferences,
 ): void {
-    if (!preferences.inapp || preferences.muted_types.includes(item.type)) {
+    if (preferences.muted_types.includes(item.type)) {
         return;
     }
 
-    toast(item.title, { description: item.body ?? undefined });
+    if (preferences.inapp) {
+        toast(item.title, { description: item.body ?? undefined });
 
-    if (preferences.sound) {
-        playChime();
+        if (preferences.sound) {
+            playChime();
+        }
     }
 
     if (preferences.desktop) {
@@ -74,47 +76,24 @@ function announce(
  * (and the feed when present). Data still flows through Inertia props; polling
  * only triggers a partial reload.
  *
- * Polling pauses while the tab is hidden and resumes when it becomes visible.
- * When a new notification id appears, a toast (and optional sound / desktop
- * notification) is shown.
+ * Polling continues while the tab is hidden so new notifications can still be
+ * announced as desktop notifications. When a new notification id appears, a
+ * toast (and optional sound / desktop notification) is shown.
  */
-export function useNotificationPoll(enabled = true): void {
+export function useNotificationPoll(): void {
     const { recent, preferences } = useNotifications();
     const lastIdRef = useRef<number | null>(null);
     const initialisedRef = useRef(false);
 
-    const { start, stop } = usePoll(
+    // keepAlive disables Inertia's hidden-tab throttle so new notifications
+    // are still detected in the background and can fire desktop notifications.
+    usePoll(
         POLL_INTERVAL,
         { only: ['notifications', 'feed', 'activeJobs'] },
-        { autoStart: false },
+        {
+            keepAlive: true,
+        },
     );
-
-    const startRef = useRef(start);
-    const stopRef = useRef(stop);
-    startRef.current = start;
-    stopRef.current = stop;
-
-    useEffect(() => {
-        if (!enabled || typeof document === 'undefined') {
-            return;
-        }
-
-        const update = (): void => {
-            if (document.hidden) {
-                stopRef.current();
-            } else {
-                startRef.current();
-            }
-        };
-
-        update();
-        document.addEventListener('visibilitychange', update);
-
-        return () => {
-            document.removeEventListener('visibilitychange', update);
-            stopRef.current();
-        };
-    }, [enabled]);
 
     useEffect(() => {
         const latest = recent[0]?.id ?? null;

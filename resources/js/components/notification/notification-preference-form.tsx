@@ -1,6 +1,5 @@
-import { useForm } from '@inertiajs/react';
-import type { FormEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { router } from '@inertiajs/react';
+import { useState } from 'react';
 import {
     Card,
     CardContent,
@@ -10,13 +9,19 @@ import {
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import type { NotificationPreferences, NotificationTypeOption } from '@/types';
 
 type FormDefinition = {
     action: string;
     method: 'get' | 'post' | 'put' | 'patch' | 'delete';
+};
+
+type PreferenceData = {
+    inapp: boolean;
+    sound: boolean;
+    desktop: boolean;
+    muted_types: string[];
 };
 
 type Props = {
@@ -52,66 +57,116 @@ export function NotificationPreferenceForm({
     types,
     action,
 }: Props) {
-    const { data, setData, patch, processing } = useForm({
+    const [data, setData] = useState<PreferenceData>({
         inapp: preferences.inapp,
         sound: preferences.sound,
         desktop: preferences.desktop,
         muted_types: preferences.muted_types,
     });
+    const [saving, setSaving] = useState(false);
+    const [desktopBlocked, setDesktopBlocked] = useState(
+        'Notification' in window && Notification.permission === 'denied',
+    );
 
-    const submit = (event: FormEvent): void => {
-        event.preventDefault();
+    // Every change is persisted immediately — preferences apply as you toggle.
+    const persist = (next: PreferenceData): void => {
+        router.patch(action.action, next, {
+            preserveScroll: true,
+            preserveState: true,
+            onBefore: () => setSaving(true),
+            onFinish: () => setSaving(false),
+        });
+    };
 
-        if (
-            data.desktop &&
-            'Notification' in window &&
-            Notification.permission === 'default'
-        ) {
-            void Notification.requestPermission();
+    const handleToggle = (
+        key: 'inapp' | 'sound' | 'desktop',
+        checked: boolean,
+    ): void => {
+        if (key !== 'desktop' || !checked) {
+            const next = { ...data, [key]: checked };
+            setData(next);
+            persist(next);
+            return;
         }
 
-        patch(action.action, { preserveScroll: true });
+        if (!('Notification' in window)) {
+            setDesktopBlocked(true);
+            return;
+        }
+
+        if (Notification.permission === 'denied') {
+            setDesktopBlocked(true);
+            return;
+        }
+
+        if (Notification.permission === 'granted') {
+            setDesktopBlocked(false);
+            const next = { ...data, desktop: true };
+            setData(next);
+            persist(next);
+            return;
+        }
+
+        void Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                setDesktopBlocked(false);
+                const next = { ...data, desktop: true };
+                setData(next);
+                persist(next);
+            } else {
+                setDesktopBlocked(permission === 'denied');
+            }
+        });
     };
 
     const toggleType = (value: string, checked: boolean): void => {
-        setData(
-            'muted_types',
-            checked
-                ? [...data.muted_types, value]
-                : data.muted_types.filter((type) => type !== value),
-        );
+        const muted_types = checked
+            ? [...data.muted_types, value]
+            : data.muted_types.filter((type) => type !== value);
+
+        const next = { ...data, muted_types };
+        setData(next);
+        persist(next);
     };
 
     return (
-        <form onSubmit={submit} noValidate className="space-y-6">
+        <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Delivery</CardTitle>
                     <CardDescription>
-                        Choose how Evoriq gets your attention.
+                        Choose how Evoriq gets your attention. Changes are saved
+                        automatically.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {TOGGLES.map((toggle) => (
-                        <div
-                            key={toggle.key}
-                            className="flex items-center justify-between gap-4"
-                        >
-                            <div className="space-y-0.5">
-                                <Label htmlFor={`toggle-${toggle.key}`}>
-                                    {toggle.label}
-                                </Label>
-                                <p className="text-sm text-muted-foreground">
-                                    {toggle.description}
-                                </p>
+                        <div key={toggle.key}>
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="space-y-0.5">
+                                    <Label htmlFor={`toggle-${toggle.key}`}>
+                                        {toggle.label}
+                                    </Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        {toggle.description}
+                                    </p>
+                                </div>
+                                <Switch
+                                    id={`toggle-${toggle.key}`}
+                                    checked={data[toggle.key]}
+                                    disabled={saving}
+                                    onCheckedChange={(checked) =>
+                                        handleToggle(toggle.key, checked)
+                                    }
+                                />
                             </div>
-                            <Switch
-                                id={`toggle-${toggle.key}`}
-                                checked={data[toggle.key]}
-                                onCheckedChange={(checked) =>
-                                    setData(toggle.key, checked)
-                                }
-                            />
+                            {toggle.key === 'desktop' && desktopBlocked && (
+                                <p className="mt-2 text-sm text-destructive">
+                                    Browser notifications are blocked for this
+                                    site. Allow them in your browser's site
+                                    settings, then toggle this switch again.
+                                </p>
+                            )}
                         </div>
                     ))}
                 </CardContent>
@@ -135,6 +190,7 @@ export function NotificationPreferenceForm({
                             <Checkbox
                                 id={`type-${type.value}`}
                                 checked={data.muted_types.includes(type.value)}
+                                disabled={saving}
                                 onCheckedChange={(checked) =>
                                     toggleType(type.value, checked === true)
                                 }
@@ -144,13 +200,6 @@ export function NotificationPreferenceForm({
                     ))}
                 </CardContent>
             </Card>
-
-            <div className="flex justify-end">
-                <Button type="submit" disabled={processing}>
-                    {processing && <Spinner />}
-                    Save preferences
-                </Button>
-            </div>
-        </form>
+        </div>
     );
 }

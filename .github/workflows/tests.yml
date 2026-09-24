@@ -13,6 +13,10 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -31,8 +35,16 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Setup Application
-        run: composer setup
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Install Node dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Run CI Checks
         run: composer ci:check

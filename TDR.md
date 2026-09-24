@@ -1,7 +1,7 @@
 # Technical Design — Clockify Analytics Platform
 
 **Status:** Draft
-**Version:** 0.2
+**Version:** 0.3
 **Product Type:** Lightweight SaaS / Analytics Platform
 **Primary Stack:** Laravel + React + PostgreSQL
 **Data Source:** Clockify API
@@ -265,36 +265,96 @@ All requests pass through the integration layer.
 
 # 9. Data Available From Clockify
 
-The synchronization architecture should be capable of handling the major Clockify entities relevant to analytics.
+## 9.1 Core principle
 
-Initial entities:
+> **Do not model the Clockify report as the source of truth. Synchronize the
+> underlying Clockify entities and build reports from our own relational model.**
 
-```text
-Workspace
-Users
-Clients
-Projects
-Tasks
-Tags
-Time Entries
-Custom Fields
-```
+Clockify describes its Detailed Report as a baseline dataset and its Entity
+Changes API as the mechanism for keeping a local dataset synchronized. We target
+the underlying entities — not the report output — so history, relationships and
+rates are preserved in our own schema.
 
-Future entities:
+## 9.2 Entity inventory
+
+Clockify's current Entity Changes API explicitly recognizes the following entity
+types, each with **created / updated / deleted** semantics:
 
 ```text
-Expenses
-Invoices
-Approvals
-Attendance
-Time Off
-Holidays
-PTO
-Assignments
-Rates
+CLIENTS
+PROJECTS
+TAGS
+TASKS
+SCHEDULED_ASSIGNMENT
+TIME_ENTRY
+TIME_ENTRY_RATE
+TIME_ENTRY_CUSTOM_FIELD_VALUE
+CUSTOM_FIELDS
+USER
+USER_GROUPS
+INVOICES
+APPROVAL_REQUESTS
+BALANCE
+HOLIDAYS
+PTO_POLICY
+TIME_OFF_REQUEST
 ```
 
-Clockify's current API documentation also exposes an experimental Entity Changes API covering multiple entity types, including time entries, projects, tasks, clients, tags, users, invoices, approval requests, balances, holidays, PTO policies, and time-off requests.
+The synchronization architecture should be capable of handling all of them. They
+are organized into four business layers plus a synchronization-infrastructure
+layer (§25).
+
+## 9.3 Priority
+
+| Entity                        | Priority        | Purpose                                  |
+| ----------------------------- | --------------- | ---------------------------------------- |
+| Workspace                     | **MVP**         | Root configuration and currency/timezone |
+| User                          | **MVP**         | People dimension                         |
+| Membership                    | **MVP**         | User/workspace relationship + rates      |
+| Client                        | **MVP**         | Client dimension                         |
+| Project                       | **MVP**         | Primary reporting dimension              |
+| Project Member                | **MVP**         | User/project relationship + rates        |
+| Task                          | **MVP**         | Work categorization                      |
+| Tag                           | **MVP**         | Flexible categorization                  |
+| Time Entry                    | **MVP**         | **Primary historical fact**              |
+| Time Entry Rate               | **MVP**         | Historical billing/cost calculations     |
+| Custom Field                  | **MVP**         | Metadata definition                      |
+| Time Entry Custom Field Value | **MVP**         | Historical custom metadata               |
+| User Custom Field Value       | **MVP**         | User/team metadata                       |
+| User Group                    | **MVP / Phase 2** | Team/group analytics                   |
+| Scheduled Assignment          | Phase 2         | Planned vs actual, capacity              |
+| Holiday                       | Phase 2         | Capacity/utilization                     |
+| PTO Policy                    | Phase 2         | PTO analytics                            |
+| Time Off Request              | Phase 2         | PTO/availability                         |
+| Balance                       | Phase 2         | Historical PTO balances                  |
+| Approval Request              | Phase 2         | Approval analytics                       |
+| Invoice                       | Phase 2         | Billing/invoice analytics                |
+| Invoice Item                  | Phase 2         | Invoice-level analytics                  |
+| Deleted Entity                | **MVP**         | Correct synchronization                  |
+| Raw Record                    | **MVP**         | Recovery/debugging                       |
+| Sync Run                      | **MVP**         | Sync observability                       |
+| Sync Job                      | **MVP**         | Resumable historical imports             |
+| Entity Change                 | **MVP**         | Incremental synchronization              |
+
+`Deleted Entity` is MVP because Clockify's synchronization APIs explicitly
+distinguish created/updated/deleted records. Without deletion handling the local
+historical dataset silently diverges from Clockify.
+
+## 9.4 MVP core
+
+For the historical analytics MVP the absolute core is:
+
+```text
+Time Entry + User + Client + Project + Task + Tag + Rates + Custom Field Values
+```
+
+with deletion/change tracking around them. Everything else can be added later
+without changing the fundamental architecture.
+
+Because a workspace has been demonstrated to answer 5-year-old 31-day report
+windows, the ingestion model is designed from day one to preserve **long-lived
+historical relationships** rather than treating Clockify's 31-day report window
+as the data-model boundary.
 
 ---
 
@@ -663,6 +723,64 @@ This should be considered for incremental synchronization.
 
 The integration should isolate experimental Clockify functionality behind an adapter so it can be changed if Clockify modifies the API.
 
+## 20.1 Change model
+
+```text
+CREATED
+UPDATED
+DELETED
+```
+
+Every detected change is recorded locally as an **entity change**
+(`clockify_entity_changes`) so ingestion is decoupled from application, and can
+be replayed, audited and observed.
+
+## 20.2 Deletion handling
+
+Clockify exposes an **Entities Deleted** API returning records such as:
+
+```text
+deletedAt
+document
+documentCode
+id
+```
+
+A deletion must never be reduced to a soft `deleted = true` flag on the entity
+alone. Deletions are recorded in `clockify_deleted_entities` and applied to the
+normalized model so historical reports stay consistent:
+
+```text
+Clockify project deleted
+        ↓
+clockify_deleted_entities
+        ↓
+normalized model updated
+        ↓
+historical reports stay consistent
+```
+
+Without this, a deleted Clockify project would continue to exist in our database
+and silently corrupt historical reports.
+
+## 20.3 Incremental sync flow
+
+```text
+last checkpoint
+      ↓
+GET /entities/updated?from=…&to=…
+      ↓
+GET /entities/deleted?from=…&to=…
+      ↓
+clockify_entity_changes
+      ↓
+rate-limited fetch of changed entities
+      ↓
+upsert / delete in the normalized model
+      ↓
+advance checkpoint
+```
+
 ---
 
 # 21. Webhooks
@@ -757,7 +875,7 @@ Every synchronization job must be resumable.
 Suggested model:
 
 ```text
-sync_runs
+clockify_sync_runs
 
 id
 workspace_id
@@ -780,7 +898,7 @@ error
 Individual jobs can additionally maintain:
 
 ```text
-sync_jobs
+clockify_sync_jobs
 
 id
 sync_run_id
@@ -811,6 +929,11 @@ resume
 ```
 
 The complete import should not restart.
+
+Alongside `clockify_sync_runs` and `clockify_sync_jobs`, the synchronization
+infrastructure maintains `clockify_entity_changes`, `clockify_deleted_entities`
+and `clockify_raw_records` (§25.24–25.26). Together these make the pipeline
+observable, replayable and recoverable.
 
 ---
 
@@ -847,49 +970,823 @@ UPDATE    INSERT
 
 Repeated imports must never create duplicate records.
 
+The upstream `clockify_id` is the only join key across Clockify and our schema;
+internal IDs are never sent to Clockify. A record's absence from a page is
+**not** a deletion — deletions arrive exclusively through the deleted-entities
+feed (§20.2), so paged imports stay idempotent and resumable.
+
 ---
 
 # 25. Data Model
 
-Core tables:
+## 25.1 Layering
+
+The model separates facts, dimensions, context and infrastructure so historical
+relationships and rates are preserved rather than flattened into one wide table.
 
 ```text
-workspaces
-
-clockify_users
-clockify_user_groups
-
-clockify_clients
-
-clockify_projects
-clockify_tasks
-clockify_tags
-
-clockify_time_entries
-
-clockify_custom_fields
-clockify_time_entry_custom_fields
-
-clockify_expenses
-clockify_invoices
-
-clockify_time_off_requests
-clockify_holidays
-clockify_pto_policies
-
-clockify_assignments
+                         CLOCKIFY
+                             │
+                             ▼
+                      Sync / Ingestion
+                             │
+             ┌───────────────┴───────────────┐
+             ▼                               ▼
+     Raw Clockify Records            Normalized Model
+     (clockify_raw_records)                  │
+              ┌──────────────────────────────┼──────────────────────────────┐
+              ▼                              ▼                              ▼
+          Dimensions                       Facts                        Context
+              │                              │                              │
+    Users / Projects               Time Entries                Custom Fields
+    Clients / Tasks                Entry Rates                 PTO
+    Tags / Groups                                              Scheduling
+              │                              │                              │
+              └──────────────────────────────┼──────────────────────────────┘
+                                             ▼
+                                     Analytics Engine
+                                             │
+                                             ▼
+                                    Reports / Dashboard
 ```
 
-Additional application tables:
+### Layer 1 — Core analytical facts
+
+```text
+clockify_time_entries
+clockify_time_entry_rates
+```
+
+### Layer 2 — Dimensions
+
+```text
+clockify_workspaces
+clockify_users
+clockify_memberships
+clockify_clients
+clockify_projects
+clockify_project_members
+clockify_tasks
+clockify_tags
+clockify_user_groups
+clockify_user_group_members
+```
+
+### Layer 3 — Metadata / context
+
+```text
+clockify_custom_fields
+clockify_time_entry_custom_field_values
+clockify_user_custom_field_values
+
+clockify_scheduled_assignments
+
+clockify_holidays
+clockify_pto_policies
+clockify_time_off_requests
+clockify_balances
+
+clockify_approval_requests
+```
+
+### Layer 4 — Commercial
+
+```text
+clockify_invoices
+clockify_invoice_items
+clockify_expenses
+```
+
+### Synchronization infrastructure
+
+```text
+clockify_sync_runs
+clockify_sync_jobs
+clockify_entity_changes
+clockify_deleted_entities
+clockify_raw_records
+clockify_api_usage
+```
+
+### Application tables
 
 ```text
 users
 clockify_connections
-
-sync_runs
-sync_jobs
-clockify_api_usage
 ```
+
+Every synchronized table carries `workspace_id` (internal FK to
+`clockify_workspaces`), the upstream `clockify_id` (unique), `created_at`,
+`updated_at`, `synced_at` and, where useful, `raw_data`.
+
+## 25.2 Workspace (`clockify_workspaces`)
+
+The workspace is Clockify's root boundary, synchronized as a dimension. In our
+single-tenant model (§40) it is **not** a tenant boundary.
+
+```text
+id
+clockify_id
+name
+currency
+time_zone
+week_start
+default_billable
+default_hourly_rate
+default_cost_rate
+active
+raw_data
+created_at
+updated_at
+synced_at
+```
+
+## 25.3 Users (`clockify_users`)
+
+Identity of a person in Clockify, kept separate from workspace membership
+(§25.4) because membership and rates change over time.
+
+```text
+id
+workspace_id
+clockify_id
+
+name
+email
+status
+
+profile_picture_url
+
+timezone
+week_start
+working_days
+work_capacity
+
+created_at
+updated_at
+synced_at
+
+raw_data
+```
+
+## 25.4 Workspace memberships (`clockify_memberships`)
+
+A user's relationship to a workspace, target entity and rates. Preserved so
+historical user/workspace/project rates are never overwritten blindly.
+
+```text
+id
+workspace_id
+user_id
+
+membership_type
+membership_status
+
+target_type
+target_id
+
+hourly_rate_amount
+hourly_rate_currency
+
+cost_rate_amount
+cost_rate_currency
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.5 Clients (`clockify_clients`)
+
+```text
+id
+workspace_id
+clockify_id
+
+name
+email
+address
+note
+currency
+
+archived
+archived_at
+
+created_at
+updated_at
+synced_at
+
+raw_data
+```
+
+Hierarchy: `Client → Project → Task → Time Entry`. A project belongs to one
+client; a client may have many projects.
+
+## 25.6 Projects (`clockify_projects`)
+
+```text
+id
+workspace_id
+clockify_id
+
+client_id
+
+name
+color
+note
+
+status
+archived
+archived_at
+
+billable
+
+public
+private
+
+billable_rate_amount
+billable_rate_currency
+
+cost_rate_amount
+cost_rate_currency
+
+estimated_hours
+estimated_cost
+
+created_at
+updated_at
+synced_at
+
+raw_data
+```
+
+Project membership is stored separately (§25.7) because different users on the
+same project may have different rates.
+
+## 25.7 Project members (`clockify_project_members`)
+
+```text
+id
+project_id
+user_id
+
+membership_type
+membership_status
+
+hourly_rate_amount
+hourly_rate_currency
+
+cost_rate_amount
+cost_rate_currency
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.8 Tasks (`clockify_tasks`)
+
+Tasks are a real reporting dimension, not display metadata.
+
+```text
+id
+workspace_id
+project_id
+clockify_id
+
+name
+status
+
+assignee_user_id
+
+billable
+
+estimated_hours
+
+billable_rate_amount
+billable_rate_currency
+
+cost_rate_amount
+cost_rate_currency
+
+created_at
+updated_at
+completed_at
+
+raw_data
+```
+
+## 25.9 Tags (`clockify_tags`, `clockify_time_entry_tags`)
+
+```text
+clockify_tags
+-------------
+id
+workspace_id
+clockify_id
+
+name
+
+archived
+archived_at
+
+created_at
+updated_at
+
+raw_data
+
+
+clockify_time_entry_tags
+------------------------
+time_entry_id
+tag_id
+```
+
+Tags are stored relationally — never as a JSON array on the time entry — so that
+hours by tag, users by tag, projects by tag, tag trends and billable vs
+non-billable by tag remain queryable.
+
+## 25.10 Time entries
+
+See §26. This is the primary historical fact table.
+
+## 25.11 Time entry rates (`clockify_time_entry_rates`)
+
+Rates are **historical facts**. A 2023 entry must use the rate that applied to
+it, not today's project rate.
+
+```text
+id
+workspace_id
+clockify_id
+
+time_entry_id
+
+user_id
+project_id
+task_id
+
+billable_rate_amount
+billable_rate_currency
+
+cost_rate_amount
+cost_rate_currency
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.12 Custom fields (`clockify_custom_fields`)
+
+```text
+id
+workspace_id
+clockify_id
+
+name
+description
+
+type
+
+entity_type
+
+status
+
+required
+only_admin_can_edit
+
+workspace_default_value
+
+created_at
+updated_at
+
+raw_data
+```
+
+Supported field types include `Text`, `Number`, `Link`, `Switch`, `Select` and
+`Select Multiple`.
+
+## 25.13 Time entry custom field values (`clockify_time_entry_custom_field_values`)
+
+```text
+id
+
+workspace_id
+
+time_entry_id
+custom_field_id
+
+value
+
+created_at
+updated_at
+
+raw_data
+```
+
+Kept as its own table — not JSON on the entry — because the Entity Changes API
+treats `TIME_ENTRY_CUSTOM_FIELD_VALUE` as a separate entity.
+
+## 25.14 User custom field values (`clockify_user_custom_field_values`)
+
+```text
+id
+workspace_id
+user_id
+custom_field_id
+
+value
+
+created_at
+updated_at
+
+raw_data
+```
+
+Useful dimensions: department, location, employee type, team, cost center.
+
+## 25.15 User groups (`clockify_user_groups`, `clockify_user_group_members`)
+
+```text
+clockify_user_groups
+--------------------
+id
+workspace_id
+clockify_id
+name
+status
+created_at
+updated_at
+raw_data
+
+
+clockify_user_group_members
+---------------------------
+user_group_id
+user_id
+```
+
+Unlocks hours by team, utilization by team and billable percentage by team.
+
+## 25.16 Scheduled assignments (`clockify_scheduled_assignments`)
+
+Not required for basic time analytics, but designed now to unlock scheduled vs
+actual hours, utilization, capacity and over/under-allocation.
+
+```text
+id
+workspace_id
+clockify_id
+
+user_id
+project_id
+task_id
+
+start_date
+end_date
+
+hours_per_day
+
+start_time
+
+billable
+
+published
+recurring
+
+include_non_working_days
+
+note
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.17 Holidays (`clockify_holidays`)
+
+```text
+id
+workspace_id
+clockify_id
+
+name
+
+start_date
+end_date
+
+color
+
+created_at
+updated_at
+
+raw_data
+```
+
+Needed for expected working hours, capacity, utilization and attendance.
+
+## 25.18 PTO policies (`clockify_pto_policies`)
+
+```text
+id
+workspace_id
+clockify_id
+
+name
+
+type
+accrual_method
+
+annual_allowance
+
+created_at
+updated_at
+
+raw_data
+```
+
+Exact fields follow the API response rather than a guessed schema. The
+architectural point is that `PTO_POLICY` is an explicit Clockify entity.
+
+## 25.19 Time-off requests (`clockify_time_off_requests`)
+
+```text
+id
+workspace_id
+clockify_id
+
+user_id
+pto_policy_id
+
+start_date
+end_date
+
+status
+
+duration
+
+reason
+
+approved_by
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.20 Balances (`clockify_balances`)
+
+A snapshot-style entity rather than a conventional fact table. Snapshots are
+retained for historical PTO analytics.
+
+```text
+id
+workspace_id
+
+user_id
+pto_policy_id
+
+balance
+unit
+
+as_of
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.21 Approval requests (`clockify_approval_requests`)
+
+```text
+id
+workspace_id
+clockify_id
+
+user_id
+
+type
+
+period_start
+period_end
+
+status
+
+submitted_at
+approved_at
+rejected_at
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.22 Invoices (`clockify_invoices`, `clockify_invoice_items`)
+
+Phase 2, unless the product's scope includes billing analytics.
+
+```text
+clockify_invoices
+-----------------
+id
+workspace_id
+clockify_id
+
+client_id
+project_id
+
+number
+
+status
+
+currency
+
+issue_date
+due_date
+
+subtotal
+tax
+total
+
+created_at
+updated_at
+
+raw_data
+
+
+clockify_invoice_items
+----------------------
+id
+invoice_id
+clockify_id
+
+description
+quantity
+unit_price
+total
+```
+
+## 25.23 Expenses (`clockify_expenses`)
+
+Phase 2, retained from the earlier scope.
+
+```text
+id
+workspace_id
+clockify_id
+
+user_id
+project_id
+task_id
+
+category
+
+amount
+currency
+
+date
+
+billable
+
+notes
+
+created_at
+updated_at
+
+raw_data
+```
+
+## 25.24 Deleted entities (`clockify_deleted_entities`)
+
+```text
+id
+workspace_id
+
+entity_type
+clockify_id
+
+deleted_at
+
+document_code
+
+raw_data
+```
+
+Essential for synchronization — see §20.2.
+
+## 25.25 Entity changes (`clockify_entity_changes`)
+
+Not a Clockify entity; this is **our** synchronization infrastructure.
+
+```text
+id
+workspace_id
+
+entity_type
+clockify_id
+
+change_type
+
+detected_at
+source_at
+
+processed_at
+
+raw_data
+```
+
+Where `change_type` is `CREATED`, `UPDATED` or `DELETED`.
+
+## 25.26 Raw records (`clockify_raw_records`)
+
+An additional layer between Clockify and the normalized model:
+
+```text
+id
+workspace_id
+
+entity_type
+clockify_id
+
+payload
+
+payload_hash
+
+source
+fetched_at
+
+created_at
+updated_at
+```
+
+Not necessarily exposed to the application. Its purpose is recovery: if Clockify
+changes a response shape, or a field turns out to be needed after the fact, the
+raw payload can rebuild the normalized entity.
+
+```text
+Clockify → Raw record → Normalized entity → Analytics
+```
+
+Retention may keep the current raw payload plus optional change history rather
+than every historical version forever.
+
+## 25.27 Sync runs, jobs and usage
+
+```text
+clockify_sync_runs
+------------------
+id
+workspace_id
+trigger
+status
+started_at
+completed_at
+records_created
+records_updated
+records_deleted
+api_requests_used
+error
+
+
+clockify_sync_jobs
+------------------
+id
+sync_run_id
+entity_type
+range_start
+range_end
+page
+page_size
+records_processed
+status
+last_error
+
+
+clockify_api_usage
+------------------
+id
+workspace_id
+window_started_at
+window_ends_at
+requests_used
+requests_remaining
+limit
+last_request_at
+updated_at
+```
+
+The earlier names `sync_runs`, `sync_jobs`, `clockify_assignments` and
+`clockify_time_entry_custom_fields` are superseded by `clockify_sync_runs`,
+`clockify_sync_jobs`, `clockify_scheduled_assignments` and
+`clockify_time_entry_custom_field_values` respectively.
 
 ---
 
@@ -903,10 +1800,11 @@ Conceptually:
 clockify_time_entries
 
 id
+workspace_id
 clockify_id
 
-workspace_id
 user_id
+
 project_id
 task_id
 
@@ -917,28 +1815,60 @@ end_at
 duration_seconds
 
 billable
+
 type
 
-cost_rate
-hourly_rate
-
-tag_ids
+time_zone
 
 is_locked
+is_in_progress
+
+approval_status
+
+cost_amount
+cost_currency
+
+billable_amount
+billable_currency
 
 clockify_created_at
 clockify_updated_at
 
+created_at
+updated_at
 synced_at
+
+raw_data
 ```
 
-Clockify's API exposes time-entry information including project, task, tags, billable status, descriptions, rates, custom fields, time interval, type, and related metadata.
+Where Clockify exposes them, `source` and `external_reference` may also be
+stored.
+
+Tags are **not** stored as a JSON array here. They live in
+`clockify_time_entry_tags` (§25.9). Per-entry rates live in
+`clockify_time_entry_rates` (§25.11) and custom-field values in
+`clockify_time_entry_custom_field_values` (§25.13) — each is a historical fact
+and must not be flattened onto the entry.
+
+Clockify's API exposes time-entry information including project, task, tags,
+billable status, descriptions, rates, custom fields, time interval, type and
+related metadata. Clockify's Entity Changes documentation uses time entries as
+the baseline dataset and identifies each record with a `timeEntryId`.
 
 ---
 
 # 27. Raw Data vs Analytics Data
 
-The database should clearly distinguish:
+The database should clearly distinguish three tiers:
+
+## Raw data
+
+```text
+clockify_raw_records
+```
+
+The unparsed upstream payloads. Used for recovery, debugging and re-normalization
+if Clockify changes its response shape (§25.26).
 
 ## Source data
 
@@ -946,7 +1876,8 @@ The database should clearly distinguish:
 clockify_*
 ```
 
-These represent synchronized Clockify records.
+These represent synchronized Clockify records normalized into our relational
+model (dimensions, facts and context).
 
 ## Derived data
 
@@ -959,6 +1890,16 @@ monthly_client_metrics
 ```
 
 Derived data can be recalculated without re-importing Clockify.
+
+```text
+Clockify
+   ↓
+Raw records
+   ↓
+Normalized entities
+   ↓
+Derived analytics
+```
 
 ---
 
@@ -1341,6 +2282,10 @@ authenticated user — never accepted from the client.
 Clockify workspace IDs remain external identifiers and are kept separate from
 our internal IDs to avoid tight coupling to Clockify's identity system.
 
+Clockify workspaces are synchronized as a dimension (`clockify_workspaces`,
+§25.2), so multiple workspace connections can exist within the single tenant —
+but a workspace is **not** a tenant boundary and no `tenants` table exists.
+
 ---
 
 # 41. Reliability
@@ -1431,12 +2376,17 @@ The Laravel React Starter Kit already provides the foundation for these capabili
 
 ## Data
 
-* Users
+* Workspace
+* Users + workspace memberships
 * Clients
-* Projects
+* Projects + project members
 * Tasks
-* Tags
+* Tags (relational)
 * Time entries
+* Time entry rates
+* Custom fields + time entry/user custom field values
+* Entity changes + deleted entities (sync correctness)
+* Raw records (recovery)
 
 ## Dashboard
 
@@ -1584,13 +2534,17 @@ No name should be finalized until those checks are completed.
                     │ Retry          │
                     │ Checkpoints    │
                     │ Change Sync    │
+                    │ Deletion Sync  │
                     └───────┬────────┘
                             │
                     ┌───────▼────────┐
                     │   PostgreSQL   │
                     │                │
-                    │ Source Data    │
-                    │ Sync State     │
+                    │ Raw Records    │  clockify_raw_records
+                    │ Sync State     │  runs / jobs / changes
+                    │                │  / deleted entities
+                    │ Normalized     │  dimensions + facts
+                    │ Entities       │  + context
                     │ Analytics      │
                     └───────┬────────┘
                             │
@@ -1621,7 +2575,9 @@ Instead:
 ```text
 Clockify
     ↓
-Raw synchronized data
+Raw records (clockify_raw_records)
+    ↓
+Normalized entities (dimensions + facts + context)
     ↓
 PostgreSQL
     ↓
