@@ -21,6 +21,9 @@ enum SettingKey: string
 
     case EXPORT_CLEANUP_DAYS = 'export_cleanup_days';
 
+    case NOTIFICATION_ENABLED = 'notification_enabled';
+    case NOTIFICATION_RETENTION_DAYS = 'notification_retention_days';
+
     case MAIL_MAILER = 'mail_mailer';
     case MAIL_HOST = 'mail_host';
     case MAIL_PORT = 'mail_port';
@@ -40,6 +43,7 @@ enum SettingKey: string
         return match ($this) {
             self::SYSTEM_NAME, self::TIMEZONE, self::DATE_FORMAT, self::WEEK_START,
             self::EXPORT_CLEANUP_DAYS => 'general',
+            self::NOTIFICATION_ENABLED, self::NOTIFICATION_RETENTION_DAYS => 'notifications',
             self::MAIL_MAILER, self::MAIL_HOST, self::MAIL_PORT, self::MAIL_USERNAME,
             self::MAIL_PASSWORD, self::MAIL_ENCRYPTION, self::MAIL_FROM_ADDRESS,
             self::MAIL_FROM_NAME => 'mail',
@@ -55,6 +59,8 @@ enum SettingKey: string
             self::DATE_FORMAT => 'Date format',
             self::WEEK_START => 'Week starts on',
             self::EXPORT_CLEANUP_DAYS => 'Export retention (days)',
+            self::NOTIFICATION_ENABLED => 'Enable notifications',
+            self::NOTIFICATION_RETENTION_DAYS => 'Notification retention (days)',
             self::MAIL_MAILER => 'Mailer',
             self::MAIL_HOST => 'SMTP host',
             self::MAIL_PORT => 'SMTP port',
@@ -75,6 +81,8 @@ enum SettingKey: string
             self::DATE_FORMAT => 'How dates are displayed across the app',
             self::WEEK_START => 'First day of the week for reports',
             self::EXPORT_CLEANUP_DAYS => 'Days to keep completed export files before cleanup',
+            self::NOTIFICATION_ENABLED => 'Master switch for creating in-app notifications',
+            self::NOTIFICATION_RETENTION_DAYS => 'Days to keep notifications before they are pruned',
             self::MAIL_MAILER => 'Transport used to send email',
             self::MAIL_HOST => 'SMTP server hostname',
             self::MAIL_PORT => 'SMTP server port',
@@ -95,6 +103,8 @@ enum SettingKey: string
             self::DATE_FORMAT => 'Y-m-d',
             self::WEEK_START => 'monday',
             self::EXPORT_CLEANUP_DAYS => 7,
+            self::NOTIFICATION_ENABLED => true,
+            self::NOTIFICATION_RETENTION_DAYS => 90,
             default => null,
         };
     }
@@ -102,7 +112,8 @@ enum SettingKey: string
     public function type(): string
     {
         return match ($this) {
-            self::EXPORT_CLEANUP_DAYS, self::MAIL_PORT => 'integer',
+            self::EXPORT_CLEANUP_DAYS, self::MAIL_PORT, self::NOTIFICATION_RETENTION_DAYS => 'integer',
+            self::NOTIFICATION_ENABLED => 'boolean',
             self::TIMEZONE, self::MAIL_MAILER, self::MAIL_ENCRYPTION, self::WEEK_START => 'select',
             default => 'string',
         };
@@ -172,6 +183,8 @@ enum SettingKey: string
             self::DATE_FORMAT => ['required', 'string', 'max:20'],
             self::WEEK_START => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],
             self::EXPORT_CLEANUP_DAYS => ['required', 'integer', 'min:1', 'max:365'],
+            self::NOTIFICATION_ENABLED => ['required', 'boolean'],
+            self::NOTIFICATION_RETENTION_DAYS => ['required', 'integer', 'min:1', 'max:3650'],
             self::MAIL_MAILER => ['required', 'in:smtp,log,array'],
             self::MAIL_HOST => ['nullable', 'string', 'max:255'],
             self::MAIL_PORT => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -219,6 +232,7 @@ enum SettingKey: string
     {
         return [
             'general' => 'General',
+            'notifications' => 'Notifications',
             'mail' => 'Mail',
         ];
     }

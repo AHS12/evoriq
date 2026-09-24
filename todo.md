@@ -4,5 +4,8 @@
 
 - [x] setup must contaiuns all necessary setup like database migration and other necessary things!!!
 
-- [ ] notification module
+- [x] notification module
 
+- [x] user export as example of data procession job
+
+- [x] Data Processing Center: import/export jobs, Activity UI with live polling, artifact download, in-app notifications, sidebar badge, module permissions (`data-processing.*`, `user.export`/`user.import`).

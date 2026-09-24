@@ -32,11 +32,18 @@ class SyncPermissionsCommand extends Command
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $registered = PermissionRegistry::getAllModulePermissions();
+
         Permission::upsert(
-            PermissionRegistry::getAllModulePermissions(),
+            $registered,
             ['name', 'guard_name'],
             ['group', 'description', 'is_system', 'updated_at'],
         );
+
+        // Prune permissions that are no longer declared in the registry.
+        $names = array_column($registered, 'name');
+
+        Permission::query()->whereNotIn('name', $names)->delete();
 
         $superAdmin = Role::query()
             ->where('name', UserRole::SUPER_ADMIN->value)

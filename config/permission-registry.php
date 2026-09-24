@@ -26,6 +26,8 @@ return [
             ['name' => 'user.create', 'group' => 'user', 'description' => 'Create users'],
             ['name' => 'user.update', 'group' => 'user', 'description' => 'Update users'],
             ['name' => 'user.delete', 'group' => 'user', 'description' => 'Delete users'],
+            ['name' => 'user.export', 'group' => 'user', 'description' => 'Export users'],
+            ['name' => 'user.import', 'group' => 'user', 'description' => 'Import users'],
         ],
     ],
 
@@ -83,10 +85,22 @@ return [
 
     'export' => [
         'permissions' => [
-            ['name' => 'export.view', 'group' => 'export', 'description' => 'View export jobs'],
-            ['name' => 'export.view.all', 'group' => 'export', 'description' => 'View all export jobs'],
-            ['name' => 'export.create', 'group' => 'export', 'description' => 'Create exports'],
-            ['name' => 'export.delete', 'group' => 'export', 'description' => 'Delete exports'],
+            ['name' => 'export.create', 'group' => 'export', 'description' => 'Export any entity (global)'],
+        ],
+    ],
+
+    'import' => [
+        'permissions' => [
+            ['name' => 'import.create', 'group' => 'import', 'description' => 'Import any entity (global)'],
+        ],
+    ],
+
+    'data-processing' => [
+        'permissions' => [
+            ['name' => 'data-processing.view', 'group' => 'data-processing', 'description' => 'Open the Data Processing Center and view own jobs'],
+            ['name' => 'data-processing.view.all', 'group' => 'data-processing', 'description' => 'View every user\'s processing jobs'],
+            ['name' => 'data-processing.manage', 'group' => 'data-processing', 'description' => 'Cancel, retry or duplicate any processing job'],
+            ['name' => 'data-processing.delete', 'group' => 'data-processing', 'description' => 'Delete any processing job and its files'],
         ],
     ],
 

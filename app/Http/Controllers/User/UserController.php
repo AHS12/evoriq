@@ -13,6 +13,7 @@ use App\Http\Resources\User\UserResource;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\User\UserService;
+use App\Support\DataProcessingOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +48,7 @@ class UserController extends Controller
             ],
             'roles' => $this->roleNames(),
             'statuses' => $this->statusOptions(),
+            'processingOptions' => DataProcessingOptions::make(),
         ]);
     }
 

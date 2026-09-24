@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Exports\Contracts\Exportable;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\WithMapping;
 
@@ -13,27 +14,26 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class UserExport implements Exportable, WithMapping
 {
     /**
-     * @param  array<string, mixed>  $filters
+     * @param  array<string, mixed>  $parameters
      */
-    public function __construct(private array $filters = []) {}
+    public function __construct(private array $parameters = []) {}
 
     /**
      * @return Collection<int, User>
      */
     public function collection(): Collection
     {
-        $query = User::query()->with('roles');
+        return $this->query()->orderBy('id')->get();
+    }
 
-        $search = $this->filters['search'] ?? null;
+    public function total(): int
+    {
+        return $this->query()->count();
+    }
 
-        if (is_string($search) && $search !== '') {
-            $query->where(function ($query) use ($search): void {
-                $query->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        return $query->orderBy('id')->get();
+    public function stage(): string
+    {
+        return 'Generating file';
     }
 
     /**
@@ -58,5 +58,38 @@ class UserExport implements Exportable, WithMapping
     public function headings(): array
     {
         return ['ID', 'Name', 'Email', 'Verified At', 'Roles', 'Created At'];
+    }
+
+    /**
+     * The filtered query shared by `collection()` and `total()`.
+     *
+     * @return Builder<User>
+     */
+    private function query(): Builder
+    {
+        $query = User::query()->with('roles');
+
+        $search = $this->parameters['search'] ?? null;
+
+        if (is_string($search) && $search !== '') {
+            $query->where(function (Builder $query) use ($search): void {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $status = $this->parameters['status'] ?? null;
+
+        if (is_string($status) && $status !== '') {
+            $query->where('status', $status);
+        }
+
+        $role = $this->parameters['role'] ?? null;
+
+        if (is_string($role) && $role !== '') {
+            $query->role($role);
+        }
+
+        return $query;
     }
 }

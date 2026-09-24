@@ -10,4 +10,15 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
  *
  * @extends FromCollection<int, mixed>
  */
-interface Exportable extends FromCollection, WithHeadings {}
+interface Exportable extends FromCollection, WithHeadings
+{
+    /**
+     * Total number of rows this export will produce, for progress reporting.
+     */
+    public function total(): int;
+
+    /**
+     * A short label for the generation step shown while the job runs.
+     */
+    public function stage(): string;
+}

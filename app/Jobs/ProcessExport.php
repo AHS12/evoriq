@@ -2,20 +2,26 @@
 
 namespace App\Jobs;
 
+use App\Enums\DataProcessingJobStatus;
 use App\Enums\ExportFormat;
 use App\Enums\QueueName;
+use App\Jobs\Concerns\TracksDataProcessingJob;
 use App\Models\DataProcessingJob;
 use App\Registry\QueueRegistry;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Queue\Attributes\FailOnTimeout;
+use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
 use Throwable;
 
+#[FailOnTimeout]
 class ProcessExport implements ShouldQueue
 {
     use Queueable;
+    use TracksDataProcessingJob;
 
     /**
      * The number of times the job may be attempted.
@@ -47,29 +53,52 @@ class ProcessExport implements ShouldQueue
     {
         $job = $this->dataProcessingJob;
 
-        $service->markProcessing($job);
+        if ($job->fresh()?->cancellationRequested() === true || $job->status === DataProcessingJobStatus::CANCELLED) {
+            $service->markCancelled($job);
+            $this->notifySafely($service, $job);
 
+            return;
+        }
+
+        $entity = $job->entity_type;
+
+        if ($entity === null) {
+            throw new RuntimeException('The export job is missing an entity type.');
+        }
+
+        $exporter = $entity->makeExporter($job->filters ?? []);
+        $total = $exporter->total();
+
+        $service->markProcessing($job, totalItems: $total, stage: $exporter->stage());
+
+        $format = $job->format ?? ExportFormat::XLSX;
+        $fileName = sprintf('%s_%s_%s.%s', $entity->value, $job->type->value, $job->job_id, $format->extension());
+        $basePath = trim((string) config('exports.base_path', 'exports'), '/');
+        $filePath = "{$basePath}/{$fileName}";
+        $fileDisk = (string) config('exports.disk', 'local');
+
+        Excel::store($exporter, $filePath, $fileDisk);
+
+        $size = Storage::disk($fileDisk)->exists($filePath)
+            ? Storage::disk($fileDisk)->size($filePath)
+            : null;
+
+        $service->attachArtifact($job, $fileName, $filePath, $fileDisk, $size, $format->mimeType());
+
+        $service->markCompleted($job, totalItems: $total, processedItems: $total);
+
+        $this->notifySafely($service, $job);
+    }
+
+    /**
+     * Notify the owner, swallowing notification errors so they never fail the job.
+     */
+    private function notifySafely(DataProcessingJobService $service, DataProcessingJob $job): void
+    {
         try {
-            $entity = $job->entity_type;
-
-            if ($entity === null) {
-                throw new RuntimeException('The export job is missing an entity type.');
-            }
-
-            $format = $job->format ?? ExportFormat::XLSX;
-            $fileName = sprintf('%s_export_%s.%s', $entity->value, $job->job_id, $format->extension());
-            $basePath = trim((string) config('exports.base_path', 'exports'), '/');
-            $filePath = "{$basePath}/{$fileName}";
-            $fileDisk = (string) config('exports.disk', 'local');
-
-            Excel::store($entity->makeExporter($job->filters ?? []), $filePath, $fileDisk);
-
-            $service->attachFile($job, $fileName, $filePath, $fileDisk);
-            $service->markCompleted($job);
-        } catch (Throwable $e) {
-            $service->markFailed($job, $e->getMessage());
-
-            throw $e;
+            $service->notifyFinished($job);
+        } catch (Throwable) {
+            // A notification failure must not fail the job.
         }
     }
 }

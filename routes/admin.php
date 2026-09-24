@@ -33,6 +33,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('can:settings.update')
             ->name('mail.test');
 
+        Route::get('notifications', [SettingController::class, 'edit'])
+            ->middleware('can:settings.view')
+            ->defaults('group', 'notifications')
+            ->name('notifications.edit');
+
+        Route::patch('notifications', [SettingController::class, 'update'])
+            ->middleware('can:settings.update')
+            ->defaults('group', 'notifications')
+            ->name('notifications.update');
+
         Route::get('appearance', [AppearanceController::class, 'edit'])
             ->middleware('can:settings.view')
             ->name('appearance.edit');

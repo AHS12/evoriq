@@ -1,12 +1,13 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import {
+    ArrowUpRight,
     Download,
     Eye,
-    FileText,
     FolderOpen,
     LayoutGrid,
     List,
     Search,
+    Sparkles,
     Trash2,
     Upload,
 } from 'lucide-react';
@@ -14,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
+import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
 import { FilePreviewDialog } from '@/components/file/file-preview-dialog';
 import { FileThumbnail } from '@/components/file/file-thumbnail';
 import { formatSize } from '@/components/file/file-utils';
@@ -39,80 +41,72 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
+import { index as activityIndex } from '@/routes/activity';
 import { destroy, index, store } from '@/routes/files';
-import { download } from '@/routes/exports';
-import type { PaginationMeta } from '@/types';
-
-type UploadItem = {
-    id: number;
-    uuid: string;
-    type: string;
-    type_label: string;
-    name: string | null;
-    file_name: string | null;
-    mime_type: string | null;
-    size: number | null;
-    url: string | null;
-    thumb_url: string | null;
-    created_at: string | null;
-};
-
-type ReportItem = {
-    id: number;
-    job_id: string;
-    type: string;
-    status: string;
-    entity_type: string | null;
-    format: string | null;
-    file_name: string | null;
-    file_size: number | null;
-    progress_percentage: number;
-    downloadable: boolean;
-    created_at: string | null;
-};
-
-type Paginated<T> = {
-    data: T[];
-    links: unknown;
-    meta: PaginationMeta;
-};
+import type { FileEntry, Paginated } from '@/types';
 
 type Props = {
-    source: 'files' | 'reports';
-    files: Paginated<UploadItem> | null;
-    reports: Paginated<ReportItem> | null;
+    source: 'all' | 'generated';
+    files: Paginated<FileEntry>;
     filters: {
         search?: string | null;
         type?: string | null;
     };
-    types?: {
+    types: {
         value: string;
         label: string;
     }[];
+    canViewGenerated: boolean;
 };
 
-function fileName(file: UploadItem): string {
-    return file.name ?? file.file_name ?? 'Untitled file';
+function fileName(entry: FileEntry): string {
+    return entry.name || entry.file_name || 'Untitled file';
+}
+
+function formatDate(value: string | null): string {
+    if (!value) {
+        return '—';
+    }
+
+    return new Date(value).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+}
+
+function SourceBadge({ entry }: { entry: FileEntry }) {
+    if (entry.is_generated) {
+        return (
+            <Badge variant="secondary" className="gap-1">
+                <Sparkles className="size-3" />
+                System
+            </Badge>
+        );
+    }
+
+    return <Badge variant="outline">Uploaded</Badge>;
 }
 
 export default function FilesIndex({
     source,
     files,
-    reports,
     filters,
-    types = [],
+    types,
+    canViewGenerated,
 }: Props) {
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [search, setSearch] = useState(filters.search ?? '');
     const [type, setType] = useState(filters.type ?? 'all');
-    const [pendingDelete, setPendingDelete] = useState<UploadItem | null>(null);
-    const [previewFile, setPreviewFile] = useState<UploadItem | null>(null);
+    const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
+    const [previewFile, setPreviewFile] = useState<FileEntry | null>(null);
     const isFirstRender = useRef(true);
 
     const upload = useForm<{ file: File | null }>({ file: null });
 
-    const navigate = (params: Record<string, string | number | undefined>) => {
+    const navigate = (
+        params: Record<string, string | number | undefined>,
+    ): void => {
         router.get(
             index.url(),
             {
@@ -140,7 +134,7 @@ export default function FilesIndex({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, type]);
 
-    const submitFile = (file: File | null) => {
+    const submitFile = (file: File | null): void => {
         if (!file) {
             return;
         }
@@ -153,7 +147,7 @@ export default function FilesIndex({
         });
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = (): void => {
         if (!pendingDelete) {
             return;
         }
@@ -164,6 +158,8 @@ export default function FilesIndex({
         });
     };
 
+    const rows = files.data;
+
     return (
         <>
             <Head title="Files" />
@@ -171,7 +167,7 @@ export default function FilesIndex({
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
                     title="Files"
-                    description="Browse uploaded files and generated reports."
+                    description="Everything stored here — your uploads and system-generated files."
                 />
 
                 <Tabs
@@ -181,408 +177,376 @@ export default function FilesIndex({
                     }
                 >
                     <TabsList>
-                        <TabsTrigger value="files">Files</TabsTrigger>
-                        <TabsTrigger value="reports">Reports</TabsTrigger>
+                        <TabsTrigger value="all">All files</TabsTrigger>
+                        {canViewGenerated && (
+                            <TabsTrigger value="generated">
+                                Generated
+                            </TabsTrigger>
+                        )}
                     </TabsList>
                 </Tabs>
 
-                {source === 'files' && (
-                    <div className="space-y-6">
-                        <Card>
-                            <CardContent>
-                                <label
-                                    htmlFor="file-upload"
-                                    onDragOver={(event) =>
-                                        event.preventDefault()
-                                    }
-                                    onDrop={(event) => {
-                                        event.preventDefault();
-                                        submitFile(
-                                            event.dataTransfer.files?.[0] ??
-                                                null,
-                                        );
-                                    }}
-                                    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors hover:border-primary/50"
-                                >
-                                    <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                                        {upload.processing ? (
-                                            <Spinner />
-                                        ) : (
-                                            <Upload className="size-5 text-muted-foreground" />
-                                        )}
-                                    </div>
-                                    <p className="text-sm font-medium">
-                                        Drag &amp; drop a file here, or click to
-                                        browse
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {upload.progress
-                                            ? `Uploading… ${upload.progress.percentage}%`
-                                            : 'PDF, images, documents and more'}
-                                    </p>
-                                    <input
-                                        id="file-upload"
-                                        type="file"
-                                        className="sr-only"
-                                        onChange={(event) =>
-                                            submitFile(
-                                                event.target.files?.[0] ?? null,
-                                            )
-                                        }
-                                    />
-                                </label>
-                                <InputError
-                                    className="mt-2"
-                                    message={upload.errors.file}
-                                />
-                            </CardContent>
-                        </Card>
-
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="relative w-full sm:max-w-xs">
-                                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    value={search}
+                {source === 'all' && (
+                    <Card>
+                        <CardContent>
+                            <label
+                                htmlFor="file-upload"
+                                onDragOver={(event) => event.preventDefault()}
+                                onDrop={(event) => {
+                                    event.preventDefault();
+                                    submitFile(
+                                        event.dataTransfer.files?.[0] ?? null,
+                                    );
+                                }}
+                                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-8 text-center transition-colors hover:border-primary/50"
+                            >
+                                <div className="flex size-10 items-center justify-center rounded-full bg-muted">
+                                    {upload.processing ? (
+                                        <Spinner />
+                                    ) : (
+                                        <Upload className="size-5 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <p className="text-sm font-medium">
+                                    Drag &amp; drop a file here, or click to
+                                    browse
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    {upload.progress
+                                        ? `Uploading… ${upload.progress.percentage}%`
+                                        : 'PDF, images, documents and more'}
+                                </p>
+                                <input
+                                    id="file-upload"
+                                    type="file"
+                                    className="sr-only"
                                     onChange={(event) =>
-                                        setSearch(event.target.value)
-                                    }
-                                    placeholder="Search files…"
-                                    className="pl-9"
-                                />
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Select value={type} onValueChange={setType}>
-                                    <SelectTrigger className="w-40">
-                                        <SelectValue placeholder="All types" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">
-                                            All types
-                                        </SelectItem>
-                                        {types.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    onClick={() =>
-                                        setView(
-                                            view === 'grid' ? 'list' : 'grid',
+                                        submitFile(
+                                            event.target.files?.[0] ?? null,
                                         )
                                     }
-                                    aria-label="Toggle view"
-                                >
-                                    {view === 'grid' ? (
-                                        <List className="size-4" />
-                                    ) : (
-                                        <LayoutGrid className="size-4" />
-                                    )}
-                                </Button>
-                            </div>
-                        </div>
-
-                        {files && files.data.length > 0 ? (
-                            <>
-                                {view === 'grid' ? (
-                                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                        {files.data.map((file) => (
-                                            <Card key={file.id}>
-                                                <CardContent className="space-y-3">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            setPreviewFile(file)
-                                                        }
-                                                        className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-muted"
-                                                        aria-label={`Preview ${fileName(file)}`}
-                                                    >
-                                                        <FileThumbnail
-                                                            name={fileName(
-                                                                file,
-                                                            )}
-                                                            mimeType={
-                                                                file.mime_type
-                                                            }
-                                                            thumbUrl={
-                                                                file.thumb_url
-                                                            }
-                                                            url={file.url}
-                                                        />
-                                                    </button>
-                                                    <div className="min-w-0">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                setPreviewFile(
-                                                                    file,
-                                                                )
-                                                            }
-                                                            className="block max-w-full truncate text-left text-sm font-medium hover:underline"
-                                                        >
-                                                            {fileName(file)}
-                                                        </button>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {formatSize(
-                                                                file.size,
-                                                            )}{' '}
-                                                            · {file.type_label}
-                                                        </p>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <Badge variant="outline">
-                                                            {file.type_label}
-                                                        </Badge>
-                                                        <div className="flex items-center gap-1">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                aria-label="Preview file"
-                                                                onClick={() =>
-                                                                    setPreviewFile(
-                                                                        file,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Eye className="size-4" />
-                                                            </Button>
-                                                            {file.url && (
-                                                                <Button
-                                                                    asChild
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    aria-label="Download"
-                                                                >
-                                                                    <a
-                                                                        href={
-                                                                            file.url
-                                                                        }
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                    >
-                                                                        <Download className="size-4" />
-                                                                    </a>
-                                                                </Button>
-                                                            )}
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                aria-label="Delete file"
-                                                                onClick={() =>
-                                                                    setPendingDelete(
-                                                                        file,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="size-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="overflow-hidden rounded-xl border">
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Name</TableHead>
-                                                    <TableHead>Type</TableHead>
-                                                    <TableHead>Size</TableHead>
-                                                    <TableHead className="text-right">
-                                                        Actions
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {files.data.map((file) => (
-                                                    <TableRow key={file.id}>
-                                                        <TableCell className="font-medium">
-                                                            {fileName(file)}
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <Badge variant="outline">
-                                                                {
-                                                                    file.type_label
-                                                                }
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            {formatSize(
-                                                                file.size,
-                                                            )}
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                aria-label="Preview file"
-                                                                onClick={() =>
-                                                                    setPreviewFile(
-                                                                        file,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Eye className="size-4" />
-                                                            </Button>
-                                                            {file.url && (
-                                                                <Button
-                                                                    asChild
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    aria-label="Download"
-                                                                >
-                                                                    <a
-                                                                        href={
-                                                                            file.url
-                                                                        }
-                                                                        target="_blank"
-                                                                        rel="noreferrer"
-                                                                    >
-                                                                        <Download className="size-4" />
-                                                                    </a>
-                                                                </Button>
-                                                            )}
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                aria-label="Delete file"
-                                                                onClick={() =>
-                                                                    setPendingDelete(
-                                                                        file,
-                                                                    )
-                                                                }
-                                                            >
-                                                                <Trash2 className="size-4" />
-                                                            </Button>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                )}
-
-                                <DataTablePagination
-                                    meta={files.meta}
-                                    onPageChange={(page) => navigate({ page })}
                                 />
-                            </>
-                        ) : (
-                            <EmptyState
-                                icon={FolderOpen}
-                                title="No files yet"
-                                description="Upload a file to see it here."
+                            </label>
+                            <InputError
+                                className="mt-2"
+                                message={upload.errors.file}
                             />
-                        )}
-                    </div>
+                        </CardContent>
+                    </Card>
                 )}
 
-                {source === 'reports' && (
-                    <div className="space-y-4">
-                        {reports && reports.data.length > 0 ? (
-                            <>
-                                <div className="overflow-hidden rounded-xl border">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Report</TableHead>
-                                                <TableHead>Format</TableHead>
-                                                <TableHead>Status</TableHead>
-                                                <TableHead>Size</TableHead>
-                                                <TableHead className="text-right">
-                                                    Actions
-                                                </TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {reports.data.map((report) => (
-                                                <TableRow key={report.id}>
-                                                    <TableCell className="font-medium">
-                                                        {report.file_name ??
-                                                            report.entity_type ??
-                                                            report.job_id}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {report.format?.toUpperCase() ??
-                                                            '—'}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge
-                                                            variant={
-                                                                report.status ===
-                                                                'completed'
-                                                                    ? 'default'
-                                                                    : report.status ===
-                                                                        'failed'
-                                                                      ? 'destructive'
-                                                                      : 'secondary'
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="relative w-full sm:max-w-xs">
+                        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            placeholder="Search files…"
+                            className="pl-9"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Select value={type} onValueChange={setType}>
+                            <SelectTrigger className="w-40">
+                                <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All types</SelectItem>
+                                {types.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() =>
+                                setView(view === 'grid' ? 'list' : 'grid')
+                            }
+                            aria-label="Toggle view"
+                        >
+                            {view === 'grid' ? (
+                                <List className="size-4" />
+                            ) : (
+                                <LayoutGrid className="size-4" />
+                            )}
+                        </Button>
+                    </div>
+                </div>
+
+                {rows.length > 0 ? (
+                    <>
+                        {view === 'grid' ? (
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                                {rows.map((entry) => (
+                                    <Card key={`${entry.source}-${entry.id}`}>
+                                        <CardContent className="space-y-3">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    entry.source === 'upload'
+                                                        ? setPreviewFile(entry)
+                                                        : undefined
+                                                }
+                                                disabled={
+                                                    entry.source !== 'upload'
+                                                }
+                                                className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-muted disabled:cursor-default"
+                                                aria-label={`Preview ${fileName(entry)}`}
+                                            >
+                                                <FileThumbnail
+                                                    name={fileName(entry)}
+                                                    mimeType={entry.mime_type}
+                                                    thumbUrl={entry.thumb_url}
+                                                    url={entry.url}
+                                                />
+                                                <span className="absolute top-2 left-2">
+                                                    <SourceBadge
+                                                        entry={entry}
+                                                    />
+                                                </span>
+                                            </button>
+                                            <div className="min-w-0">
+                                                <p className="truncate text-sm font-medium">
+                                                    {fileName(entry)}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatSize(entry.size)} ·{' '}
+                                                    {entry.is_generated
+                                                        ? (entry.job_type_label ??
+                                                          'Generated')
+                                                        : entry.type_label}{' '}
+                                                    ·{' '}
+                                                    {formatDate(
+                                                        entry.created_at,
+                                                    )}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <SourceBadge entry={entry} />
+                                                <div className="flex items-center gap-1">
+                                                    {entry.source ===
+                                                        'upload' && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            aria-label="Preview file"
+                                                            onClick={() =>
+                                                                setPreviewFile(
+                                                                    entry,
+                                                                )
                                                             }
                                                         >
-                                                            {report.status}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {formatSize(
-                                                            report.file_size,
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {report.downloadable ? (
+                                                            <Eye className="size-4" />
+                                                        </Button>
+                                                    )}
+                                                    {entry.is_generated &&
+                                                        entry.job_id && (
                                                             <Button
                                                                 asChild
                                                                 variant="ghost"
-                                                                size="sm"
+                                                                size="icon"
+                                                                aria-label="View job"
                                                             >
                                                                 <a
-                                                                    href={download.url(
-                                                                        report.id,
+                                                                    href={activityIndex.url(
+                                                                        {
+                                                                            query: {
+                                                                                job_id: entry.job_id,
+                                                                            },
+                                                                        },
                                                                     )}
                                                                 >
-                                                                    <Download className="size-4" />
-                                                                    Download
+                                                                    <ArrowUpRight className="size-4" />
                                                                 </a>
                                                             </Button>
-                                                        ) : (
-                                                            <span className="text-sm text-muted-foreground">
-                                                                {
-                                                                    report.progress_percentage
-                                                                }
-                                                                %
-                                                            </span>
                                                         )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-
-                                <DataTablePagination
-                                    meta={reports.meta}
-                                    onPageChange={(page) => navigate({ page })}
-                                />
-                            </>
+                                                    {entry.download_url && (
+                                                        <Button
+                                                            asChild
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            aria-label="Download"
+                                                        >
+                                                            <a
+                                                                href={
+                                                                    entry.download_url
+                                                                }
+                                                            >
+                                                                <Download className="size-4" />
+                                                            </a>
+                                                        </Button>
+                                                    )}
+                                                    {entry.source ===
+                                                        'upload' && (
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            aria-label="Delete file"
+                                                            onClick={() =>
+                                                                setPendingDelete(
+                                                                    entry,
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="size-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
                         ) : (
-                            <EmptyState
-                                icon={FileText}
-                                title="No reports yet"
-                                description="Generated exports will appear here."
-                            />
+                            <div className="overflow-hidden rounded-xl border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Source</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Size</TableHead>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead className="text-right">
+                                                Actions
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {rows.map((entry) => (
+                                            <TableRow
+                                                key={`${entry.source}-${entry.id}`}
+                                            >
+                                                <TableCell className="max-w-xs truncate font-medium">
+                                                    {fileName(entry)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <SourceBadge
+                                                        entry={entry}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    {entry.is_generated
+                                                        ? (entry.job_type_label ??
+                                                          'Generated')
+                                                        : entry.type_label}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {formatSize(entry.size)}
+                                                </TableCell>
+                                                <TableCell className="text-muted-foreground">
+                                                    {formatDate(
+                                                        entry.created_at,
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        {entry.source ===
+                                                            'upload' && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                aria-label="Preview file"
+                                                                onClick={() =>
+                                                                    setPreviewFile(
+                                                                        entry,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Eye className="size-4" />
+                                                            </Button>
+                                                        )}
+                                                        {entry.is_generated &&
+                                                            entry.job_id && (
+                                                                <Button
+                                                                    asChild
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    aria-label="View job"
+                                                                >
+                                                                    <a
+                                                                        href={activityIndex.url(
+                                                                            {
+                                                                                query: {
+                                                                                    job_id: entry.job_id,
+                                                                                },
+                                                                            },
+                                                                        )}
+                                                                    >
+                                                                        <ArrowUpRight className="size-4" />
+                                                                    </a>
+                                                                </Button>
+                                                            )}
+                                                        {entry.download_url && (
+                                                            <Button
+                                                                asChild
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                aria-label="Download"
+                                                            >
+                                                                <a
+                                                                    href={
+                                                                        entry.download_url
+                                                                    }
+                                                                >
+                                                                    <Download className="size-4" />
+                                                                </a>
+                                                            </Button>
+                                                        )}
+                                                        {entry.source ===
+                                                            'upload' && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                aria-label="Delete file"
+                                                                onClick={() =>
+                                                                    setPendingDelete(
+                                                                        entry,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <Trash2 className="size-4" />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         )}
-                    </div>
+
+                        <DataTablePagination
+                            meta={files.meta}
+                            onPageChange={(page) => navigate({ page })}
+                        />
+                    </>
+                ) : (
+                    <EmptyState
+                        icon={FolderOpen}
+                        title={
+                            source === 'generated'
+                                ? 'No generated files yet'
+                                : 'No files yet'
+                        }
+                        description={
+                            source === 'generated'
+                                ? 'Completed exports and reports will appear here.'
+                                : 'Upload a file to see it here.'
+                        }
+                    />
                 )}
             </div>
 

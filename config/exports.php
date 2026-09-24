@@ -39,4 +39,31 @@ return [
 
     'cleanup_days' => (int) env('EXPORT_CLEANUP_DAYS', 7),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Imports
+    |--------------------------------------------------------------------------
+    |
+    | The number of rows read per chunk while importing. Smaller chunks give
+    | more frequent progress updates.
+    |
+    */
+
+    'import' => [
+        'chunk_size' => (int) env('EXPORT_IMPORT_CHUNK_SIZE', 100),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Stalled jobs
+    |--------------------------------------------------------------------------
+    |
+    | A running job whose worker was lost (crash, OOM, timeout) is failed by
+    | `data-processing:reap-stale` once it has been processing for this many
+    | seconds. Keep it above the heavy queue timeout.
+    |
+    */
+
+    'stale_after' => (int) env('EXPORT_STALE_AFTER', 1920),
+
 ];

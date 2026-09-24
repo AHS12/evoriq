@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\DataProcessingJobType;
-use App\Enums\ExportEntity;
 use App\Enums\ExportFormat;
 use Database\Factories\DataProcessingJobFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -18,10 +18,16 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $job_id
  * @property DataProcessingJobType $type
+ * @property string|null $name
  * @property DataProcessingJobStatus $status
- * @property ExportEntity|null $entity_type
+ * @property string|null $stage
+ * @property DataEntity|null $entity_type
  * @property ExportFormat|null $format
  * @property array<string, mixed>|null $filters
+ * @property string|null $input_disk
+ * @property string|null $input_path
+ * @property int|null $input_size
+ * @property string|null $input_mime_type
  * @property string|null $file_name
  * @property string|null $file_disk
  * @property string|null $file_path
@@ -36,6 +42,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $error_message
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
+ * @property Carbon|null $cancel_requested_at
  * @property int|null $user_id
  * @property int|null $created_by
  * @property int|null $updated_by
@@ -44,10 +51,11 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $user
  */
 #[Fillable([
-    'job_id', 'type', 'status', 'entity_type', 'format', 'filters',
+    'job_id', 'type', 'name', 'status', 'stage', 'entity_type', 'format', 'filters',
+    'input_disk', 'input_path', 'input_size', 'input_mime_type',
     'file_name', 'file_disk', 'file_path', 'original_file_name', 'file_size', 'mime_type',
     'total_items', 'processed_items', 'success_count', 'error_count', 'errors', 'error_message',
-    'started_at', 'completed_at', 'user_id', 'created_by', 'updated_by',
+    'started_at', 'completed_at', 'cancel_requested_at', 'user_id', 'created_by', 'updated_by',
 ])]
 class DataProcessingJob extends Model
 {
@@ -64,17 +72,19 @@ class DataProcessingJob extends Model
         return [
             'type' => DataProcessingJobType::class,
             'status' => DataProcessingJobStatus::class,
-            'entity_type' => ExportEntity::class,
+            'entity_type' => DataEntity::class,
             'format' => ExportFormat::class,
             'filters' => 'array',
             'errors' => 'array',
             'file_size' => 'integer',
+            'input_size' => 'integer',
             'total_items' => 'integer',
             'processed_items' => 'integer',
             'success_count' => 'integer',
             'error_count' => 'integer',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'cancel_requested_at' => 'datetime',
         ];
     }
 
@@ -145,12 +155,59 @@ class DataProcessingJob extends Model
     }
 
     /**
+     * Jobs that are still queued or running.
+     *
+     * @param  Builder<DataProcessingJob>  $query
+     * @return Builder<DataProcessingJob>
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            DataProcessingJobStatus::PENDING,
+            DataProcessingJobStatus::PROCESSING,
+        ]);
+    }
+
+    /**
+     * @param  Builder<DataProcessingJob>  $query
+     * @return Builder<DataProcessingJob>
+     */
+    public function scopeImports(Builder $query): Builder
+    {
+        return $query->where('type', DataProcessingJobType::IMPORT);
+    }
+
+    /**
      * @param  Builder<DataProcessingJob>  $query
      * @return Builder<DataProcessingJob>
      */
     public function scopeExports(Builder $query): Builder
     {
         return $query->where('type', DataProcessingJobType::EXPORT);
+    }
+
+    /**
+     * @param  Builder<DataProcessingJob>  $query
+     * @return Builder<DataProcessingJob>
+     */
+    public function scopeReports(Builder $query): Builder
+    {
+        return $query->where('type', DataProcessingJobType::REPORT);
+    }
+
+    public function isImport(): bool
+    {
+        return $this->type === DataProcessingJobType::IMPORT;
+    }
+
+    public function isExport(): bool
+    {
+        return $this->type === DataProcessingJobType::EXPORT;
+    }
+
+    public function isReport(): bool
+    {
+        return $this->type === DataProcessingJobType::REPORT;
     }
 
     public function isCompleted(): bool
@@ -161,6 +218,27 @@ class DataProcessingJob extends Model
     public function isFailed(): bool
     {
         return $this->status === DataProcessingJobStatus::FAILED;
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === DataProcessingJobStatus::CANCELLED;
+    }
+
+    /**
+     * Whether the job is still queued or running.
+     */
+    public function isActive(): bool
+    {
+        return $this->status->isActive();
+    }
+
+    /**
+     * Whether cancellation has been requested but not yet applied.
+     */
+    public function cancellationRequested(): bool
+    {
+        return $this->cancel_requested_at !== null;
     }
 
     /**
@@ -181,5 +259,73 @@ class DataProcessingJob extends Model
     public function isDownloadable(): bool
     {
         return $this->isCompleted() && $this->file_path !== null;
+    }
+
+    /**
+     * The downloadable artifacts for this job (forward-compatible list).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function artifactList(): array
+    {
+        if ($this->file_path === null) {
+            return [];
+        }
+
+        $cleanupDays = (int) config('exports.cleanup_days', 7);
+
+        return [[
+            'key' => 'primary',
+            'label' => $this->isImport() ? 'Import report' : 'Generated file',
+            'file_name' => $this->file_name,
+            'size' => $this->file_size,
+            'mime_type' => $this->mime_type,
+            'downloadable' => $this->isDownloadable(),
+            'expires_at' => $this->completed_at?->copy()->addDays($cleanupDays)->toIso8601String(),
+        ]];
+    }
+
+    /**
+     * A human title for the job: the producer-supplied name, or a derived
+     * "{Entity} {operation}" label.
+     */
+    public function displayName(): string
+    {
+        if (is_string($this->name) && $this->name !== '') {
+            return $this->name;
+        }
+
+        $entity = $this->entity_type?->label() ?? 'Data';
+
+        return trim($entity.' '.$this->type->label());
+    }
+
+    /**
+     * A short, human duration (e.g. "2.4s", "1m 12s", "3h 5m").
+     */
+    public function durationLabel(): ?string
+    {
+        if ($this->started_at === null) {
+            return null;
+        }
+
+        $end = $this->completed_at ?? now();
+        $seconds = max(0, (int) $this->started_at->diffInSeconds($end));
+
+        if ($seconds < 60) {
+            return $seconds.'s';
+        }
+
+        $minutes = intdiv($seconds, 60);
+        $remainingSeconds = $seconds % 60;
+
+        if ($minutes < 60) {
+            return $remainingSeconds > 0 ? "{$minutes}m {$remainingSeconds}s" : "{$minutes}m";
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remainingMinutes = $minutes % 60;
+
+        return $remainingMinutes > 0 ? "{$hours}h {$remainingMinutes}m" : "{$hours}h";
     }
 }

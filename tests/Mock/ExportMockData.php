@@ -2,7 +2,7 @@
 
 namespace Tests\Mock;
 
-use App\Enums\ExportEntity;
+use App\Enums\DataEntity;
 use App\Enums\ExportFormat;
 
 class ExportMockData
@@ -15,7 +15,7 @@ class ExportMockData
     public static function request(): array
     {
         return [
-            'entity_type' => ExportEntity::USERS->value,
+            'entity_type' => DataEntity::USERS->value,
             'format' => ExportFormat::XLSX->value,
         ];
     }

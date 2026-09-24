@@ -10,6 +10,12 @@ Artisan::command('inspire', function () {
 
 Schedule::command('data-processing:cleanup-completed')->daily();
 
+// Reliability: fail jobs whose worker was lost (crash, OOM, timeout).
+Schedule::command('data-processing:reap-stale')->everyFiveMinutes();
+
+// Retention: prune expired and old in-app notifications.
+Schedule::command('notifications:prune')->daily();
+
 // Application health: run the checks and keep the schedule heartbeat fresh.
 Schedule::command('health:check')->everyFiveMinutes();
 Schedule::command('health:schedule-check-heartbeat')->everyMinute();

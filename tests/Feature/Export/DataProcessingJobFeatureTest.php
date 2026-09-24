@@ -11,7 +11,7 @@ beforeEach(function () {
     Queue::fake();
 
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo(['export.view', 'export.view.all', 'export.create', 'export.delete']);
+    $this->user->givePermissionTo(['data-processing.view', 'data-processing.view.all', 'export.create', 'data-processing.delete']);
 });
 
 test('lists data processing jobs', function () {
@@ -93,4 +93,17 @@ test('forbids users without export permissions', function () {
     $this->actingAs($other)
         ->getJson(route('exports.index'))
         ->assertForbidden();
+});
+
+test('scopes jobs to the owner without the view-all permission', function () {
+    $owner = User::factory()->create();
+    $owner->givePermissionTo(['data-processing.view', 'export.create']);
+
+    DataProcessingJob::factory()->create(['user_id' => $owner->id]);
+    DataProcessingJob::factory()->count(2)->create();
+
+    $this->actingAs($owner)
+        ->getJson(route('exports.index'))
+        ->assertOk()
+        ->assertJsonCount(1, 'data');
 });

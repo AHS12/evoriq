@@ -1,5 +1,6 @@
 import { Combobox } from '@/components/app/combobox';
 import InputError from '@/components/input-error';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -26,6 +27,8 @@ export function SettingField({ field, error }: Props) {
     const options = field.options ?? [];
     const searchableSelect =
         field.type === 'select' && options.length > SEARCHABLE_THRESHOLD;
+    const booleanChecked =
+        field.value === true || field.value === 1 || field.value === '1';
 
     return (
         <div className="grid gap-2">
@@ -60,6 +63,19 @@ export function SettingField({ field, error }: Props) {
                         ))}
                     </SelectContent>
                 </Select>
+            ) : field.type === 'boolean' ? (
+                <div className="flex h-9 items-center gap-2">
+                    <input type="hidden" name={field.key} value="0" />
+                    <Checkbox
+                        id={id}
+                        name={field.key}
+                        value="1"
+                        defaultChecked={booleanChecked}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                        {booleanChecked ? 'Enabled' : 'Disabled'}
+                    </span>
+                </div>
             ) : field.is_secret ? (
                 <Input
                     id={id}

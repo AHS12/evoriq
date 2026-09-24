@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Export;
 use App\DTOs\DataProcessingJob\DataProcessingJobDTO;
 use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
 use App\Enums\ApiErrorCode;
+use App\Enums\DataProcessingJobType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Export\StoreExportRequest;
 use App\Http\Resources\Export\DataProcessingJobResource;
 use App\Models\DataProcessingJob;
+use App\Models\User;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +32,13 @@ class ExportController extends Controller
     {
         Gate::authorize('viewAny', DataProcessingJob::class);
 
-        $jobs = $this->service->paginate(DataProcessingJobFilterDTO::fromRequest($request));
+        $filters = DataProcessingJobFilterDTO::fromRequest($request);
+
+        if (! $this->canViewAll($request)) {
+            $filters = $filters->scopedToUser((int) $request->user()->getKey());
+        }
+
+        $jobs = $this->service->paginate($filters);
 
         return $this->respond(DataProcessingJobResource::collection($jobs));
     }
@@ -40,9 +48,11 @@ class ExportController extends Controller
      */
     public function store(StoreExportRequest $request): JsonResponse
     {
-        Gate::authorize('create', DataProcessingJob::class);
+        $dto = DataProcessingJobDTO::fromRequest($request);
 
-        $job = $this->service->createExport(DataProcessingJobDTO::fromRequest($request));
+        Gate::authorize('create', [DataProcessingJob::class, DataProcessingJobType::EXPORT, $dto->entityType]);
+
+        $job = $this->service->createExport($dto);
 
         return $this->respond(DataProcessingJobResource::make($job), Response::HTTP_CREATED);
     }
@@ -87,5 +97,16 @@ class ExportController extends Controller
         $this->service->delete($dataProcessingJob);
 
         return $this->successNoContent();
+    }
+
+    /**
+     * Whether the user may see every user's jobs.
+     */
+    private function canViewAll(Request $request): bool
+    {
+        $user = $request->user();
+
+        return $user instanceof User
+            && $user->getAllPermissions()->pluck('name')->contains('data-processing.view.all');
     }
 }

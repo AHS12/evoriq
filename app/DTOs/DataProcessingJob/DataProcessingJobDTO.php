@@ -2,8 +2,8 @@
 
 namespace App\DTOs\DataProcessingJob;
 
+use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobType;
-use App\Enums\ExportEntity;
 use App\Enums\ExportFormat;
 use App\Http\Requests\Export\StoreExportRequest;
 
@@ -13,7 +13,7 @@ final readonly class DataProcessingJobDTO
      * @param  array<string, mixed>  $filters
      */
     public function __construct(
-        public ExportEntity $entityType,
+        public DataEntity $entityType,
         public ExportFormat $format = ExportFormat::XLSX,
         public DataProcessingJobType $type = DataProcessingJobType::EXPORT,
         public array $filters = [],
@@ -27,7 +27,7 @@ final readonly class DataProcessingJobDTO
         $filters = $validated['filters'] ?? null;
 
         return new self(
-            entityType: ExportEntity::from((string) $validated['entity_type']),
+            entityType: DataEntity::from((string) $validated['entity_type']),
             format: ExportFormat::from((string) $validated['format']),
             filters: is_array($filters) ? $filters : [],
             totalItems: isset($validated['total_items']) ? (int) $validated['total_items'] : null,

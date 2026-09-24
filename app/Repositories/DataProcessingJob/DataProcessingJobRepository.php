@@ -7,6 +7,7 @@ use App\Enums\DataProcessingJobStatus;
 use App\Helpers\EloquentFilterHelper;
 use App\Models\DataProcessingJob;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -78,6 +79,43 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
     public function delete(DataProcessingJob $model): bool
     {
         return (bool) $model->delete();
+    }
+
+    public function statusCounts(?int $userId = null): array
+    {
+        $counts = DataProcessingJob::query()
+            ->when($userId !== null, fn (Builder $query): Builder => $query->where('user_id', $userId))
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status')
+            ->all();
+
+        $result = [];
+
+        foreach (DataProcessingJobStatus::cases() as $status) {
+            $result[$status->value] = (int) ($counts[$status->value] ?? 0);
+        }
+
+        $result['total'] = array_sum($result);
+
+        return $result;
+    }
+
+    public function activeCount(?int $userId = null): int
+    {
+        return DataProcessingJob::query()
+            ->when($userId !== null, fn (Builder $query): Builder => $query->where('user_id', $userId))
+            ->active()
+            ->count();
+    }
+
+    public function staleProcessingBefore(CarbonInterface $cutoff): Collection
+    {
+        return DataProcessingJob::query()
+            ->where('status', DataProcessingJobStatus::PROCESSING)
+            ->whereNotNull('started_at')
+            ->where('started_at', '<', $cutoff)
+            ->get();
     }
 
     public function countCompletedBefore(Carbon $cutoff): int

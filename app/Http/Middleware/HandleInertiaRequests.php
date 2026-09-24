@@ -2,12 +2,21 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Resources\Notification\NotificationResource;
 use App\Models\User;
+use App\Services\DataProcessingJob\DataProcessingJobService;
+use App\Services\Notification\NotificationService;
+use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(
+        protected NotificationService $notifications,
+        protected NotificationPreferenceService $notificationPreferences,
+    ) {}
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -54,6 +63,57 @@ class HandleInertiaRequests extends Middleware
                 'file' => $user instanceof User && $user->hasPermissionTo('file.view'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'notifications' => fn (): array => $this->notificationSummary($request),
+            'activeJobs' => fn (): int => $this->activeJobCount($request),
+        ];
+    }
+
+    /**
+     * The number of pending/running jobs the user can see, for the sidebar badge.
+     */
+    private function activeJobCount(Request $request): int
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            return 0;
+        }
+
+        $permissions = $user->getAllPermissions()->pluck('name');
+        $viewAll = $permissions->contains('data-processing.view.all');
+
+        if (! $viewAll && ! $permissions->contains('data-processing.view')) {
+            return 0;
+        }
+
+        return app(DataProcessingJobService::class)->activeCountFor((int) $user->id, $viewAll);
+    }
+
+    /**
+     * The bell's shared payload: unread count, latest notifications and the
+     * user's preferences. Evaluated lazily, so it never runs for non-Inertia
+     * responses (e.g. the SSE stream).
+     *
+     * @return array{unread_count: int, recent: array<int, mixed>, preferences: array<string, mixed>}
+     */
+    private function notificationSummary(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            return [
+                'unread_count' => 0,
+                'recent' => [],
+                'preferences' => $this->notificationPreferences->defaults(),
+            ];
+        }
+
+        return [
+            'unread_count' => $this->notifications->unreadCountFor($user->id),
+            'recent' => NotificationResource::collection(
+                $this->notifications->recentFor($user->id, (int) config('notification.feed.recent_limit', 8)),
+            )->resolve(),
+            'preferences' => $this->notificationPreferences->forUser($user),
         ];
     }
 }

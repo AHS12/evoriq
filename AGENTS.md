@@ -234,6 +234,11 @@ public function store(StoreReportRequest $request, ReportService $service)
   `file` are selectable. Dispatch to named channels `critical`, `default`,
   `heavy` and resolve their retry/timeout via `App\Registry\QueueRegistry`
   (`QueueName` + `QueueConfigDTO`).
+- **`retry_after` must exceed the longest channel timeout** (`QUEUE_RETRY_AFTER`,
+  default `1860` > the heavy channel's `1800`). If it is lower, a long job is
+  re-reserved by another worker while still running and is rejected with
+  `MaxAttemptsExceededException`. Long jobs set `#[FailOnTimeout]` and a
+  `failed()` handler so they can never be left "running" forever (see §7.14).
 - **Horizon** monitors queues in production, but requires `ext-pcntl`/`ext-posix`
   and therefore **runs on Linux only** (its provider is registered conditionally
   and excluded from auto-discovery). On Windows, run `php artisan queue:work`.
@@ -293,20 +298,43 @@ Entry::where(function ($q) {
   Local super admin: `superadmin@evoriq.test` / `123456` — never seed in production.
 - Authorize every action with a policy and `Gate::authorize(...)`.
 
-### 7.14 Exports & async processing
+### 7.14 Exports, imports & the Data Processing Center
 
-- Long-running work (exports, imports) is tracked with `App\Models\DataProcessingJob`
-  and runs through the queued `App\Jobs\ProcessExport` job on the `heavy` channel.
-- Exporter classes live in `app/Exports` and implement
-  `App\Exports\Contracts\Exportable`; register new entities on
-  `App\Enums\ExportEntity` (which builds the exporter via `makeExporter()`).
-- Files are generated with `maatwebsite/excel` to the disk configured in
-  `config/exports.php` and downloaded through `ExportController` (JSON
-  endpoints). Exports read from PostgreSQL — **never** query Clockify directly
-  (TDR §33).
-- `ExportController` is gated by `DataProcessingJobPolicy` (`export.*`
-  permissions). Completed jobs and their files are pruned by the scheduled
-  `data-processing:cleanup-completed` command.
+- Every long-running operation — **imports, exports and (future) report
+  generation** — is tracked with `App\Models\DataProcessingJob` and runs as a
+  queued job on the `heavy` channel. The single producer entry point is
+  `DataProcessingJobService::dispatch(JobRequest)`, which persists the job and
+  hands it to `DataProcessingJobDispatcher` (`ProcessExport` / `ProcessImport`).
+  Never run this work synchronously from a request.
+- Entities are registered on `App\Enums\DataEntity` (`makeExporter()` /
+  `makeImporter()`), which also carries `label`/`icon`/`permissionKey` and the
+  import template metadata. Exporter classes live in `app/Exports` and implement
+  `App\Exports\Contracts\Exportable` (`collection`, `headings`, `total`,
+  `stage`); importers live in `app/Imports` and implement
+  `App\Imports\Contracts\Importable`. Files use `maatwebsite/excel` on the disk
+  in `config/exports.php`. Exports/imports read from PostgreSQL — **never** query
+  Clockify directly (TDR §33).
+- The **Data Processing Center UI** lives at `/activity` (nav: **Job activity**)
+  (`DataProcessingJob\ActivityController`, `pages/data-processing/index.tsx`) and
+  polls live progress; artifacts are also browsable under Files → Generated,
+  where uploads and system-generated files are shown together (generated entries
+  carry a "System" badge). Module pages add entry points that reuse the same
+  dialogs/routes (see the Users page, gated by `user.export` / `user.import`).
+- **Permissions** (`DataProcessingJobPolicy`): center access via
+  `data-processing.view` / `data-processing.view.all`; cancel/retry/duplicate via
+  `data-processing.manage`; delete via `data-processing.delete`. Queueing an
+  operation is allowed with the module-level permission (`user.export`,
+  `user.import`) **or** the global `export.create` / `import.create`. Completed
+  jobs and their files are pruned by the scheduled
+  `data-processing:cleanup-completed` command; owners are notified in-app on
+  completion/failure. See `docs/DATA_PROCESSING_CENTER_PLAN.md`.
+- **Reliability:** export/import jobs set `#[FailOnTimeout]` and use the
+  `TracksDataProcessingJob` trait's `failed()` handler, so a row always reaches a
+  terminal state (failed) even on timeout; `handle()` never marks failure itself
+  (it only updates progress / cancellation). The scheduled
+  `data-processing:reap-stale` command (every 5 min) fails rows whose worker was
+  lost (crash/OOM). Imports read at `exports.import.chunk_size` (default `100`)
+  for frequent progress updates. See `docs/JOB_RELIABILITY_PLAN.md`.
 
 ### 7.15 Settings, media & developer tools
 

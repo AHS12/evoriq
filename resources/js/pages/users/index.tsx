@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import type { ColumnDef, SortingState } from '@tanstack/react-table';
-import { Plus, Users } from 'lucide-react';
+import { Download, Plus, Upload, Users } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { DataTable } from '@/components/app/data-table/data-table';
@@ -8,6 +8,8 @@ import { DataTableColumnHeader } from '@/components/app/data-table/data-table-co
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
 import { PageHeader } from '@/components/app/page-header';
+import { ExportDialog } from '@/components/data-processing/export-dialog';
+import { ImportDialog } from '@/components/data-processing/import-dialog';
 import { UserFormDialog } from '@/components/user/user-form-dialog';
 import { UserRowActions } from '@/components/user/user-row-actions';
 import { UserStatusBadge } from '@/components/user/user-status-badge';
@@ -28,7 +30,7 @@ import {
 } from '@/hooks/use-data-table-filters';
 import { useInitials } from '@/hooks/use-initials';
 import { destroy, index } from '@/routes/users';
-import type { Paginated, User, UserStatus } from '@/types';
+import type { JobOptions, Paginated, User, UserStatus } from '@/types';
 
 type Filters = {
     search?: string | null;
@@ -45,6 +47,7 @@ type Props = {
     filters: Filters;
     roles: string[];
     statuses: { value: UserStatus; label: string }[];
+    processingOptions: JobOptions;
 };
 
 function formatDate(value: string | null): string {
@@ -59,7 +62,13 @@ function formatDate(value: string | null): string {
     });
 }
 
-export default function UsersIndex({ users, filters, roles, statuses }: Props) {
+export default function UsersIndex({
+    users,
+    filters,
+    roles,
+    statuses,
+    processingOptions,
+}: Props) {
     const can = useCan();
     const getInitials = useInitials();
 
@@ -69,6 +78,8 @@ export default function UsersIndex({ users, filters, roles, statuses }: Props) {
     const [pendingDelete, setPendingDelete] = useState<User | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [exportOpen, setExportOpen] = useState(false);
+    const [importOpen, setImportOpen] = useState(false);
 
     const openCreate = () => {
         setEditingUser(null);
@@ -209,12 +220,32 @@ export default function UsersIndex({ users, filters, roles, statuses }: Props) {
                     title="Users"
                     description="Manage who can access the workspace and what they can do."
                     actions={
-                        can('user.create') ? (
-                            <Button onClick={openCreate}>
-                                <Plus />
-                                New user
-                            </Button>
-                        ) : undefined
+                        <>
+                            {can('user.import') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setImportOpen(true)}
+                                >
+                                    <Upload />
+                                    Import
+                                </Button>
+                            )}
+                            {can('user.export') && (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setExportOpen(true)}
+                                >
+                                    <Download />
+                                    Export
+                                </Button>
+                            )}
+                            {can('user.create') && (
+                                <Button onClick={openCreate}>
+                                    <Plus />
+                                    New user
+                                </Button>
+                            )}
+                        </>
                     }
                 />
 
@@ -328,6 +359,25 @@ export default function UsersIndex({ users, filters, roles, statuses }: Props) {
                 roles={roles}
                 statuses={statuses}
                 user={editingUser ?? undefined}
+            />
+
+            <ExportDialog
+                open={exportOpen}
+                onOpenChange={setExportOpen}
+                options={processingOptions}
+                lockEntity="users"
+                parameters={{
+                    search: search || undefined,
+                    status: status === 'all' ? undefined : status,
+                    role: role === 'all' ? undefined : role,
+                }}
+            />
+
+            <ImportDialog
+                open={importOpen}
+                onOpenChange={setImportOpen}
+                options={processingOptions}
+                lockEntity="users"
             />
         </>
     );

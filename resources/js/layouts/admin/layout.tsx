@@ -1,5 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { Mail, Palette, ServerCog, SlidersHorizontal } from 'lucide-react';
+import {
+    Bell,
+    Mail,
+    Palette,
+    ServerCog,
+    SlidersHorizontal,
+} from 'lucide-react';
 import type { PropsWithChildren } from 'react';
 import { PageHeader } from '@/components/app/page-header';
 import { Button } from '@/components/ui/button';
@@ -11,6 +17,7 @@ import { edit as appearanceEdit } from '@/routes/admin/settings/appearance';
 import { edit as developerEdit } from '@/routes/admin/settings/developer';
 import { edit as generalEdit } from '@/routes/admin/settings/general';
 import { edit as mailEdit } from '@/routes/admin/settings/mail';
+import { edit as notificationsEdit } from '@/routes/admin/settings/notifications';
 import type { NavItem } from '@/types';
 
 export default function AdminLayout({ children }: PropsWithChildren) {
@@ -27,6 +34,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             title: 'Mail',
             href: mailEdit(),
             icon: Mail,
+        },
+        {
+            title: 'Notifications',
+            href: notificationsEdit(),
+            icon: Bell,
         },
         {
             title: 'Appearance',

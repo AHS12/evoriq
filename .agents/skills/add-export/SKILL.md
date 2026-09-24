@@ -1,6 +1,6 @@
 ---
 name: add-export
-description: 'Register a new exportable entity on Evoriq''s async export pipeline (exporter class + ExportEntity enum + tests).'
+description: 'Register a new exportable entity on Evoriq''s async export pipeline (exporter class + DataEntity enum + tests).'
 argument-hint: 'Entity name, for example: Entry or Report.'
 ---
 
@@ -51,11 +51,11 @@ through `App\Jobs\ProcessExport` on the `heavy` queue and are tracked with
    }
    ```
 
-2. **Register the entity** on `App\Enums\ExportEntity`: add a case and a
+2. **Register the entity** on `App\Enums\DataEntity`: add a case and a
    `makeExporter()` arm returning the exporter instance.
 
 3. **Expose it to the UI** — `ExportController` (`StoreExportRequest` validates
-   with `Rule::enum(ExportEntity::class)`) accepts `entity_type` plus
+   with `Rule::enum(DataEntity::class)`) accepts `entity_type` plus
    `format` (`csv`/`xlsx`) as soon as the enum case exists.
 
 4. **Test it** — run the job with `Storage::fake('local')` and assert the file
@@ -73,6 +73,6 @@ through `App\Jobs\ProcessExport` on the `heavy` queue and are tracked with
 ## Completion checks
 
 - [ ] Exporter implements `Exportable` and reads only PostgreSQL.
-- [ ] `ExportEntity` case + `makeExporter()` arm added.
+- [ ] `DataEntity` case + `makeExporter()` arm added.
 - [ ] Job test asserts the generated file and DB state.
 - [ ] `composer check` passes.

@@ -12,7 +12,7 @@ uses(TestCase::class, RefreshDatabase::class);
 test('groups returns the configurable setting groups', function () {
     $groups = app(SettingService::class)->groups();
 
-    expect(array_column($groups, 'key'))->toBe(['general', 'mail']);
+    expect(array_column($groups, 'key'))->toBe(['general', 'notifications', 'mail']);
 });
 
 test('update encrypts secret values', function () {

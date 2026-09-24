@@ -8,6 +8,7 @@ enum DataProcessingJobStatus: string
     case PROCESSING = 'processing';
     case COMPLETED = 'completed';
     case FAILED = 'failed';
+    case CANCELLED = 'cancelled';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum DataProcessingJobStatus: string
             self::PROCESSING => 'Processing',
             self::COMPLETED => 'Completed',
             self::FAILED => 'Failed',
+            self::CANCELLED => 'Cancelled',
         };
     }
 
@@ -24,6 +26,14 @@ enum DataProcessingJobStatus: string
      */
     public function isFinal(): bool
     {
-        return in_array($this, [self::COMPLETED, self::FAILED], true);
+        return in_array($this, [self::COMPLETED, self::FAILED, self::CANCELLED], true);
+    }
+
+    /**
+     * Whether the job is still waiting or running.
+     */
+    public function isActive(): bool
+    {
+        return ! $this->isFinal();
     }
 }

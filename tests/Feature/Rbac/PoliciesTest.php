@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\DataEntity;
+use App\Enums\DataProcessingJobType;
 use App\Models\DataProcessingJob;
 use App\Models\Upload;
 use App\Models\User;
@@ -25,7 +27,7 @@ test('members can view and create exports', function () {
     $member = member();
 
     expect(Gate::forUser($member)->allows('viewAny', DataProcessingJob::class))->toBeTrue()
-        ->and(Gate::forUser($member)->allows('create', DataProcessingJob::class))->toBeTrue();
+        ->and(Gate::forUser($member)->allows('create', [DataProcessingJob::class, DataProcessingJobType::EXPORT, DataEntity::USERS]))->toBeTrue();
 });
 
 test('users without developer.view cannot access developer tools', function () {

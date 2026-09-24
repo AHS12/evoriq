@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
 import {
+    Activity,
     BookOpen,
     FolderGit2,
     FolderOpen,
@@ -21,9 +22,11 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useActiveJobs } from '@/hooks/use-active-jobs';
 import { useCan } from '@/hooks/use-can';
 import { edit as settingsEdit } from '@/routes/admin/settings/general';
 import { dashboard } from '@/routes';
+import { index as activityIndex } from '@/routes/activity';
 import { index as filesIndex } from '@/routes/files';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
@@ -44,8 +47,18 @@ const footerNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const can = useCan();
+    const activeJobs = useActiveJobs();
 
     const workspace: NavItem[] = [];
+
+    if (can('data-processing.view') || can('data-processing.view.all')) {
+        workspace.push({
+            title: 'Job activity',
+            href: activityIndex(),
+            icon: Activity,
+            badge: activeJobs,
+        });
+    }
 
     if (can('file.view')) {
         workspace.push({

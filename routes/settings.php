@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Setting\AppearanceController;
+use App\Http\Controllers\Setting\NotificationPreferenceController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -15,6 +16,9 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('settings/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
 
     Route::patch('settings/appearance', [AppearanceController::class, 'update'])->name('appearance.update');
+
+    Route::get('settings/notifications', [NotificationPreferenceController::class, 'edit'])->name('notification-preferences.edit');
+    Route::patch('settings/notifications', [NotificationPreferenceController::class, 'update'])->name('notification-preferences.update');
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {

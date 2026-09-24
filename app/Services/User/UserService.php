@@ -63,7 +63,7 @@ class UserService
             return $user->load('roles');
         });
 
-        $this->sendInvitation($user);
+        $this->invite($user);
 
         return $user;
     }
@@ -126,7 +126,7 @@ class UserService
         });
 
         if ($status === UserStatus::INVITED) {
-            $this->sendInvitation($user);
+            $this->invite($user);
         }
 
         return $user;
@@ -144,7 +144,7 @@ class UserService
             'updated_by' => auth()->id(),
         ]));
 
-        $this->sendInvitation($user);
+        $this->invite($user);
 
         return $user;
     }
@@ -192,7 +192,10 @@ class UserService
         );
     }
 
-    protected function sendInvitation(User $user): void
+    /**
+     * Email a user the invitation to set their password.
+     */
+    public function invite(User $user): void
     {
         $user->notify(new UserInvitation(
             $this->invitationUrl($user),
