@@ -11,7 +11,7 @@ class PintCommand extends Command
 
     protected $description = 'Run Laravel Pint to fix code style issues';
 
-    public function handle()
+    public function handle(): int
     {
         $command = ['php', 'vendor/bin/pint', '--ansi'];
 
@@ -23,18 +23,18 @@ class PintCommand extends Command
         $process->setTimeout(null);
 
         $process->setEnv([
-            'TERM' => env('TERM', 'xterm-256color'),
-            'COLORTERM' => env('COLORTERM', 'truecolor'),
+            'TERM' => getenv('TERM') ?: 'xterm-256color',
+            'COLORTERM' => getenv('COLORTERM') ?: 'truecolor',
         ]);
 
         if (Process::isTtySupported()) {
             $process->setTty(true);
         }
 
-        $process->run(function ($type, $buffer) {
-            echo $buffer;
+        $process->run(function (string $type, string $buffer): void {
+            $this->output->write($buffer);
         });
 
-        return $process->isSuccessful() ? 0 : 1;
+        return $process->isSuccessful() ? self::SUCCESS : self::FAILURE;
     }
 }
