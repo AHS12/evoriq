@@ -43,6 +43,9 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
+      - name: Generate Wayfinder helpers
+        run: php artisan wayfinder:generate --with-form
+
       - name: Install Node dependencies
         run: npm ci --no-audit --no-fund
 
