@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AuditLogName;
 use App\Enums\MediaCollection;
 use App\Enums\UploadType;
 use Database\Factories\UploadFactory;
@@ -10,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -39,6 +42,20 @@ class Upload extends Model implements HasMedia
     use HasFactory;
 
     use InteractsWithMedia;
+    use LogsActivity;
+
+    /**
+     * Configure the automatic audit trail for the model.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName(AuditLogName::DOMAIN)
+            ->logOnly(['name', 'type', 'size'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->setDescriptionForEvent(fn (string $event): string => "Upload {$event}");
+    }
 
     /**
      * Get the attributes that should be cast.

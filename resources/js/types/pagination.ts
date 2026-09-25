@@ -23,3 +23,14 @@ export type Paginated<T> = {
     };
     meta: PaginationMeta;
 };
+
+export type CursorPaginationMeta = {
+    per_page: number;
+    next_cursor: string | null;
+    prev_cursor: string | null;
+};
+
+export type CursorPaginated<T> = {
+    data: T[];
+    meta: CursorPaginationMeta;
+};

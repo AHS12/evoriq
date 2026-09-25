@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Repositories\AuditLog\AuditLogRepository;
+use App\Repositories\Contracts\AuditLogRepositoryInterface;
 use App\Repositories\Contracts\CommandRunRepositoryInterface;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
@@ -24,6 +26,7 @@ class RepositoryServiceProvider extends ServiceProvider
      * @var array<class-string, class-string>
      */
     public array $bindings = [
+        AuditLogRepositoryInterface::class => AuditLogRepository::class,
         CommandRunRepositoryInterface::class => CommandRunRepository::class,
         DataProcessingJobRepositoryInterface::class => DataProcessingJobRepository::class,
         NotificationRepositoryInterface::class => NotificationRepository::class,

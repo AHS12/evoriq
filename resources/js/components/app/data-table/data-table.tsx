@@ -32,6 +32,7 @@ type Props<TData, TValue> = {
     isLoading?: boolean;
     sorting?: SortingState;
     onSortingChange?: (sorting: SortingState) => void;
+    onRowClick?: (row: TData) => void;
     emptyState?: DataTableEmptyState;
     className?: string;
 };
@@ -42,6 +43,7 @@ export function DataTable<TData, TValue>({
     isLoading = false,
     sorting = [],
     onSortingChange,
+    onRowClick,
     emptyState,
     className,
 }: Props<TData, TValue>) {
@@ -98,7 +100,18 @@ export function DataTable<TData, TValue>({
                         ))
                     ) : rows.length > 0 ? (
                         rows.map((row) => (
-                            <TableRow key={row.id}>
+                            <TableRow
+                                key={row.id}
+                                className={cn(
+                                    onRowClick &&
+                                        'cursor-pointer hover:bg-muted/50',
+                                )}
+                                onClick={
+                                    onRowClick
+                                        ? () => onRowClick(row.original)
+                                        : undefined
+                                }
+                            >
                                 {row.getVisibleCells().map((cell) => (
                                     <TableCell key={cell.id}>
                                         {flexRender(

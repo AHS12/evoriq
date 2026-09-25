@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\MediaCollection;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileAvatarRequest;
 use App\Http\Requests\Settings\ProfileDeleteRequest;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Services\Profile\ProfileService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +16,10 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        private readonly ProfileService $profiles,
+    ) {}
+
     /**
      * Show the user's profile settings page.
      */
@@ -52,9 +56,7 @@ class ProfileController extends Controller
      */
     public function updateAvatar(ProfileAvatarRequest $request): RedirectResponse
     {
-        $request->user()
-            ->addMediaFromRequest('avatar')
-            ->toMediaCollection(MediaCollection::PROFILE->value);
+        $this->profiles->updateAvatar($request->user(), $request->file('avatar'));
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Avatar updated.')]);
 
@@ -66,7 +68,7 @@ class ProfileController extends Controller
      */
     public function destroyAvatar(Request $request): RedirectResponse
     {
-        $request->user()->clearMediaCollection(MediaCollection::PROFILE->value);
+        $this->profiles->removeAvatar($request->user());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Avatar removed.')]);
 

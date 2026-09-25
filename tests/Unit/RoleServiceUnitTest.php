@@ -4,6 +4,7 @@ use App\DTOs\Role\RoleDTO;
 use App\DTOs\Role\RoleFilterDTO;
 use App\Models\Role;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Services\Audit\AuditLogService;
 use App\Services\Role\RoleService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -15,7 +16,9 @@ uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $this->repository = Mockery::mock(RoleRepositoryInterface::class);
-    $this->service = new RoleService($this->repository);
+    $this->audit = Mockery::mock(AuditLogService::class);
+    $this->audit->shouldReceive('record')->byDefault();
+    $this->service = new RoleService($this->repository, $this->audit);
 });
 
 afterEach(function () {

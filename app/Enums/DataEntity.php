@@ -2,12 +2,14 @@
 
 namespace App\Enums;
 
+use App\Exports\AuditLogExport;
 use App\Exports\Contracts\Exportable;
 use App\Exports\UserExport;
 use App\Imports\Contracts\Importable;
 use App\Imports\UserImport;
 use App\Models\DataProcessingJob;
 use Closure;
+use RuntimeException;
 
 /**
  * The registry of entities the Data Processing Center can operate on.
@@ -19,10 +21,13 @@ enum DataEntity: string
 {
     case USERS = 'users';
 
+    case AUDIT_LOGS = 'audit-logs';
+
     public function label(): string
     {
         return match ($this) {
             self::USERS => 'Users',
+            self::AUDIT_LOGS => 'Audit Log',
         };
     }
 
@@ -33,6 +38,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => 'users',
+            self::AUDIT_LOGS => 'history',
         };
     }
 
@@ -44,6 +50,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => 'user',
+            self::AUDIT_LOGS => 'audit',
         };
     }
 
@@ -54,6 +61,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => in_array($type, [DataProcessingJobType::IMPORT, DataProcessingJobType::EXPORT], true),
+            self::AUDIT_LOGS => $type === DataProcessingJobType::EXPORT,
         };
     }
 
@@ -66,6 +74,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => [ExportFormat::CSV, ExportFormat::XLSX],
+            self::AUDIT_LOGS => [ExportFormat::CSV, ExportFormat::XLSX],
         };
     }
 
@@ -78,6 +87,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => ['Name', 'Email', 'Roles'],
+            self::AUDIT_LOGS => [],
         };
     }
 
@@ -90,6 +100,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => ['Ada Lovelace', 'ada@example.com', 'Member'],
+            self::AUDIT_LOGS => [],
         };
     }
 
@@ -106,6 +117,7 @@ enum DataEntity: string
                 'Email' => 'Required, unique, valid email',
                 'Roles' => 'Optional, comma-separated role names',
             ],
+            self::AUDIT_LOGS => [],
         };
     }
 
@@ -118,6 +130,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => new UserExport($parameters),
+            self::AUDIT_LOGS => new AuditLogExport($parameters),
         };
     }
 
@@ -130,6 +143,7 @@ enum DataEntity: string
     {
         return match ($this) {
             self::USERS => new UserImport($job, $onProgress),
+            self::AUDIT_LOGS => throw new RuntimeException('Audit logs cannot be imported.'),
         };
     }
 }

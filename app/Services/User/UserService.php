@@ -4,10 +4,13 @@ namespace App\Services\User;
 
 use App\DTOs\User\UserDTO;
 use App\DTOs\User\UserFilterDTO;
+use App\Enums\AuditEvent;
+use App\Enums\AuditLogName;
 use App\Enums\UserStatus;
 use App\Models\User;
 use App\Notifications\UserInvitation;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +27,7 @@ class UserService
 
     public function __construct(
         protected UserRepositoryInterface $users,
+        protected AuditLogService $audit,
     ) {}
 
     /**
@@ -99,7 +103,19 @@ class UserService
      */
     public function assignRoles(User $user, array $roles): User
     {
-        return DB::transaction(fn (): User => $this->users->assignRoles($user, $roles)->load('roles'));
+        return DB::transaction(function () use ($user, $roles): User {
+            $updated = $this->users->assignRoles($user, $roles)->load('roles');
+
+            $this->audit->record(
+                AuditEvent::ROLE_ASSIGNED,
+                $user,
+                ['roles' => $roles],
+                actor: auth()->user(),
+                channel: AuditLogName::RBAC,
+            );
+
+            return $updated;
+        });
     }
 
     /**
@@ -110,6 +126,8 @@ class UserService
         if ($user->isSuperAdmin() && $status === UserStatus::SUSPENDED) {
             throw new AuthorizationException(__('The super admin cannot be suspended.'));
         }
+
+        $previousStatus = $user->status;
 
         $user = DB::transaction(function () use ($user, $status): User {
             $data = [
@@ -124,6 +142,18 @@ class UserService
 
             return $this->users->update($user, $data)->load('roles');
         });
+
+        if ($previousStatus !== $status) {
+            $event = match (true) {
+                $status === UserStatus::SUSPENDED => AuditEvent::USER_SUSPENDED,
+                $previousStatus === UserStatus::SUSPENDED && $status === UserStatus::ACTIVE => AuditEvent::USER_REACTIVATED,
+                default => null,
+            };
+
+            if ($event !== null) {
+                $this->audit->record($event, $user, ['from' => $previousStatus->value, 'to' => $status->value], actor: auth()->user(), channel: AuditLogName::SECURITY);
+            }
+        }
 
         if ($status === UserStatus::INVITED) {
             $this->invite($user);

@@ -4,6 +4,7 @@ import {
     BookOpen,
     FolderGit2,
     FolderOpen,
+    History,
     LayoutGrid,
     Settings,
     ShieldCheck,
@@ -27,6 +28,7 @@ import { useCan } from '@/hooks/use-can';
 import { edit as settingsEdit } from '@/routes/admin/settings/general';
 import { dashboard } from '@/routes';
 import { index as activityIndex } from '@/routes/activity';
+import { index as auditLogsIndex } from '@/routes/audit-logs';
 import { index as filesIndex } from '@/routes/files';
 import { index as rolesIndex } from '@/routes/roles';
 import { index as usersIndex } from '@/routes/users';
@@ -91,6 +93,14 @@ export function AppSidebar() {
             title: 'Settings',
             href: settingsEdit(),
             icon: Settings,
+        });
+    }
+
+    if (can('audit.view') || can('audit.view.all')) {
+        administration.push({
+            title: 'Audit Log',
+            href: auditLogsIndex(),
+            icon: History,
         });
     }
 

@@ -14,6 +14,7 @@ require __DIR__.'/setup.php';
 require __DIR__.'/settings.php';
 require __DIR__.'/notifications.php';
 require __DIR__.'/activity.php';
+require __DIR__.'/audit.php';
 require __DIR__.'/exports.php';
 require __DIR__.'/files.php';
 require __DIR__.'/users.php';

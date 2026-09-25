@@ -3,13 +3,20 @@
 namespace App\Services\Setting;
 
 use Ahs12\Setanjo\Facades\Settings;
+use App\Enums\AuditEvent;
+use App\Enums\AuditLogName;
 use App\Enums\SettingKey;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
 class SettingService
 {
+    public function __construct(
+        protected AuditLogService $audit,
+    ) {}
+
     /**
      * Every configurable setting, grouped for the UI.
      *
@@ -56,13 +63,16 @@ class SettingService
     }
 
     /**
-     * Persist the submitted values, encrypting secrets. Blank secrets are kept.
+     * Persist the submitted values, encrypting secrets, and audit every
+     * actual change (secret values are never recorded).
      *
      * @param  array<string, mixed>  $values
      */
     public function update(array $values): void
     {
-        DB::transaction(function () use ($values): void {
+        $changes = DB::transaction(function () use ($values): array {
+            $changes = [];
+
             foreach (SettingKey::configurable() as $key) {
                 if (! array_key_exists($key->value, $values)) {
                     continue;
@@ -74,13 +84,36 @@ class SettingService
                     continue;
                 }
 
+                $previous = Settings::get($key->value);
+
                 if ($key->isSecret()) {
                     $value = Crypt::encryptString((string) $value);
                 }
 
+                if ($previous === $value) {
+                    continue;
+                }
+
                 Settings::set($key->value, $value);
+
+                $changes[] = [
+                    'key' => $key->value,
+                    'old' => $key->isSecret() ? null : $previous,
+                    'new' => $key->isSecret() ? null : $value,
+                ];
             }
+
+            return $changes;
         });
+
+        foreach ($changes as $change) {
+            $this->audit->record(
+                AuditEvent::SETTING_UPDATED,
+                description: __('Setting updated: :key', ['key' => $change['key']]),
+                properties: $change,
+                channel: AuditLogName::SETTINGS,
+            );
+        }
     }
 
     /**

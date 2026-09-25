@@ -7,6 +7,7 @@ use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
 use App\DTOs\DataProcessingJob\JobRequest;
 use App\DTOs\Notification\NotificationDTO;
 use App\DTOs\Notification\NotificationTargetDTO;
+use App\Enums\AuditEvent;
 use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\ExportFormat;
@@ -16,7 +17,9 @@ use App\Exports\ImportReportExport;
 use App\Imports\ImportResult;
 use App\Jobs\DataProcessingJobDispatcher;
 use App\Models\DataProcessingJob;
+use App\Models\User;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
+use App\Services\Audit\AuditLogService;
 use App\Services\Notification\NotificationService;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -33,6 +36,7 @@ class DataProcessingJobService
     public function __construct(
         protected DataProcessingJobRepositoryInterface $repository,
         protected NotificationService $notifications,
+        protected AuditLogService $audit,
     ) {}
 
     /**
@@ -166,7 +170,7 @@ class DataProcessingJobService
         int $errorCount = 0,
         ?array $errors = null,
     ): DataProcessingJob {
-        return $this->repository->update($job, [
+        $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::COMPLETED,
             'stage' => null,
             'total_items' => $totalItems,
@@ -176,6 +180,23 @@ class DataProcessingJobService
             'errors' => $errors,
             'completed_at' => now(),
         ]);
+
+        if (! $job->isReport()) {
+            $event = $job->isImport() ? AuditEvent::IMPORT_COMPLETED : AuditEvent::EXPORT_COMPLETED;
+
+            $this->audit->record(
+                $event,
+                $job,
+                ['entity' => $job->entity_type?->value, 'file_name' => $job->file_name, 'rows' => $processedItems],
+                actor: User::find($job->user_id),
+                description: __(':entity :operation completed', [
+                    'entity' => $job->entity_type?->label() ?? 'Data',
+                    'operation' => strtolower($job->type->label()),
+                ]),
+            );
+        }
+
+        return $job;
     }
 
     /**
@@ -183,7 +204,7 @@ class DataProcessingJobService
      */
     public function markFailed(DataProcessingJob $job, string $errorMessage): DataProcessingJob
     {
-        return $this->repository->update($job, [
+        $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::FAILED,
             'stage' => null,
             'error_message' => $errorMessage,
@@ -194,6 +215,23 @@ class DataProcessingJobService
             ]],
             'completed_at' => now(),
         ]);
+
+        if (! $job->isReport()) {
+            $event = $job->isImport() ? AuditEvent::IMPORT_FAILED : AuditEvent::EXPORT_FAILED;
+
+            $this->audit->record(
+                $event,
+                $job,
+                ['entity' => $job->entity_type?->value, 'error' => $errorMessage],
+                actor: User::find($job->user_id),
+                description: __(':entity :operation failed', [
+                    'entity' => $job->entity_type?->label() ?? 'Data',
+                    'operation' => strtolower($job->type->label()),
+                ]),
+            );
+        }
+
+        return $job;
     }
 
     /**
@@ -201,11 +239,23 @@ class DataProcessingJobService
      */
     public function markCancelled(DataProcessingJob $job): DataProcessingJob
     {
-        return $this->repository->update($job, [
+        $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::CANCELLED,
             'stage' => null,
             'completed_at' => now(),
         ]);
+
+        $this->audit->record(
+            AuditEvent::PROCESSING_CANCELLED,
+            $job,
+            ['entity' => $job->entity_type?->value],
+            description: __(':entity :operation cancelled', [
+                'entity' => $job->entity_type?->label() ?? 'Data',
+                'operation' => strtolower($job->type->label()),
+            ]),
+        );
+
+        return $job;
     }
 
     /**
@@ -222,7 +272,20 @@ class DataProcessingJobService
             return $this->markCancelled($job);
         }
 
-        return $this->repository->update($job, ['cancel_requested_at' => now()]);
+        $updated = $this->repository->update($job, ['cancel_requested_at' => now()]);
+
+        $this->audit->record(
+            AuditEvent::PROCESSING_CANCELLED,
+            $updated,
+            ['entity' => $updated->entity_type?->value, 'requested' => true],
+            actor: auth()->user(),
+            description: __(':entity :operation cancellation requested', [
+                'entity' => $updated->entity_type?->label() ?? 'Data',
+                'operation' => strtolower($updated->type->label()),
+            ]),
+        );
+
+        return $updated;
     }
 
     /**

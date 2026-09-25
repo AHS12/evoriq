@@ -3,14 +3,22 @@
 use App\DTOs\Setting\NotificationPreferenceDTO;
 use App\Enums\NotificationType;
 use App\Enums\UserSettingKey;
+use App\Services\Audit\AuditLogService;
 use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->service = new NotificationPreferenceService;
+    $this->audit = Mockery::mock(AuditLogService::class);
+    $this->audit->shouldReceive('record')->byDefault();
+    $this->service = new NotificationPreferenceService($this->audit);
+});
+
+afterEach(function () {
+    Mockery::close();
 });
 
 test('defaults are returned when nothing is stored', function () {

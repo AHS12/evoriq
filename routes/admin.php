@@ -43,6 +43,16 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->defaults('group', 'notifications')
             ->name('notifications.update');
 
+        Route::get('audit', [SettingController::class, 'edit'])
+            ->middleware('can:settings.view')
+            ->defaults('group', 'audit')
+            ->name('audit.edit');
+
+        Route::patch('audit', [SettingController::class, 'update'])
+            ->middleware('can:settings.update')
+            ->defaults('group', 'audit')
+            ->name('audit.update');
+
         Route::get('appearance', [AppearanceController::class, 'edit'])
             ->middleware('can:settings.view')
             ->name('appearance.edit');

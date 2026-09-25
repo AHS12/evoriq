@@ -2,6 +2,7 @@
 
 use App\DTOs\DataProcessingJob\DataProcessingJobDTO;
 use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
+use App\Enums\AuditEvent;
 use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\ExportFormat;
@@ -9,6 +10,7 @@ use App\Enums\NotificationType;
 use App\Jobs\ProcessExport;
 use App\Models\DataProcessingJob;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
+use App\Services\Audit\AuditLogService;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -22,7 +24,9 @@ uses(TestCase::class, RefreshDatabase::class);
 beforeEach(function () {
     $this->repository = Mockery::mock(DataProcessingJobRepositoryInterface::class);
     $this->notifications = Mockery::mock(NotificationService::class);
-    $this->service = new DataProcessingJobService($this->repository, $this->notifications);
+    $this->audit = Mockery::mock(AuditLogService::class);
+    $this->audit->shouldReceive('record')->byDefault();
+    $this->service = new DataProcessingJobService($this->repository, $this->notifications, $this->audit);
 });
 
 afterEach(function () {
@@ -118,13 +122,19 @@ test('cancel marks a pending job cancelled immediately', function () {
     $this->service->cancel($job);
 });
 
-test('cancel requests cancellation for a processing job', function () {
+test('cancel requests cancellation for a processing job and audits it', function () {
     $job = DataProcessingJob::factory()->active()->create();
 
     $this->repository->shouldReceive('update')
         ->once()
         ->withArgs(fn (DataProcessingJob $model, array $data): bool => array_key_exists('cancel_requested_at', $data))
         ->andReturn($job);
+
+    $this->audit->shouldReceive('record')
+        ->once()
+        ->withArgs(function (AuditEvent $event, ?DataProcessingJob $subject) use ($job): bool {
+            return $event === AuditEvent::PROCESSING_CANCELLED && $subject?->is($job);
+        });
 
     $this->service->cancel($job);
 });

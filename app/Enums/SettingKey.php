@@ -24,6 +24,12 @@ enum SettingKey: string
     case NOTIFICATION_ENABLED = 'notification_enabled';
     case NOTIFICATION_RETENTION_DAYS = 'notification_retention_days';
 
+    case AUDIT_RETENTION_AUTH = 'audit_retention_auth';
+    case AUDIT_RETENTION_SECURITY = 'audit_retention_security';
+    case AUDIT_RETENTION_RBAC = 'audit_retention_rbac';
+    case AUDIT_RETENTION_SETTINGS = 'audit_retention_settings';
+    case AUDIT_RETENTION_DOMAIN = 'audit_retention_domain';
+
     case MAIL_MAILER = 'mail_mailer';
     case MAIL_HOST = 'mail_host';
     case MAIL_PORT = 'mail_port';
@@ -44,6 +50,8 @@ enum SettingKey: string
             self::SYSTEM_NAME, self::TIMEZONE, self::DATE_FORMAT, self::WEEK_START,
             self::EXPORT_CLEANUP_DAYS => 'general',
             self::NOTIFICATION_ENABLED, self::NOTIFICATION_RETENTION_DAYS => 'notifications',
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => 'audit',
             self::MAIL_MAILER, self::MAIL_HOST, self::MAIL_PORT, self::MAIL_USERNAME,
             self::MAIL_PASSWORD, self::MAIL_ENCRYPTION, self::MAIL_FROM_ADDRESS,
             self::MAIL_FROM_NAME => 'mail',
@@ -61,6 +69,11 @@ enum SettingKey: string
             self::EXPORT_CLEANUP_DAYS => 'Export retention (days)',
             self::NOTIFICATION_ENABLED => 'Enable notifications',
             self::NOTIFICATION_RETENTION_DAYS => 'Notification retention (days)',
+            self::AUDIT_RETENTION_AUTH => 'Auth log retention',
+            self::AUDIT_RETENTION_SECURITY => 'Security log retention',
+            self::AUDIT_RETENTION_RBAC => 'Roles & permissions log retention',
+            self::AUDIT_RETENTION_SETTINGS => 'Settings log retention',
+            self::AUDIT_RETENTION_DOMAIN => 'Domain log retention',
             self::MAIL_MAILER => 'Mailer',
             self::MAIL_HOST => 'SMTP host',
             self::MAIL_PORT => 'SMTP port',
@@ -83,6 +96,11 @@ enum SettingKey: string
             self::EXPORT_CLEANUP_DAYS => 'Days to keep completed export files before cleanup',
             self::NOTIFICATION_ENABLED => 'Master switch for creating in-app notifications',
             self::NOTIFICATION_RETENTION_DAYS => 'Days to keep notifications before they are pruned',
+            self::AUDIT_RETENTION_AUTH => 'How long login and logout events are kept before pruning',
+            self::AUDIT_RETENTION_SECURITY => 'How long security events (suspensions, failed logins, 2FA) are kept before pruning',
+            self::AUDIT_RETENTION_RBAC => 'How long role and permission changes are kept before pruning',
+            self::AUDIT_RETENTION_SETTINGS => 'How long setting changes are kept before pruning',
+            self::AUDIT_RETENTION_DOMAIN => 'How long domain events (exports, imports, uploads) are kept before pruning',
             self::MAIL_MAILER => 'Transport used to send email',
             self::MAIL_HOST => 'SMTP server hostname',
             self::MAIL_PORT => 'SMTP server port',
@@ -105,6 +123,11 @@ enum SettingKey: string
             self::EXPORT_CLEANUP_DAYS => 7,
             self::NOTIFICATION_ENABLED => true,
             self::NOTIFICATION_RETENTION_DAYS => 90,
+            self::AUDIT_RETENTION_AUTH => 180,
+            self::AUDIT_RETENTION_SECURITY => 365,
+            self::AUDIT_RETENTION_RBAC => 365,
+            self::AUDIT_RETENTION_SETTINGS => 180,
+            self::AUDIT_RETENTION_DOMAIN => 90,
             default => null,
         };
     }
@@ -114,6 +137,8 @@ enum SettingKey: string
         return match ($this) {
             self::EXPORT_CLEANUP_DAYS, self::MAIL_PORT, self::NOTIFICATION_RETENTION_DAYS => 'integer',
             self::NOTIFICATION_ENABLED => 'boolean',
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => 'select',
             self::TIMEZONE, self::MAIL_MAILER, self::MAIL_ENCRYPTION, self::WEEK_START => 'select',
             default => 'string',
         };
@@ -150,8 +175,28 @@ enum SettingKey: string
                 ['label' => 'Saturday', 'value' => 'saturday'],
                 ['label' => 'Sunday', 'value' => 'sunday'],
             ],
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => self::retentionOptions(),
             default => [],
         };
+    }
+
+    /**
+     * Retention choices shared by every audit log channel (value = days).
+     *
+     * @return array<int, array{label: string, value: string}>
+     */
+    private static function retentionOptions(): array
+    {
+        return [
+            ['label' => '6 months', 'value' => '180'],
+            ['label' => '1 year', 'value' => '365'],
+            ['label' => '2 years', 'value' => '730'],
+            ['label' => '3 years', 'value' => '1095'],
+            ['label' => '5 years', 'value' => '1825'],
+            ['label' => '7 years', 'value' => '2555'],
+            ['label' => '10 years', 'value' => '3650'],
+        ];
     }
 
     /**
@@ -185,6 +230,8 @@ enum SettingKey: string
             self::EXPORT_CLEANUP_DAYS => ['required', 'integer', 'min:1', 'max:365'],
             self::NOTIFICATION_ENABLED => ['required', 'boolean'],
             self::NOTIFICATION_RETENTION_DAYS => ['required', 'integer', 'min:1', 'max:3650'],
+            self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
+            self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => ['required', 'integer', 'min:30', 'max:3650'],
             self::MAIL_MAILER => ['required', 'in:smtp,log,array'],
             self::MAIL_HOST => ['nullable', 'string', 'max:255'],
             self::MAIL_PORT => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -233,6 +280,7 @@ enum SettingKey: string
         return [
             'general' => 'General',
             'notifications' => 'Notifications',
+            'audit' => 'Audit log',
             'mail' => 'Mail',
         ];
     }

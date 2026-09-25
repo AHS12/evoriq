@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Ahs12\Setanjo\Traits\HasSettings;
+use App\Enums\AuditLogName;
 use App\Enums\MediaCollection;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
@@ -21,6 +22,8 @@ use Illuminate\Support\Carbon;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -51,7 +54,21 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable implements HasMedia, MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasSettings, InteractsWithMedia, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, HasSettings, InteractsWithMedia, LogsActivity, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    /**
+     * Configure the automatic audit trail for the model.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName(AuditLogName::SECURITY)
+            ->logOnly(['name', 'email', 'status'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges()
+            ->dontLogIfAttributesChangedOnly(['updated_by'])
+            ->setDescriptionForEvent(fn (string $event): string => "User {$event}");
+    }
 
     /**
      * Register the model's event listeners.

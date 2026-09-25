@@ -120,6 +120,15 @@ return [
         ],
     ],
 
+    'audit' => [
+        'permissions' => [
+            ['name' => 'audit.view', 'group' => 'audit', 'description' => 'View audit log entries of own actions'],
+            ['name' => 'audit.view.all', 'group' => 'audit', 'description' => 'View all audit log entries'],
+            ['name' => 'audit.manage', 'group' => 'audit', 'description' => 'Prune audit log entries per the retention windows'],
+            ['name' => 'audit.export', 'group' => 'audit', 'description' => 'Export audit log entries'],
+        ],
+    ],
+
     'developer' => [
         'permissions' => [
             ['name' => 'developer.view', 'group' => 'developer', 'description' => 'Access developer tools', 'is_system' => true],

@@ -3,9 +3,12 @@
 namespace App\Services\Setting;
 
 use App\DTOs\Setting\NotificationPreferenceDTO;
+use App\Enums\AuditEvent;
+use App\Enums\AuditLogName;
 use App\Enums\NotificationType;
 use App\Enums\UserSettingKey;
 use App\Models\User;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -16,6 +19,10 @@ use Illuminate\Support\Facades\DB;
  */
 class NotificationPreferenceService
 {
+    public function __construct(
+        protected AuditLogService $audit,
+    ) {}
+
     /**
      * The fully resolved preferences for a user (defaults applied).
      *
@@ -60,6 +67,19 @@ class NotificationPreferenceService
             $settings->set(UserSettingKey::NOTIFICATION_DESKTOP_ENABLED->value, $dto->desktop ? '1' : '0');
             $settings->set(UserSettingKey::NOTIFICATION_MUTED_TYPES->value, json_encode(array_values($dto->mutedTypes)));
         });
+
+        $this->audit->record(
+            AuditEvent::NOTIFICATION_PREFERENCES_UPDATED,
+            $user,
+            [
+                'inapp' => $dto->inapp,
+                'sound' => $dto->sound,
+                'desktop' => $dto->desktop,
+                'muted_types' => array_values($dto->mutedTypes),
+            ],
+            actor: $user,
+            channel: AuditLogName::SETTINGS,
+        );
     }
 
     /**

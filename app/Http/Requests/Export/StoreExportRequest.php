@@ -32,6 +32,11 @@ class StoreExportRequest extends FormRequest
             'filters.search' => ['sometimes', 'nullable', 'string', 'max:255'],
             'filters.status' => ['sometimes', 'nullable', Rule::enum(UserStatus::class)],
             'filters.role' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'filters.channel' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'filters.event' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'filters.causer_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'filters.date_from' => ['sometimes', 'nullable', 'date'],
+            'filters.date_to' => ['sometimes', 'nullable', 'date', 'after_or_equal:filters.date_from'],
             'total_items' => ['sometimes', 'integer', 'min:0'],
         ];
     }

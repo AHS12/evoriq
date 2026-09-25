@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Models\User;
 use App\Notifications\UserInvitation;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\Audit\AuditLogService;
 use App\Services\User\UserService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -19,7 +20,9 @@ uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     $this->repository = Mockery::mock(UserRepositoryInterface::class);
-    $this->service = new UserService($this->repository);
+    $this->audit = Mockery::mock(AuditLogService::class);
+    $this->audit->shouldReceive('record')->byDefault();
+    $this->service = new UserService($this->repository, $this->audit);
 });
 
 afterEach(function () {

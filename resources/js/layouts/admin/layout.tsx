@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import {
     Bell,
+    History,
     Mail,
     Palette,
     ServerCog,
@@ -14,6 +15,7 @@ import { useCan } from '@/hooks/use-can';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn } from '@/lib/utils';
 import { edit as appearanceEdit } from '@/routes/admin/settings/appearance';
+import { edit as auditEdit } from '@/routes/admin/settings/audit';
 import { edit as developerEdit } from '@/routes/admin/settings/developer';
 import { edit as generalEdit } from '@/routes/admin/settings/general';
 import { edit as mailEdit } from '@/routes/admin/settings/mail';
@@ -39,6 +41,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             title: 'Notifications',
             href: notificationsEdit(),
             icon: Bell,
+        },
+        {
+            title: 'Audit log',
+            href: auditEdit(),
+            icon: History,
         },
         {
             title: 'Appearance',

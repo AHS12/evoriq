@@ -38,6 +38,11 @@ Controller → Service → Repository → Model → PostgreSQL
 - **Enums** for every fixed value set — no magic strings.
 - **Custom exceptions live in `app/Exceptions/`** (never inside module folders).
 - **Clockify HTTP only through `app/Services/Clockify`** (see `AGENTS.md` §7.10).
+- **Audit trail** (see `AGENTS.md` §7.16): services record named events with
+  `AuditLogService::record()` inside transactions; controllers and jobs never
+  call `activity()` directly. `logAll()` / `logFillable()` are forbidden —
+  always a selective `logOnly([...])` allowlist with `logOnlyDirty()` and
+  `dontLogEmptyChanges()`.
 
 ## Red flags (reject on sight)
 

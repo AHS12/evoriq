@@ -4,11 +4,14 @@ namespace App\Services\Role;
 
 use App\DTOs\Role\RoleDTO;
 use App\DTOs\Role\RoleFilterDTO;
+use App\Enums\AuditEvent;
+use App\Enums\AuditLogName;
 use App\Enums\UserRole;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Repositories\Contracts\RoleRepositoryInterface;
+use App\Services\Audit\AuditLogService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -19,6 +22,7 @@ class RoleService
 {
     public function __construct(
         protected RoleRepositoryInterface $roles,
+        protected AuditLogService $audit,
     ) {}
 
     /**
@@ -88,17 +92,33 @@ class RoleService
     }
 
     /**
-     * Filter permissions to the assignable set and persist them.
+     * Filter permissions to the assignable set, persist them and audit the
+     * exact grants/revocations.
      *
      * @param  array<int, string>  $permissions
      */
     protected function syncPermissions(Role $role, array $permissions): Role
     {
+        $previous = $role->exists ? $role->permissions->pluck('name')->all() : [];
+
         $assignable = $this->roles->assignablePermissionNames($permissions, $role->is_system);
 
         $role = $this->roles->syncPermissions($role, $assignable);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+        if (! $role->wasRecentlyCreated) {
+            $granted = array_values(array_diff($assignable, $previous));
+            $revoked = array_values(array_diff($previous, $assignable));
+
+            if ($granted !== []) {
+                $this->audit->record(AuditEvent::PERMISSION_GRANTED, $role, ['permissions' => $granted], actor: auth()->user(), channel: AuditLogName::RBAC);
+            }
+
+            if ($revoked !== []) {
+                $this->audit->record(AuditEvent::PERMISSION_REVOKED, $role, ['permissions' => $revoked], actor: auth()->user(), channel: AuditLogName::RBAC);
+            }
+        }
 
         return $role;
     }

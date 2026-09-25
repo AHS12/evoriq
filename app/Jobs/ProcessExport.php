@@ -7,6 +7,7 @@ use App\Enums\ExportFormat;
 use App\Enums\QueueName;
 use App\Jobs\Concerns\TracksDataProcessingJob;
 use App\Models\DataProcessingJob;
+use App\Models\User;
 use App\Registry\QueueRegistry;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -15,6 +16,7 @@ use Illuminate\Queue\Attributes\FailOnTimeout;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use RuntimeException;
+use Spatie\Activitylog\Support\CauserResolver;
 use Throwable;
 
 #[FailOnTimeout]
@@ -47,9 +49,23 @@ class ProcessExport implements ShouldQueue
     }
 
     /**
-     * Execute the job.
+     * Execute the job. Model events fired during the run are attributed to
+     * the job owner, since a queue has no authenticated user.
      */
-    public function handle(DataProcessingJobService $service): void
+    public function handle(DataProcessingJobService $service, ?CauserResolver $causerResolver = null): void
+    {
+        $causerResolver ??= app(CauserResolver::class);
+
+        $owner = $this->dataProcessingJob->user_id !== null
+            ? User::find($this->dataProcessingJob->user_id)
+            : null;
+
+        $causerResolver->withCauser($owner, function () use ($service): void {
+            $this->process($service);
+        });
+    }
+
+    private function process(DataProcessingJobService $service): void
     {
         $job = $this->dataProcessingJob;
 

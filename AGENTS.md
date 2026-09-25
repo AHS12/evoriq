@@ -356,6 +356,30 @@ Entry::where(function ($q) {
   Telescope is dev-only; Pulse/Horizon are gated by the `viewPulse`/
   `viewHorizon` abilities in `AuthServiceProvider`/`HorizonServiceProvider`.
 
+### 7.16 Audit logging
+
+- The audit trail is collected with **`spatie/laravel-activitylog` v5** and
+  browsed at `/audit-logs` (`audit-logs.*` routes, `AuditLogController`).
+- **Audit events, not churn.** Model changes are collected automatically via
+  the `LogsActivity` trait with a selective `logOnly([...])` allowlist,
+  `logOnlyDirty()` and `dontLogEmptyChanges()`. **Never** call `logAll()` /
+  `logFillable()`. High-frequency models get named events only (no trait).
+- Named domain events (role changes, suspensions, finished exports, …) are
+  recorded with **`AuditLogService::record()`** from services — never from
+  controllers or jobs. In queued jobs, pass the actor explicitly; `auth()`
+  is empty there.
+- Channels are `App\Enums\AuditLogName` (`auth`, `security`, `rbac`,
+  `settings`, `domain`), events `App\Enums\AuditEvent`; each channel has a
+  retention window in `config/audit.php`, enforced by the scheduled
+  `audit:clean` command and a manual prune gated by `audit.manage`.
+- Secrets never reach the log: `config/audit.php` `redacted_attributes` is
+  enforced centrally by `App\ActivityLog\AuditLogAction` (with
+  `default_except_attributes` in `config/activitylog.php` as the pre-diff
+  filter).
+- Every row written during one request/job shares a `correlation_id`
+  (`App\ActivityLog\AuditContext`, booted by `AuditRequestContext`).
+- Extend coverage with the **`add-audit-logging`** skill.
+
 ## 8. Frontend conventions
 
 ### 8.1 Directory structure
@@ -466,7 +490,9 @@ Run `npm run build` after adding routes before referencing new Wayfinder helpers
    service → request/resource → controller → routes → tests.
 3. Implement backend first (service–repository), then the Inertia page/UI.
 4. Add tests (unit + feature) alongside the code.
-5. Run `composer check` and fix everything before finishing.
+5. Declare audit coverage for anything security- or business-relevant (skill:
+   `add-audit-logging`).
+6. Run `composer check` and fix everything before finishing.
 
 ## 11. Rules & skills index
 
@@ -479,3 +505,4 @@ Run `npm run build` after adding routes before referencing new Wayfinder helpers
   - `.agents/skills/clockify-sync-feature` — add Clockify sync work safely
   - `.agents/skills/add-permission` — declare, sync and enforce a permission
   - `.agents/skills/add-export` — register a new async export entity
+  - `.agents/skills/add-audit-logging` — add audit trail coverage for a model/module

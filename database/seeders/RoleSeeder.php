@@ -36,10 +36,10 @@ class RoleSeeder extends Seeder
                     'role.delete',
                     'settings.update',
                     'connection.credentials.update',
+                    'audit.manage',
                 ])
                 ->get(),
         );
-
         $member = Role::firstOrCreate(
             ['name' => UserRole::MEMBER->value, 'guard_name' => $guard],
             ['is_system' => true],

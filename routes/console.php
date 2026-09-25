@@ -16,6 +16,9 @@ Schedule::command('data-processing:reap-stale')->everyFiveMinutes();
 // Retention: prune expired and old in-app notifications.
 Schedule::command('notifications:prune')->daily();
 
+// Retention: prune audit log entries per each channel's retention window.
+Schedule::command('audit:clean')->dailyAt('03:30');
+
 // Application health: run the checks and keep the schedule heartbeat fresh.
 Schedule::command('health:check')->everyFiveMinutes();
 Schedule::command('health:schedule-check-heartbeat')->everyMinute();
