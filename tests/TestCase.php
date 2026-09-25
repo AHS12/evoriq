@@ -12,6 +12,14 @@ abstract class TestCase extends BaseTestCase
      */
     protected $seed = true;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Tests render Inertia pages but must not depend on built assets.
+        $this->withoutVite();
+    }
+
     protected function skipUnlessFortifyHas(string $feature, ?string $message = null): void
     {
         if (! Features::enabled($feature)) {
