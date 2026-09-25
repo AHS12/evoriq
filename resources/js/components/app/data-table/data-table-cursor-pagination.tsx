@@ -7,6 +7,7 @@ type Props = {
     meta: CursorPaginationMeta;
     onPrevious: () => void;
     onNext: () => void;
+    disabled?: boolean;
     className?: string;
 };
 
@@ -14,6 +15,7 @@ export function DataTableCursorPagination({
     meta,
     onPrevious,
     onNext,
+    disabled = false,
     className,
 }: Props) {
     const { per_page, next_cursor, prev_cursor } = meta;
@@ -44,7 +46,7 @@ export function DataTableCursorPagination({
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={prev_cursor === null}
+                    disabled={disabled || prev_cursor === null}
                     onClick={onPrevious}
                 >
                     <ChevronLeft />
@@ -54,7 +56,7 @@ export function DataTableCursorPagination({
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={next_cursor === null}
+                    disabled={disabled || next_cursor === null}
                     onClick={onNext}
                 >
                     Next

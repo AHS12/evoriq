@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { DataTable } from '@/components/app/data-table/data-table';
 import { DataTableCursorPagination } from '@/components/app/data-table/data-table-cursor-pagination';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
+import { DataTablePerPage } from '@/components/app/data-table/data-table-per-page';
 import { PageHeader } from '@/components/app/page-header';
 import { Combobox } from '@/components/app/combobox';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
@@ -108,7 +109,7 @@ export default function AuditLogsIndex({
         date_to: filters.date_to || undefined,
     };
 
-    const { apply } = useDataTableFilters(
+    const { apply, isLoading } = useDataTableFilters(
         auditLogsIndex.url(),
         filters as TableFilters,
     );
@@ -326,12 +327,21 @@ export default function AuditLogsIndex({
                         placeholder="All events"
                         searchPlaceholder="Search events…"
                     />
+
+                    <DataTablePerPage
+                        value={logs.meta.per_page}
+                        disabled={isLoading}
+                        onChange={(perPage) =>
+                            apply({ per_page: perPage, cursor: null }, true)
+                        }
+                    />
                 </DataTableToolbar>
 
                 <div className="space-y-4">
                     <DataTable
                         columns={columns}
                         data={logs.data}
+                        isLoading={isLoading}
                         onRowClick={(entry) => setSelected(entry)}
                         emptyState={{
                             icon: History,
@@ -343,6 +353,7 @@ export default function AuditLogsIndex({
 
                     <DataTableCursorPagination
                         meta={logs.meta}
+                        disabled={isLoading}
                         onPrevious={() =>
                             apply({ cursor: logs.meta.prev_cursor }, true)
                         }

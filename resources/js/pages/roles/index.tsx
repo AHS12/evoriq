@@ -64,7 +64,10 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         setFormOpen(true);
     };
 
-    const { apply } = useDataTableFilters(index.url(), filters as TableFilters);
+    const { apply, isLoading } = useDataTableFilters(
+        index.url(),
+        filters as TableFilters,
+    );
 
     const sorting: SortingState = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order_direction === 'desc' }]
@@ -198,6 +201,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                     <DataTable
                         columns={columns}
                         data={roles.data}
+                        isLoading={isLoading}
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
                         emptyState={{
@@ -211,6 +215,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
 
                     <DataTablePagination
                         meta={roles.meta}
+                        disabled={isLoading}
                         onPageChange={(page) => apply({ page }, true)}
                     />
                 </div>

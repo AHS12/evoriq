@@ -33,7 +33,10 @@ final readonly class AuditLogFilterDTO
             dateTo: $request->string('date_to')->toString() ?: null,
             orderBy: (string) $request->input('order_by', 'created_at'),
             orderDirection: (string) $request->input('order_direction', 'desc'),
-            perPage: $request->integer('per_page', (int) config('audit.pagination', 25)),
+            perPage: max(1, min(
+                $request->integer('per_page', (int) config('audit.pagination', 25)),
+                100,
+            )),
         );
     }
 

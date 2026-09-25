@@ -198,16 +198,28 @@ export function updateAppearance(
     return current;
 }
 
+const PERSIST_DEBOUNCE_MS = 500;
+
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
 function persistAppearance(preferences: AppearancePreferences): void {
-    router.patch(
-        updateAppearanceRoute.url(),
-        { ...preferences, silent: true },
-        {
-            preserveScroll: true,
-            preserveState: true,
-            only: [],
-        },
-    );
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+    }
+
+    persistTimer = setTimeout(() => {
+        persistTimer = null;
+
+        router.patch(
+            updateAppearanceRoute.url(),
+            { ...preferences, silent: true },
+            {
+                preserveScroll: true,
+                preserveState: true,
+                only: [],
+            },
+        );
+    }, PERSIST_DEBOUNCE_MS);
 }
 
 export type UseAppearanceReturn = {

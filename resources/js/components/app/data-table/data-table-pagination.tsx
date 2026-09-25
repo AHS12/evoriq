@@ -6,10 +6,16 @@ import type { PaginationMeta } from '@/types';
 type Props = {
     meta: PaginationMeta;
     onPageChange: (page: number) => void;
+    disabled?: boolean;
     className?: string;
 };
 
-export function DataTablePagination({ meta, onPageChange, className }: Props) {
+export function DataTablePagination({
+    meta,
+    onPageChange,
+    disabled = false,
+    className,
+}: Props) {
     const { current_page, last_page, from, to, total } = meta;
 
     return (
@@ -48,7 +54,7 @@ export function DataTablePagination({ meta, onPageChange, className }: Props) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={current_page <= 1}
+                    disabled={disabled || current_page <= 1}
                     onClick={() => onPageChange(current_page - 1)}
                 >
                     <ChevronLeft />
@@ -58,7 +64,7 @@ export function DataTablePagination({ meta, onPageChange, className }: Props) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    disabled={current_page >= last_page}
+                    disabled={disabled || current_page >= last_page}
                     onClick={() => onPageChange(current_page + 1)}
                 >
                     Next

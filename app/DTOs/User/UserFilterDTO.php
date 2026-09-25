@@ -26,7 +26,7 @@ final readonly class UserFilterDTO
                 : null,
             orderBy: (string) $request->input('order_by', 'created_at'),
             orderDirection: (string) $request->input('order_direction', 'desc'),
-            perPage: $request->integer('per_page', 15),
+            perPage: max(1, min($request->integer('per_page', 15), 100)),
         );
     }
 }

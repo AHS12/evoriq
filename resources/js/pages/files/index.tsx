@@ -11,7 +11,7 @@ import {
     Trash2,
     Upload,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
@@ -44,6 +44,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { index as activityIndex } from '@/routes/activity';
 import { destroy, index, store } from '@/routes/files';
 import type { FileEntry, Paginated } from '@/types';
+import { cn } from '@/lib/utils';
+import { useDataTableFilters } from '@/hooks/use-data-table-filters';
 
 type Props = {
     source: 'all' | 'generated';
@@ -100,39 +102,13 @@ export default function FilesIndex({
     const [type, setType] = useState(filters.type ?? 'all');
     const [pendingDelete, setPendingDelete] = useState<FileEntry | null>(null);
     const [previewFile, setPreviewFile] = useState<FileEntry | null>(null);
-    const isFirstRender = useRef(true);
 
     const upload = useForm<{ file: File | null }>({ file: null });
 
-    const navigate = (
-        params: Record<string, string | number | undefined>,
-    ): void => {
-        router.get(
-            index.url(),
-            {
-                source,
-                search: search || undefined,
-                type: type === 'all' ? undefined : type,
-                ...params,
-            },
-            { preserveState: true, preserveScroll: true, replace: true },
-        );
-    };
-
-    useEffect(() => {
-        if (isFirstRender.current) {
-            isFirstRender.current = false;
-
-            return;
-        }
-
-        const timer = setTimeout(() => {
-            navigate({ page: 1 });
-        }, 300);
-
-        return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, type]);
+    const { apply, isLoading } = useDataTableFilters(index.url(), {
+        ...filters,
+        source,
+    });
 
     const submitFile = (file: File | null): void => {
         if (!file) {
@@ -173,7 +149,7 @@ export default function FilesIndex({
                 <Tabs
                     value={source}
                     onValueChange={(value) =>
-                        navigate({ source: value, page: 1 })
+                        apply({ source: value, page: 1 }, true)
                     }
                 >
                     <TabsList>
@@ -240,13 +216,29 @@ export default function FilesIndex({
                         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={search}
-                            onChange={(event) => setSearch(event.target.value)}
+                            onChange={(event) => {
+                                setSearch(event.target.value);
+                                apply({ search: event.target.value, page: 1 });
+                            }}
                             placeholder="Search files…"
                             className="pl-9"
                         />
                     </div>
                     <div className="flex items-center gap-2">
-                        <Select value={type} onValueChange={setType}>
+                        <Select
+                            value={type}
+                            onValueChange={(value) => {
+                                setType(value);
+                                apply(
+                                    {
+                                        type:
+                                            value === 'all' ? undefined : value,
+                                        page: 1,
+                                    },
+                                    true,
+                                );
+                            }}
+                        >
                             <SelectTrigger className="w-40">
                                 <SelectValue placeholder="All types" />
                             </SelectTrigger>
@@ -283,7 +275,13 @@ export default function FilesIndex({
                 {rows.length > 0 ? (
                     <>
                         {view === 'grid' ? (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <div
+                                className={cn(
+                                    'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+                                    isLoading &&
+                                        'pointer-events-none opacity-60',
+                                )}
+                            >
                                 {rows.map((entry) => (
                                     <Card key={`${entry.source}-${entry.id}`}>
                                         <CardContent className="space-y-3">
@@ -407,7 +405,13 @@ export default function FilesIndex({
                                 ))}
                             </div>
                         ) : (
-                            <div className="overflow-hidden rounded-xl border">
+                            <div
+                                className={cn(
+                                    'overflow-hidden rounded-xl border',
+                                    isLoading &&
+                                        'pointer-events-none opacity-60',
+                                )}
+                            >
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
@@ -530,7 +534,8 @@ export default function FilesIndex({
 
                         <DataTablePagination
                             meta={files.meta}
-                            onPageChange={(page) => navigate({ page })}
+                            disabled={isLoading}
+                            onPageChange={(page) => apply({ page }, true)}
                         />
                     </>
                 ) : (

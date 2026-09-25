@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type TableFilterValue = string | number | boolean | null | undefined;
 export type TableFilters = Record<string, TableFilterValue>;
@@ -10,12 +10,45 @@ type Options = {
     preserveScroll?: boolean;
 };
 
+type RouterEvent = CustomEvent<{
+    visit: { url: string | URL; method: string };
+}>;
+
 export function useDataTableFilters(
     url: string,
     current: TableFilters,
     options: Options = {},
 ) {
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const isTableVisit = (event: RouterEvent) => {
+            const { visit } = event.detail;
+
+            return (
+                visit.method.toLowerCase() === 'get' &&
+                new URL(visit.url, window.location.origin).pathname ===
+                    window.location.pathname
+            );
+        };
+
+        const offStart = router.on('start', (event) => {
+            if (isTableVisit(event)) {
+                setIsLoading(true);
+            }
+        });
+        const offFinish = router.on('finish', (event) => {
+            if (isTableVisit(event)) {
+                setIsLoading(false);
+            }
+        });
+
+        return () => {
+            offStart();
+            offFinish();
+        };
+    }, []);
 
     useEffect(() => {
         return () => {
@@ -69,5 +102,5 @@ export function useDataTableFilters(
         [current, visit, options.debounce],
     );
 
-    return { apply };
+    return { apply, isLoading };
 }

@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/app/confirm-dialog';
 import { DataTable } from '@/components/app/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/app/data-table/data-table-column-header';
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
+import { DataTablePerPage } from '@/components/app/data-table/data-table-per-page';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
 import { PageHeader } from '@/components/app/page-header';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
@@ -91,7 +92,10 @@ export default function UsersIndex({
         setFormOpen(true);
     };
 
-    const { apply } = useDataTableFilters(index.url(), filters as TableFilters);
+    const { apply, isLoading } = useDataTableFilters(
+        index.url(),
+        filters as TableFilters,
+    );
 
     const sorting: SortingState = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order_direction !== 'asc' }]
@@ -311,12 +315,21 @@ export default function UsersIndex({
                             ))}
                         </SelectContent>
                     </Select>
+
+                    <DataTablePerPage
+                        value={users.meta.per_page}
+                        disabled={isLoading}
+                        onChange={(perPage) =>
+                            apply({ per_page: perPage, page: 1 }, true)
+                        }
+                    />
                 </DataTableToolbar>
 
                 <div className="space-y-4">
                     <DataTable
                         columns={columns}
                         data={users.data}
+                        isLoading={isLoading}
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
                         emptyState={{
@@ -330,6 +343,7 @@ export default function UsersIndex({
 
                     <DataTablePagination
                         meta={users.meta}
+                        disabled={isLoading}
                         onPageChange={(page) => apply({ page }, true)}
                     />
                 </div>
