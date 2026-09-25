@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
@@ -26,10 +27,14 @@ export function AdminStep({
     onBack,
     onNext,
 }: Props) {
+    const { t } = useTranslation();
+
     return (
         <div className="space-y-4">
             <div className="space-y-1">
-                <h2 className="text-xl font-semibold">Super administrator</h2>
+                <h2 className="text-xl font-semibold">
+                    {t('Super administrator')}
+                </h2>
                 <p className="text-sm text-muted-foreground">
                     This account has full access. Additional users are created
                     by you later.
@@ -37,7 +42,7 @@ export function AdminStep({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="app_name">Workspace name</Label>
+                <Label htmlFor="app_name">{t('Workspace name')}</Label>
                 <Input
                     id="app_name"
                     value={data.app_name}
@@ -50,7 +55,7 @@ export function AdminStep({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="name">Full name</Label>
+                <Label htmlFor="name">{t('Full name')}</Label>
                 <Input
                     id="name"
                     value={data.name}
@@ -62,7 +67,7 @@ export function AdminStep({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{t('Email address')}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -75,7 +80,7 @@ export function AdminStep({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="Password">{t('Password')}</Label>
                 <PasswordInput
                     id="password"
                     value={data.password}
@@ -89,7 +94,9 @@ export function AdminStep({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="password_confirmation">Confirm password</Label>
+                <Label htmlFor="password_confirmation">
+                    {t('Confirm password')}
+                </Label>
                 <PasswordInput
                     id="password_confirmation"
                     value={data.password_confirmation}
@@ -107,10 +114,10 @@ export function AdminStep({
                     onClick={onBack}
                     disabled={processing}
                 >
-                    Back
+                    {t('Back')}
                 </Button>
                 <Button onClick={onNext} disabled={processing}>
-                    Continue
+                    {t('Continue')}
                 </Button>
             </div>
         </div>

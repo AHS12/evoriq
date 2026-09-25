@@ -474,6 +474,43 @@ Entry::where(function ($q) {
   with React Testing Library, and wire it into `composer check`. Until then,
   verify behavior through Inertia feature tests and manual review.
 
+### 8.11 Translation-friendly code
+
+The app ships with 5 languages (`en`, `bn`, `fr`, `de`, `es`) via an in-house
+i18n layer. **Every user-visible string must be translatable.** Rules:
+
+- **English source string = translation key.** Wrap every user-visible string
+  in `t()` from `useTranslation()`: `t('Save changes')`. The English text
+  renders before a translation exists; never use string concatenation or
+  template interpolation for UI text — use Laravel-style `:param`
+  interpolation: `t('Delete :name?', { name })`.
+- **Strings inside module-scope helpers** (formatters, utils) cannot call
+  hooks — accept a `t: Translate` parameter (see
+  `components/data-processing/job-utils.ts`) and pass `t` from the calling
+  component.
+- **Zod schema messages stay English keys.** `useZodForm` translates client
+  errors automatically; don't pass `t` manually.
+- **Backend labels** (`Enums\*::label()`, `description()`, `options()`) must
+  be wrapped in `__()`; the frontend renders them through `t()` again
+  (`SettingField`, `SettingsForm`, dashboard stats).
+- **Static `Page.layout` breadcrumb titles** don't need wrapping — the
+  `Breadcrumbs` component translates them at render. Auth layout
+  `title`/`description` are translated the same way.
+- **Dictionaries live in `lang/app/{locale}.json`** — one file per locale,
+  kept in sync by `tests/Unit/TranslationParityTest.php` (add every new key
+  to **all five** files). They are separate from the `lang:update`
+  publisher files and are excluded from Pint.
+- **Bangla (`bn`) transliteration rule:** widely-understood tech terms are
+  phonetically transliterated, not translated — রোলস, এক্সপোর্ট, ইমপোর্ট,
+  স্ট্যাটাস, ফাইল, ডাউনলোড, ড্যাশবোর্ড, টাইমজোন. Translate the rest
+  naturally.
+- **Locale switching does a full page reload** (`POST /locale` →
+  `window.location.reload()`). `appLocale()` reads `<html lang>`, which is
+  only set on a full load — never switch locale with a soft Inertia visit.
+- **Dates/numbers** use `appLocale()` from `lib/locale.ts` with the `Intl`
+  APIs; the locale middleware resolves user preference → session → global
+  setting → `en`.
+
 ## 9. Generated files — do not edit
 
 - `resources/js/actions/**`, `resources/js/routes/**`, `resources/js/wayfinder/**`
@@ -506,3 +543,4 @@ Run `npm run build` after adding routes before referencing new Wayfinder helpers
   - `.agents/skills/add-permission` — declare, sync and enforce a permission
   - `.agents/skills/add-export` — register a new async export entity
   - `.agents/skills/add-audit-logging` — add audit trail coverage for a model/module
+  - `.agents/skills/add-translation` — extract strings into the 5-locale app dictionaries

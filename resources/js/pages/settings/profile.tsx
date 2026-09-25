@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { edit } from '@/routes/profile';
 import { send } from '@/routes/verification';
+import { useTranslation } from '@/hooks/use-translation';
 import type { Auth } from '@/types';
 
 type PageProps = {
@@ -30,6 +31,7 @@ export default function Profile({
     status?: string;
 }) {
     const { auth } = usePage<PageProps>().props;
+    const { t } = useTranslation();
     const user = auth.user;
 
     if (!user) {
@@ -38,16 +40,16 @@ export default function Profile({
 
     return (
         <>
-            <Head title="Profile" />
+            <Head title={t('Profile')} />
 
-            <h1 className="sr-only">Profile settings</h1>
+            <h1 className="sr-only">{t('Profile settings')}</h1>
 
             <div className="space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Avatar</CardTitle>
+                        <CardTitle>{t('Avatar')}</CardTitle>
                         <CardDescription>
-                            Upload a photo to personalize your account.
+                            {t('Upload a photo to personalize your account.')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -57,9 +59,9 @@ export default function Profile({
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Profile information</CardTitle>
+                        <CardTitle>{t('Profile information')}</CardTitle>
                         <CardDescription>
-                            Update your name and email address.
+                            {t('Update your name and email address.')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -73,7 +75,9 @@ export default function Profile({
                             {({ processing, errors }) => (
                                 <>
                                     <div className="grid gap-2">
-                                        <Label htmlFor="name">Name</Label>
+                                        <Label htmlFor="name">
+                                            {t('Name')}
+                                        </Label>
 
                                         <Input
                                             id="name"
@@ -82,7 +86,7 @@ export default function Profile({
                                             name="name"
                                             required
                                             autoComplete="name"
-                                            placeholder="Full name"
+                                            placeholder={t('Full name')}
                                         />
 
                                         <InputError
@@ -93,7 +97,7 @@ export default function Profile({
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="email">
-                                            Email address
+                                            {t('Email address')}
                                         </Label>
 
                                         <Input
@@ -104,7 +108,7 @@ export default function Profile({
                                             name="email"
                                             required
                                             autoComplete="username"
-                                            placeholder="Email address"
+                                            placeholder={t('Email address')}
                                         />
 
                                         <InputError
@@ -117,24 +121,26 @@ export default function Profile({
                                         user.email_verified_at === null && (
                                             <div>
                                                 <p className="-mt-4 text-sm text-muted-foreground">
-                                                    Your email address is
-                                                    unverified.{' '}
+                                                    {t(
+                                                        'Your email address is unverified.',
+                                                    )}{' '}
                                                     <Link
                                                         href={send()}
                                                         as="button"
                                                         className="text-foreground underline decoration-muted-foreground/50 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
                                                     >
-                                                        Click here to re-send
-                                                        the verification email.
+                                                        {t(
+                                                            'Click here to re-send the verification email.',
+                                                        )}
                                                     </Link>
                                                 </p>
 
                                                 {status ===
                                                     'verification-link-sent' && (
                                                     <div className="mt-2 text-sm font-medium text-success">
-                                                        A new verification link
-                                                        has been sent to your
-                                                        email address.
+                                                        {t(
+                                                            'A new verification link has been sent to your email address.',
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>
@@ -145,7 +151,7 @@ export default function Profile({
                                         data-test="update-profile-button"
                                     >
                                         {processing && <Spinner />}
-                                        Save
+                                        {t('Save')}
                                     </Button>
                                 </>
                             )}

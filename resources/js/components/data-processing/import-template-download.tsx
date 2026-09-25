@@ -9,6 +9,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { template } from '@/routes/activity';
+import { useTranslation } from '@/hooks/use-translation';
 import type { JobEntityOption } from '@/types';
 
 type Props = {
@@ -17,6 +18,7 @@ type Props = {
 
 export function ImportTemplateDownload({ entity }: Props) {
     const [format, setFormat] = useState<'csv' | 'xlsx'>('csv');
+    const { t } = useTranslation();
 
     if (!entity) {
         return null;
@@ -50,7 +52,7 @@ export function ImportTemplateDownload({ entity }: Props) {
                         )}
                     >
                         <Download className="size-4" />
-                        Download template
+                        {t('Download template')}
                     </a>
                 </Button>
             </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { usePasskeyRegister } from '@laravel/passkeys/react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function PasskeyRegistration({ onSuccess }: Props) {
+    const { t } = useTranslation();
     const [name, setName] = useState(() => {
         const ua = navigator.userAgent;
 
@@ -78,13 +80,13 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
             className="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
         >
             <div className="grid gap-2">
-                <Label htmlFor="passkey-name">Passkey name</Label>
+                <Label htmlFor="passkey-name">{t('Passkey name')}</Label>
                 <Input
                     id="passkey-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., MacBook Pro, iPhone"
+                    placeholder={t('e.g., MacBook Pro, iPhone')}
                     className="mt-1 block w-full border-foreground/20"
                     autoFocus
                 />

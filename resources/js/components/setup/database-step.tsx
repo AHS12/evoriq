@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { router } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import InputError from '@/components/input-error';
@@ -29,6 +30,8 @@ type Props = {
 };
 
 export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
+    const { t } = useTranslation();
+
     const { form, errors, validate, setField } = useZodForm<DatabaseFormValues>(
         {
             driver: defaults.driver,
@@ -40,6 +43,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
             create_database: true,
         },
         databaseFormSchema,
+        t,
     );
 
     const selected = drivers.find(
@@ -89,7 +93,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
     return (
         <form onSubmit={submit} noValidate className="space-y-4">
             <div className="space-y-1">
-                <h2 className="text-xl font-semibold">Database</h2>
+                <h2 className="text-xl font-semibold">{t('Database')}</h2>
                 <p className="text-sm text-muted-foreground">
                     Where Evoriq stores its synchronized data. SQLite works out
                     of the box with no server required.
@@ -97,10 +101,10 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="driver">Driver</Label>
+                <Label htmlFor="Driver">{t('Driver')}</Label>
                 <Select value={form.data.driver} onValueChange={selectDriver}>
                     <SelectTrigger id="driver" className="w-full">
-                        <SelectValue placeholder="Select a driver" />
+                        <SelectValue placeholder={t('Select a driver')} />
                     </SelectTrigger>
                     <SelectContent>
                         {drivers.map((driver) => (
@@ -122,7 +126,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                 <>
                     <div className="grid gap-2 sm:grid-cols-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="host">Host</Label>
+                            <Label htmlFor="Host">{t('Host')}</Label>
                             <Input
                                 id="host"
                                 value={form.data.host}
@@ -136,7 +140,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="port">Port</Label>
+                            <Label htmlFor="Port">{t('Port')}</Label>
                             <Input
                                 id="port"
                                 type="number"
@@ -151,7 +155,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="database">Database name</Label>
+                        <Label htmlFor="database">{t('Database name')}</Label>
                         <Input
                             id="database"
                             value={form.data.database}
@@ -166,7 +170,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
 
                     <div className="grid gap-2 sm:grid-cols-2">
                         <div className="grid gap-2">
-                            <Label htmlFor="username">Username</Label>
+                            <Label htmlFor="Username">{t('Username')}</Label>
                             <Input
                                 id="username"
                                 value={form.data.username}
@@ -180,7 +184,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="Password">{t('Password')}</Label>
                             <Input
                                 id="password"
                                 type="password"
@@ -198,7 +202,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
 
             {isSqlite && (
                 <div className="grid gap-2">
-                    <Label htmlFor="database">Database file</Label>
+                    <Label htmlFor="database">{t('Database file')}</Label>
                     <Input
                         id="database"
                         value={form.data.database}
@@ -244,7 +248,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                 </Button>
                 <Button type="submit" disabled={form.processing || !selected}>
                     {form.processing && <Spinner />}
-                    Save &amp; continue
+                    {t('Save & continue')}
                 </Button>
             </div>
         </form>

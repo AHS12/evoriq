@@ -30,8 +30,10 @@ import {
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
 import { useInitials } from '@/hooks/use-initials';
+import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/users';
 import type { JobOptions, Paginated, User, UserStatus } from '@/types';
+import { appLocale } from '@/lib/locale';
 
 type Filters = {
     search?: string | null;
@@ -56,7 +58,7 @@ function formatDate(value: string | null): string {
         return '—';
     }
 
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(appLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -72,6 +74,7 @@ export default function UsersIndex({
 }: Props) {
     const can = useCan();
     const getInitials = useInitials();
+    const { t } = useTranslation();
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [role, setRole] = useState(filters.role ?? 'all');
@@ -119,7 +122,7 @@ export default function UsersIndex({
             accessorKey: 'name',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="User" />
+                <DataTableColumnHeader column={column} title={t('User')} />
             ),
             cell: ({ row }) => (
                 <div className="flex items-center gap-3">
@@ -142,7 +145,7 @@ export default function UsersIndex({
         {
             accessorKey: 'roles',
             enableSorting: false,
-            header: () => 'Roles',
+            header: () => t('Roles'),
             cell: ({ row }) =>
                 row.original.roles && row.original.roles.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
@@ -160,7 +163,7 @@ export default function UsersIndex({
             accessorKey: 'status',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Status" />
+                <DataTableColumnHeader column={column} title={t('Status')} />
             ),
             cell: ({ row }) => (
                 <UserStatusBadge
@@ -173,7 +176,7 @@ export default function UsersIndex({
             accessorKey: 'created_at',
             enableSorting: true,
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Created" />
+                <DataTableColumnHeader column={column} title={t('Created')} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-muted-foreground">
@@ -184,7 +187,7 @@ export default function UsersIndex({
         {
             id: 'actions',
             enableSorting: false,
-            header: () => <span className="sr-only">Actions</span>,
+            header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
                 <div className="flex justify-end">
                     <UserRowActions
@@ -211,18 +214,20 @@ export default function UsersIndex({
     const emptyAction = can('user.create') ? (
         <Button onClick={openCreate}>
             <Plus />
-            New user
+            {t('New user')}
         </Button>
     ) : undefined;
 
     return (
         <>
-            <Head title="Users" />
+            <Head title={t('Users')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Users"
-                    description="Manage who can access the workspace and what they can do."
+                    title={t('Users')}
+                    description={t(
+                        'Manage who can access the workspace and what they can do.',
+                    )}
                     actions={
                         <>
                             {can('user.import') && (
@@ -231,7 +236,7 @@ export default function UsersIndex({
                                     onClick={() => setImportOpen(true)}
                                 >
                                     <Upload />
-                                    Import
+                                    {t('Import')}
                                 </Button>
                             )}
                             {can('user.export') && (
@@ -240,13 +245,13 @@ export default function UsersIndex({
                                     onClick={() => setExportOpen(true)}
                                 >
                                     <Download />
-                                    Export
+                                    {t('Export')}
                                 </Button>
                             )}
                             {can('user.create') && (
                                 <Button onClick={openCreate}>
                                     <Plus />
-                                    New user
+                                    {t('New user')}
                                 </Button>
                             )}
                         </>
@@ -259,7 +264,7 @@ export default function UsersIndex({
                         setSearch(value);
                         apply({ search: value, page: 1 });
                     }}
-                    searchPlaceholder="Search by name or email…"
+                    searchPlaceholder={t('Search by name or email…')}
                 >
                     <Select
                         value={role}
@@ -275,10 +280,12 @@ export default function UsersIndex({
                         }}
                     >
                         <SelectTrigger className="w-40">
-                            <SelectValue placeholder="All roles" />
+                            <SelectValue placeholder={t('All roles')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All roles</SelectItem>
+                            <SelectItem value="all">
+                                {t('All roles')}
+                            </SelectItem>
                             {roles.map((name) => (
                                 <SelectItem key={name} value={name}>
                                     {name}
@@ -301,10 +308,12 @@ export default function UsersIndex({
                         }}
                     >
                         <SelectTrigger className="w-40">
-                            <SelectValue placeholder="All statuses" />
+                            <SelectValue placeholder={t('All statuses')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All statuses</SelectItem>
+                            <SelectItem value="all">
+                                {t('All statuses')}
+                            </SelectItem>
                             {statuses.map((option) => (
                                 <SelectItem
                                     key={option.value}
@@ -334,9 +343,10 @@ export default function UsersIndex({
                         onSortingChange={handleSortingChange}
                         emptyState={{
                             icon: Users,
-                            title: 'No users found',
-                            description:
+                            title: t('No users found'),
+                            description: t(
                                 'Try adjusting your search or filters, or invite a new user.',
+                            ),
                             action: emptyAction,
                         }}
                     />
@@ -356,13 +366,16 @@ export default function UsersIndex({
                         setPendingDelete(null);
                     }
                 }}
-                title="Delete user?"
+                title={t('Delete user?')}
                 description={
                     pendingDelete
-                        ? `${pendingDelete.name} will be permanently deleted. This cannot be undone.`
+                        ? t(
+                              ':name will be permanently deleted. This cannot be undone.',
+                              { name: pendingDelete.name },
+                          )
                         : undefined
                 }
-                confirmLabel="Delete"
+                confirmLabel={t('Delete')}
                 destructive
                 onConfirm={confirmDelete}
             />

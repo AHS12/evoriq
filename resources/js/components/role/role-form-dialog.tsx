@@ -6,6 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useTranslation } from '@/hooks/use-translation';
 import type { Permission, Role } from '@/types';
 
 type Props = {
@@ -23,6 +24,7 @@ export function RoleFormDialog({
 }: Props) {
     const isEditing = Boolean(role);
     const isSuperAdmin = role?.name === 'Super Admin';
+    const { t } = useTranslation();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,17 +32,23 @@ export function RoleFormDialog({
                 <DialogHeader className="shrink-0 border-b px-6 py-4">
                     <DialogTitle>
                         {isSuperAdmin
-                            ? 'Super Admin role'
+                            ? t('Super Admin role')
                             : isEditing
-                              ? 'Edit role'
-                              : 'New role'}
+                              ? t('Edit role')
+                              : t('New role')}
                     </DialogTitle>
                     <DialogDescription>
                         {isSuperAdmin
-                            ? 'The Super Admin role is locked and always holds every permission.'
+                            ? t(
+                                  'The Super Admin role is locked and always holds every permission.',
+                              )
                             : isEditing
-                              ? 'Update the role name and the permissions it grants.'
-                              : 'Create a custom role and choose the permissions it grants.'}
+                              ? t(
+                                    'Update the role name and the permissions it grants.',
+                                )
+                              : t(
+                                    'Create a custom role and choose the permissions it grants.',
+                                )}
                     </DialogDescription>
                 </DialogHeader>
 

@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import { useZodForm } from '@/hooks/use-zod-form';
 import {
     exportJobSchema,
@@ -54,6 +55,8 @@ function ExportForm({
     onCancel,
     onSuccess,
 }: FormProps) {
+    const { t } = useTranslation();
+
     const entities = options.entities.filter(
         (entity) =>
             entity.export &&
@@ -86,7 +89,7 @@ function ExportForm({
         <form onSubmit={submit} noValidate className="space-y-4">
             {lockEntity === undefined && (
                 <div className="grid gap-2">
-                    <Label htmlFor="export-entity">Entity</Label>
+                    <Label htmlFor="export-entity">{t('Entity')}</Label>
                     <Select
                         value={form.data.entity_type}
                         onValueChange={(value) =>
@@ -94,7 +97,7 @@ function ExportForm({
                         }
                     >
                         <SelectTrigger id="export-entity">
-                            <SelectValue placeholder="Choose an entity" />
+                            <SelectValue placeholder={t('Choose an entity')} />
                         </SelectTrigger>
                         <SelectContent>
                             {entities.map((entity) => (
@@ -112,7 +115,7 @@ function ExportForm({
             )}
 
             <div className="grid gap-2">
-                <Label htmlFor="export-format">Format</Label>
+                <Label htmlFor="export-format">{t('Format')}</Label>
                 <Select
                     value={form.data.format}
                     onValueChange={(value) =>
@@ -140,11 +143,11 @@ function ExportForm({
                     onClick={onCancel}
                     disabled={form.processing}
                 >
-                    Cancel
+                    {t('Cancel')}
                 </Button>
                 <Button type="submit" disabled={form.processing}>
                     {form.processing && <Spinner className="size-4" />}
-                    Export
+                    {t('Export')}
                 </Button>
             </DialogFooter>
         </form>
@@ -158,14 +161,17 @@ export function ExportDialog({
     lockEntity,
     parameters = {},
 }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>New export</DialogTitle>
+                    <DialogTitle>{t('New export')}</DialogTitle>
                     <DialogDescription>
-                        Generate a file in the background. We'll notify you when
-                        it's ready.
+                        {t(
+                            "Generate a file in the background. We'll notify you when it's ready.",
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 

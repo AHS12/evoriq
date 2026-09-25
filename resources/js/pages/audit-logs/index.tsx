@@ -33,6 +33,8 @@ import {
 } from '@/hooks/use-data-table-filters';
 import { index as auditLogsIndex, prune } from '@/routes/audit-logs';
 import type { AuditLog, AuditLogIndexProps } from '@/types';
+import { appLocale } from '@/lib/locale';
+import { useTranslation } from '@/hooks/use-translation';
 
 type SelectOption = { value: string; label: string };
 
@@ -62,7 +64,7 @@ function formatDateTime(value: string | null): string {
         return '—';
     }
 
-    return new Date(value).toLocaleString(undefined, {
+    return new Date(value).toLocaleString(appLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -100,6 +102,7 @@ export default function AuditLogsIndex({
     const [selected, setSelected] = useState<AuditLog | null>(null);
     const [pruneOpen, setPruneOpen] = useState(false);
     const [exportOpen, setExportOpen] = useState(false);
+    const { t } = useTranslation();
 
     const exportParameters = {
         search: search || undefined,
@@ -118,7 +121,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'created_at',
             enableSorting: false,
-            header: () => 'When',
+            header: () => t('When'),
             cell: ({ row }) => (
                 <span className="text-sm whitespace-nowrap text-muted-foreground">
                     {formatDateTime(row.original.created_at)}
@@ -128,7 +131,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'causer',
             enableSorting: false,
-            header: () => 'User',
+            header: () => t('User'),
             cell: ({ row }) =>
                 row.original.causer ? (
                     <div className="flex items-center gap-2">
@@ -150,14 +153,14 @@ export default function AuditLogsIndex({
                     </div>
                 ) : (
                     <span className="text-sm text-muted-foreground">
-                        System
+                        {t('System')}
                     </span>
                 ),
         },
         {
             accessorKey: 'channel',
             enableSorting: false,
-            header: () => 'Channel',
+            header: () => t('Channel'),
             cell: ({ row }) =>
                 row.original.channel ? (
                     <Badge
@@ -174,7 +177,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'event',
             enableSorting: false,
-            header: () => 'Event',
+            header: () => t('Event'),
             cell: ({ row }) =>
                 row.original.event ? (
                     <Badge
@@ -189,7 +192,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'description',
             enableSorting: false,
-            header: () => 'Description',
+            header: () => t('Description'),
             cell: ({ row }) => (
                 <span className="line-clamp-1 text-sm">
                     {row.original.description}
@@ -199,7 +202,7 @@ export default function AuditLogsIndex({
         {
             id: 'subject',
             enableSorting: false,
-            header: () => 'Subject',
+            header: () => t('Subject'),
             cell: ({ row }) =>
                 row.original.subject ? (
                     <span className="text-sm text-muted-foreground">
@@ -236,15 +239,17 @@ export default function AuditLogsIndex({
 
     return (
         <>
-            <Head title="Audit Log" />
+            <Head title={t('Audit Log')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Audit Log"
+                    title={t('Audit Log')}
                     description={
                         canViewAll
-                            ? 'Everything users do across the workspace, newest first.'
-                            : 'Your own recorded actions, newest first.'
+                            ? t(
+                                  'Everything users do across the workspace, newest first.',
+                              )
+                            : t('Your own recorded actions, newest first.')
                     }
                     actions={
                         <>
@@ -254,7 +259,7 @@ export default function AuditLogsIndex({
                                     onClick={() => setExportOpen(true)}
                                 >
                                     <Download />
-                                    Export
+                                    {t('Export')}
                                 </Button>
                             )}
                             {canManage && (
@@ -262,7 +267,7 @@ export default function AuditLogsIndex({
                                     variant="outline"
                                     onClick={() => setPruneOpen(true)}
                                 >
-                                    Prune entries
+                                    {t('Prune entries')}
                                 </Button>
                             )}
                         </>
@@ -275,7 +280,7 @@ export default function AuditLogsIndex({
                         setSearch(value);
                         apply({ search: value, cursor: null });
                     }}
-                    searchPlaceholder="Search descriptions…"
+                    searchPlaceholder={t('Search descriptions…')}
                 >
                     <Select
                         value={channel}
@@ -292,10 +297,12 @@ export default function AuditLogsIndex({
                         }}
                     >
                         <SelectTrigger className="w-44">
-                            <SelectValue placeholder="All channels" />
+                            <SelectValue placeholder={t('All channels')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All channels</SelectItem>
+                            <SelectItem value="all">
+                                {t('All channels')}
+                            </SelectItem>
                             {channels.map((option: SelectOption) => (
                                 <SelectItem
                                     key={option.value}
@@ -321,11 +328,11 @@ export default function AuditLogsIndex({
                             );
                         }}
                         options={[
-                            { value: 'all', label: 'All events' },
+                            { value: 'all', label: t('All events') },
                             ...events,
                         ]}
-                        placeholder="All events"
-                        searchPlaceholder="Search events…"
+                        placeholder={t('All events')}
+                        searchPlaceholder={t('Search events…')}
                     />
 
                     <DataTablePerPage
@@ -345,9 +352,10 @@ export default function AuditLogsIndex({
                         onRowClick={(entry) => setSelected(entry)}
                         emptyState={{
                             icon: History,
-                            title: 'No audit entries found',
-                            description:
+                            title: t('No audit entries found'),
+                            description: t(
                                 'Try adjusting your search or filters.',
+                            ),
                         }}
                     />
 
@@ -385,17 +393,17 @@ export default function AuditLogsIndex({
                             <dl className="space-y-3 text-sm">
                                 <div className="flex justify-between gap-4">
                                     <dt className="text-muted-foreground">
-                                        User
+                                        {t('User')}
                                     </dt>
                                     <dd className="text-right font-medium">
                                         {selected.causer
                                             ? `${selected.causer.name} (${selected.causer.email})`
-                                            : 'System'}
+                                            : t('System')}
                                     </dd>
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <dt className="text-muted-foreground">
-                                        Channel
+                                        {t('Channel')}
                                     </dt>
                                     <dd className="font-medium">
                                         {selected.channel ?? '—'}
@@ -403,7 +411,7 @@ export default function AuditLogsIndex({
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <dt className="text-muted-foreground">
-                                        Event
+                                        {t('Event')}
                                     </dt>
                                     <dd className="font-medium">
                                         {selected.event ?? '—'}
@@ -412,7 +420,7 @@ export default function AuditLogsIndex({
                                 {selected.subject && (
                                     <div className="flex justify-between gap-4">
                                         <dt className="text-muted-foreground">
-                                            Subject
+                                            {t('Subject')}
                                         </dt>
                                         <dd className="font-medium">
                                             {selected.subject.label} (
@@ -425,7 +433,7 @@ export default function AuditLogsIndex({
                                 )}
                                 <div className="flex justify-between gap-4">
                                     <dt className="text-muted-foreground">
-                                        IP address
+                                        {t('IP address')}
                                     </dt>
                                     <dd className="font-medium">
                                         {typeof selected.properties
@@ -436,7 +444,7 @@ export default function AuditLogsIndex({
                                 </div>
                                 <div className="flex justify-between gap-4">
                                     <dt className="text-muted-foreground">
-                                        Correlation ID
+                                        {t('Correlation ID')}
                                     </dt>
                                     <dd className="max-w-48 truncate font-mono text-xs">
                                         {selected.correlation_id ?? '—'}
@@ -447,7 +455,7 @@ export default function AuditLogsIndex({
                             {changedKeys.length > 0 && (
                                 <div>
                                     <h4 className="mb-2 text-sm font-medium">
-                                        Changes
+                                        {t('Changes')}
                                     </h4>
                                     <div className="overflow-hidden rounded-md border">
                                         {changedKeys.map((key) => (
@@ -486,9 +494,11 @@ export default function AuditLogsIndex({
             <ConfirmDialog
                 open={pruneOpen}
                 onOpenChange={setPruneOpen}
-                title="Prune audit log?"
-                description="Entries older than each channel's retention window will be permanently deleted. This cannot be undone."
-                confirmLabel="Prune"
+                title={t('Prune audit log?')}
+                description={t(
+                    "Entries older than each channel's retention window will be permanently deleted. This cannot be undone.",
+                )}
+                confirmLabel={t('Prune')}
                 destructive
                 onConfirm={confirmPrune}
             />
@@ -505,5 +515,8 @@ export default function AuditLogsIndex({
 }
 
 AuditLogsIndex.layout = {
-    breadcrumbs: [{ title: 'Audit Log', href: auditLogsIndex() }],
+    breadcrumbs: [
+        // Rendered through Breadcrumbs, which translates the title.
+        { title: 'Audit Log', href: auditLogsIndex() },
+    ],
 };

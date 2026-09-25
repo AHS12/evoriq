@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { useTranslation } from '@/hooks/use-translation';
 import { useState } from 'react';
 import {
     Card,
@@ -57,6 +58,7 @@ export function NotificationPreferenceForm({
     types,
     action,
 }: Props) {
+    const { t } = useTranslation();
     const [data, setData] = useState<PreferenceData>({
         inapp: preferences.inapp,
         sound: preferences.sound,
@@ -133,10 +135,11 @@ export function NotificationPreferenceForm({
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Delivery</CardTitle>
+                    <CardTitle>{t('Delivery')}</CardTitle>
                     <CardDescription>
-                        Choose how Evoriq gets your attention. Changes are saved
-                        automatically.
+                        {t(
+                            'Choose how Evoriq gets your attention. Changes are saved automatically.',
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -145,10 +148,10 @@ export function NotificationPreferenceForm({
                             <div className="flex items-center justify-between gap-4">
                                 <div className="space-y-0.5">
                                     <Label htmlFor={`toggle-${toggle.key}`}>
-                                        {toggle.label}
+                                        {t(toggle.label)}
                                     </Label>
                                     <p className="text-sm text-muted-foreground">
-                                        {toggle.description}
+                                        {t(toggle.description)}
                                     </p>
                                 </div>
                                 <Switch
@@ -174,10 +177,11 @@ export function NotificationPreferenceForm({
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Muted types</CardTitle>
+                    <CardTitle>{t('Muted types')}</CardTitle>
                     <CardDescription>
-                        Muted types still appear in your feed and unread count,
-                        but never interrupt you.
+                        {t(
+                            'Muted types still appear in your feed and unread count, but never interrupt you.',
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2">
@@ -195,7 +199,7 @@ export function NotificationPreferenceForm({
                                     toggleType(type.value, checked === true)
                                 }
                             />
-                            {type.label}
+                            {t(type.label)}
                         </label>
                     ))}
                 </CardContent>

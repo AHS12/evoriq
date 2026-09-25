@@ -10,6 +10,7 @@ import { SetupStepper } from '@/components/setup/setup-stepper';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useZodForm } from '@/hooks/use-zod-form';
+import { useTranslation } from '@/hooks/use-translation';
 import { createAdminSchema } from '@/lib/schemas/setup';
 import { environment as generateKeyRoute, store } from '@/routes/setup';
 import type {
@@ -61,6 +62,7 @@ export default function Setup({
         resolveInitialStep(requirements, status, hasSuperAdmin),
     );
     const [generatingKey, setGeneratingKey] = useState(false);
+    const { t } = useTranslation();
 
     const stepOrder: Step[] = hasSuperAdmin
         ? ['welcome', 'database', 'migrate', 'drivers', 'finish']
@@ -82,6 +84,7 @@ export default function Setup({
             password_confirmation: '',
         },
         createAdminSchema(!hasSuperAdmin),
+        t,
     );
 
     const requirementsMet = requirements
@@ -89,14 +92,14 @@ export default function Setup({
         .every((requirement) => requirement.passed);
 
     const stepLabels = hasSuperAdmin
-        ? ['Welcome', 'Database', 'Migrate', 'Drivers', 'Finish']
+        ? [t('Welcome'), t('Database'), t('Migrate'), t('Drivers'), t('Finish')]
         : [
-              'Welcome',
-              'Database',
-              'Migrate',
-              'Drivers',
-              'Administrator',
-              'Finish',
+              t('Welcome'),
+              t('Database'),
+              t('Migrate'),
+              t('Drivers'),
+              t('Administrator'),
+              t('Finish'),
           ];
 
     const navigateTo = (index: number) => {
@@ -144,7 +147,7 @@ export default function Setup({
 
     return (
         <>
-            <Head title="Setup" />
+            <Head title={t('Setup')} />
 
             <div className="grid min-h-svh lg:grid-cols-2">
                 <aside className="relative hidden flex-col justify-between overflow-hidden bg-primary p-10 text-primary-foreground lg:flex">
@@ -153,12 +156,12 @@ export default function Setup({
                     </div>
                     <div className="relative z-10 space-y-3">
                         <h1 className="text-2xl font-semibold">
-                            Set up your workspace
+                            {t('Set up your workspace')}
                         </h1>
                         <p className="max-w-sm text-sm text-primary-foreground/70">
-                            Historical time analytics and reporting for
-                            Clockify. This one-time setup configures your
-                            database, runtime drivers and administrator access.
+                            {t(
+                                'Historical time analytics and reporting for Clockify. This one-time setup configures your database, runtime drivers and administrator access.',
+                            )}
                         </p>
                     </div>
                     <div className="relative z-10 text-xs text-primary-foreground/50">
@@ -179,11 +182,12 @@ export default function Setup({
                             <div className="space-y-4">
                                 <div className="space-y-1">
                                     <h2 className="text-xl font-semibold">
-                                        Before we begin
+                                        {t('Before we begin')}
                                     </h2>
                                     <p className="text-sm text-muted-foreground">
-                                        We checked your environment. Resolve any
-                                        failed checks to continue.
+                                        {t(
+                                            'We checked your environment. Resolve any failed checks to continue.',
+                                        )}
                                     </p>
                                 </div>
 
@@ -192,8 +196,9 @@ export default function Setup({
                                 {!status.environment.key_set && (
                                     <div className="flex items-center justify-between gap-4 rounded-lg border p-3 text-sm">
                                         <span>
-                                            An application key is required to
-                                            encrypt sessions.
+                                            {t(
+                                                'An application key is required to encrypt sessions.',
+                                            )}
                                         </span>
                                         <Button
                                             size="sm"
@@ -202,7 +207,7 @@ export default function Setup({
                                             disabled={generatingKey}
                                         >
                                             {generatingKey && <Spinner />}
-                                            Generate key
+                                            {t('Generate key')}
                                         </Button>
                                     </div>
                                 )}
@@ -222,7 +227,7 @@ export default function Setup({
                                             !status.environment.key_set
                                         }
                                     >
-                                        Continue
+                                        {t('Continue')}
                                     </Button>
                                 </div>
                             </div>

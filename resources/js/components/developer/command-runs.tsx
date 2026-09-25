@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { appLocale } from '@/lib/locale';
 import type { CommandRun, CommandRunStatus, MaintenanceAction } from '@/types';
 
 type Props = {
@@ -40,7 +41,7 @@ function formatTimestamp(value: string | null): string {
         return '';
     }
 
-    return new Date(value).toLocaleString(undefined, {
+    return new Date(value).toLocaleString(appLocale(), {
         dateStyle: 'short',
         timeStyle: 'short',
     });

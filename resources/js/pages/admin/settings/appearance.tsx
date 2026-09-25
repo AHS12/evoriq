@@ -4,6 +4,7 @@ import AppearanceTabs from '@/components/appearance-tabs';
 import { AccentPicker } from '@/components/appearance/accent-picker';
 import { ContrastToggle } from '@/components/appearance/contrast-toggle';
 import { ThemePicker } from '@/components/appearance/theme-picker';
+import { LanguageSelect } from '@/components/app/language-select';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -46,6 +47,11 @@ export default function AppearanceSettings() {
                     <div className="space-y-2">
                         <p className="text-sm font-medium">Accent color</p>
                         <AccentPicker />
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium">Language</p>
+                        <LanguageSelect className="w-48" />
                     </div>
 
                     <ContrastToggle />

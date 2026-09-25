@@ -15,6 +15,7 @@ import { useCan } from '@/hooks/use-can';
 import { useDataTableFilters } from '@/hooks/use-data-table-filters';
 import { useJobPoll } from '@/hooks/use-job-poll';
 import { useJobTransitions } from '@/hooks/use-job-transitions';
+import { useTranslation } from '@/hooks/use-translation';
 import { index } from '@/routes/activity';
 import type {
     DataProcessingJob,
@@ -68,6 +69,7 @@ export default function DataProcessingIndex({
 
     const canExport = can('user.export') || can('export.create');
     const canImport = can('user.import') || can('import.create');
+    const { t } = useTranslation();
 
     const openJob = (job: DataProcessingJob): void => {
         setSelected(job);
@@ -82,12 +84,14 @@ export default function DataProcessingIndex({
 
     return (
         <>
-            <Head title="Job activity" />
+            <Head title={t('Job activity')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Job activity"
-                    description="Background jobs — imports, exports and reports."
+                    title={t('Job activity')}
+                    description={t(
+                        'Background jobs — imports, exports and reports.',
+                    )}
                     actions={
                         <>
                             {canImport && (
@@ -96,13 +100,13 @@ export default function DataProcessingIndex({
                                     onClick={() => setImportOpen(true)}
                                 >
                                     <Upload />
-                                    Import
+                                    {t('Import')}
                                 </Button>
                             )}
                             {canExport && (
                                 <Button onClick={() => setExportOpen(true)}>
                                     <Download />
-                                    Export
+                                    {t('Export')}
                                 </Button>
                             )}
                         </>
@@ -142,9 +146,9 @@ export default function DataProcessingIndex({
 
                 {!live && activeJobs > 0 && (
                     <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
-                        <span>Live updates are paused.</span>
+                        <span>{t('Live updates are paused.')}</span>
                         <Button variant="ghost" size="sm" onClick={resume}>
-                            Resume
+                            {t('Resume')}
                         </Button>
                     </div>
                 )}
@@ -165,13 +169,15 @@ export default function DataProcessingIndex({
                     ) : (
                         <EmptyState
                             icon={Activity}
-                            title="Nothing running"
-                            description="Imports and exports you start will show up here with live progress."
+                            title={t('Nothing running')}
+                            description={t(
+                                'Imports and exports you start will show up here with live progress.',
+                            )}
                             action={
                                 canExport ? (
                                     <Button onClick={() => setExportOpen(true)}>
                                         <Download />
-                                        Start an export
+                                        {t('Start an export')}
                                     </Button>
                                 ) : undefined
                             }

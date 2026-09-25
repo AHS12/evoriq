@@ -6,6 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { useTranslation } from '@/hooks/use-translation';
 import type { User, UserStatus } from '@/types';
 
 type Props = {
@@ -24,18 +25,21 @@ export function UserFormDialog({
     user,
 }: Props) {
     const isEditing = Boolean(user);
+    const { t } = useTranslation();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditing ? 'Edit user' : 'New user'}
+                        {isEditing ? t('Edit user') : t('New user')}
                     </DialogTitle>
                     <DialogDescription>
                         {isEditing
-                            ? "Update this user's details, roles and status."
-                            : 'Invite someone to the workspace. They will receive an email to set their password.'}
+                            ? t("Update this user's details, roles and status.")
+                            : t(
+                                  'Invite someone to the workspace. They will receive an email to set their password.',
+                              )}
                     </DialogDescription>
                 </DialogHeader>
 

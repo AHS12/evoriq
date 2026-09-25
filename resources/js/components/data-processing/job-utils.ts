@@ -1,11 +1,17 @@
 import type { DataProcessingJob, JobStatus } from '@/types';
+import { appLocale } from '@/lib/locale';
+
+export type Translate = (
+    key: string,
+    replacements?: Record<string, string | number>,
+) => string;
 
 export function formatNumber(value: number | null | undefined): string {
     if (value === null || value === undefined) {
         return '—';
     }
 
-    return new Intl.NumberFormat().format(value);
+    return new Intl.NumberFormat(appLocale()).format(value);
 }
 
 export function formatBytes(bytes: number | null | undefined): string {
@@ -32,7 +38,7 @@ export function relativeTime(value: string | null | undefined): string {
 
     const diff = new Date(value).getTime() - Date.now();
     const abs = Math.abs(diff);
-    const formatter = new Intl.RelativeTimeFormat(undefined, {
+    const formatter = new Intl.RelativeTimeFormat(appLocale(), {
         numeric: 'auto',
     });
 
@@ -52,7 +58,7 @@ export function relativeTime(value: string | null | undefined): string {
         return formatter.format(Math.round(diff / 86_400_000), 'day');
     }
 
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(appLocale(), {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
@@ -66,34 +72,45 @@ export function isActiveStatus(status: JobStatus): boolean {
 /**
  * A one-line summary of a finished (or pending) job.
  */
-export function resultSummary(job: DataProcessingJob): string {
+export function resultSummary(job: DataProcessingJob, t: Translate): string {
     if (job.status === 'failed') {
-        return job.error_message ?? 'Failed';
+        return job.error_message ?? t('Failed');
     }
 
     if (job.status === 'cancelled') {
-        return 'Cancelled';
+        return t('Cancelled');
     }
 
     if (job.status === 'pending') {
-        return 'Waiting to start';
+        return t('Waiting to start');
     }
 
     if (job.type === 'import') {
         return [
-            `Created ${formatNumber(job.counts.created ?? job.success_count)}`,
-            `Skipped ${formatNumber(job.errors.filter((e) => e.type === 'duplicate').length)}`,
-            `Failed ${formatNumber(job.counts.failed ?? job.error_count)}`,
+            t('Created :count', {
+                count: formatNumber(job.counts.created ?? job.success_count),
+            }),
+            t('Skipped :count', {
+                count: formatNumber(
+                    job.errors.filter((e) => e.type === 'duplicate').length,
+                ),
+            }),
+            t('Failed :count', {
+                count: formatNumber(job.counts.failed ?? job.error_count),
+            }),
         ].join(' · ');
     }
 
-    return `${formatNumber(job.processed_items)} rows`;
+    return t(':count rows', { count: formatNumber(job.processed_items) });
 }
 
 /**
  * A rough time remaining estimate for a running job, when determinate.
  */
-export function computeEta(job: DataProcessingJob): string | null {
+export function computeEta(
+    job: DataProcessingJob,
+    t: Translate,
+): string | null {
     if (job.status !== 'processing') {
         return null;
     }
@@ -113,10 +130,10 @@ export function computeEta(job: DataProcessingJob): string | null {
     const remaining = Math.max(0, (elapsed / processed) * (total - processed));
 
     if (remaining < 60) {
-        return `~${Math.round(remaining)}s left`;
+        return t('~:count left', { count: `${Math.round(remaining)}s` });
     }
 
-    return `~${Math.round(remaining / 60)}m left`;
+    return t('~:count left', { count: `${Math.round(remaining / 60)}m` });
 }
 
 export type JobGroup = {
@@ -124,9 +141,9 @@ export type JobGroup = {
     jobs: DataProcessingJob[];
 };
 
-function dayLabel(value: string | null): string {
+function dayLabel(value: string | null, t: Translate): string {
     if (!value) {
-        return 'Earlier';
+        return t('Earlier');
     }
 
     const date = new Date(value);
@@ -142,29 +159,32 @@ function dayLabel(value: string | null): string {
     );
 
     if (diffDays <= 0) {
-        return 'Just now';
+        return t('Just now');
     }
 
     if (diffDays === 1) {
-        return 'Yesterday';
+        return t('Yesterday');
     }
 
     if (diffDays < 7) {
-        return date.toLocaleDateString(undefined, { weekday: 'long' });
+        return date.toLocaleDateString(appLocale(), { weekday: 'long' });
     }
 
-    return date.toLocaleDateString(undefined, {
+    return date.toLocaleDateString(appLocale(), {
         month: 'long',
         day: 'numeric',
         year: 'numeric',
     });
 }
 
-export function groupJobsByDay(jobs: DataProcessingJob[]): JobGroup[] {
+export function groupJobsByDay(
+    jobs: DataProcessingJob[],
+    t: Translate,
+): JobGroup[] {
     const groups: JobGroup[] = [];
 
     for (const job of jobs) {
-        const label = dayLabel(job.created_at);
+        const label = dayLabel(job.created_at, t);
         const existing = groups.find((group) => group.label === label);
 
         if (existing) {

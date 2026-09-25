@@ -11,6 +11,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import type { SettingField as SettingFieldType } from '@/types';
+import { useTranslation } from '@/hooks/use-translation';
 
 type Props = {
     field: SettingFieldType;
@@ -23,6 +24,7 @@ type Props = {
 const SEARCHABLE_THRESHOLD = 10;
 
 export function SettingField({ field, error }: Props) {
+    const { t } = useTranslation();
     const id = `setting-${field.key}`;
     const options = field.options ?? [];
     const searchableSelect =
@@ -32,7 +34,7 @@ export function SettingField({ field, error }: Props) {
 
     return (
         <div className="grid gap-2">
-            <Label htmlFor={id}>{field.label}</Label>
+            <Label htmlFor={id}>{t(field.label)}</Label>
 
             {searchableSelect ? (
                 <Combobox
@@ -42,8 +44,8 @@ export function SettingField({ field, error }: Props) {
                     defaultValue={
                         field.value != null ? String(field.value) : undefined
                     }
-                    placeholder="Select…"
-                    searchPlaceholder="Search…"
+                    placeholder={t('Select…')}
+                    searchPlaceholder={t('Search…')}
                 />
             ) : field.type === 'select' ? (
                 <Select
@@ -53,12 +55,12 @@ export function SettingField({ field, error }: Props) {
                     }
                 >
                     <SelectTrigger id={id} className="w-full">
-                        <SelectValue placeholder="Select…" />
+                        <SelectValue placeholder={t('Select…')} />
                     </SelectTrigger>
                     <SelectContent>
                         {options.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.label)}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -73,7 +75,7 @@ export function SettingField({ field, error }: Props) {
                         defaultChecked={booleanChecked}
                     />
                     <span className="text-sm text-muted-foreground">
-                        {booleanChecked ? 'Enabled' : 'Disabled'}
+                        {booleanChecked ? t('Enabled') : t('Disabled')}
                     </span>
                 </div>
             ) : field.is_secret ? (
@@ -84,8 +86,8 @@ export function SettingField({ field, error }: Props) {
                     autoComplete="new-password"
                     placeholder={
                         field.has_value
-                            ? '•••••••• (leave blank to keep)'
-                            : 'Not set'
+                            ? t('•••••••• (leave blank to keep)')
+                            : t('Not set')
                     }
                 />
             ) : (
@@ -101,7 +103,7 @@ export function SettingField({ field, error }: Props) {
 
             {field.description && (
                 <p className="text-xs text-muted-foreground">
-                    {field.description}
+                    {t(field.description)}
                 </p>
             )}
 

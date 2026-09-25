@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import { useZodForm } from '@/hooks/use-zod-form';
 import { roleFormSchema } from '@/lib/schemas/role';
 import { store, update } from '@/routes/roles';
@@ -20,6 +21,7 @@ type Props = {
 export function RoleForm({ permissions, role, onCancel, onSuccess }: Props) {
     const isSuperAdmin = role?.name === 'Super Admin';
     const nameLocked = role?.is_system ?? false;
+    const { t } = useTranslation();
 
     const { form, errors, validate, setField } = useZodForm(
         {
@@ -27,6 +29,7 @@ export function RoleForm({ permissions, role, onCancel, onSuccess }: Props) {
             permissions: role?.permissions ?? [],
         },
         roleFormSchema,
+        t,
     );
 
     const submit = (event: FormEvent) => {
@@ -53,14 +56,14 @@ export function RoleForm({ permissions, role, onCancel, onSuccess }: Props) {
         >
             <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
                 <div className="grid gap-2">
-                    <Label htmlFor="name">Name</Label>
+                    <Label htmlFor="name">{t('Name')}</Label>
                     <Input
                         id="name"
                         value={form.data.name}
                         onChange={(event) =>
                             setField('name', event.target.value)
                         }
-                        placeholder="e.g. Project Manager"
+                        placeholder={t('e.g. Project Manager')}
                         disabled={nameLocked}
                         aria-invalid={Boolean(errors.name)}
                         autoFocus={!nameLocked}
@@ -69,13 +72,13 @@ export function RoleForm({ permissions, role, onCancel, onSuccess }: Props) {
                     <InputError message={errors.name} />
                     {nameLocked && (
                         <p className="text-xs text-muted-foreground">
-                            System role names cannot be changed.
+                            {t('System role names cannot be changed.')}
                         </p>
                     )}
                 </div>
 
                 <div className="grid gap-2">
-                    <Label>Permissions</Label>
+                    <Label>{t('Permissions')}</Label>
                     <PermissionMatrix
                         permissions={permissions}
                         value={form.data.permissions}
@@ -94,12 +97,12 @@ export function RoleForm({ permissions, role, onCancel, onSuccess }: Props) {
                     onClick={onCancel}
                     disabled={form.processing}
                 >
-                    {isSuperAdmin ? 'Close' : 'Cancel'}
+                    {isSuperAdmin ? t('Close') : t('Cancel')}
                 </Button>
                 {!isSuperAdmin && (
                     <Button type="submit" disabled={form.processing}>
                         {form.processing && <Spinner />}
-                        {role ? 'Save changes' : 'Create role'}
+                        {role ? t('Save changes') : t('Create role')}
                     </Button>
                 )}
             </div>

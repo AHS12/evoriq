@@ -4,6 +4,7 @@ export type * from './dashboard';
 export type * from './data-processing';
 export type * from './developer';
 export type * from './file';
+export type * from './i18n';
 export type * from './navigation';
 export type * from './notification';
 export type * from './pagination';

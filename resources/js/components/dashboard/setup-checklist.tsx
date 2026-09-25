@@ -1,5 +1,6 @@
 import { CheckCircle2, Circle, Clock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     Card,
     CardContent,
@@ -26,12 +27,14 @@ function StepIcon({ status }: { status: SetupStepStatus }) {
 }
 
 export function SetupChecklist({ steps }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Get started</CardTitle>
+                <CardTitle>{t('Get started')}</CardTitle>
                 <CardDescription>
-                    Finish setting up Evoriq to unlock analytics.
+                    {t('Finish setting up Evoriq to unlock analytics.')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -40,13 +43,15 @@ export function SetupChecklist({ steps }: Props) {
                         <StepIcon status={step.status} />
                         <div className="min-w-0 flex-1">
                             <div className="flex flex-wrap items-center gap-2">
-                                <p className="font-medium">{step.label}</p>
+                                <p className="font-medium">{t(step.label)}</p>
                                 {step.status === 'coming_soon' && (
-                                    <Badge variant="outline">Coming soon</Badge>
+                                    <Badge variant="outline">
+                                        {t('Coming soon')}
+                                    </Badge>
                                 )}
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                {step.description}
+                                {t(step.description)}
                             </p>
                         </div>
                     </div>

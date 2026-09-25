@@ -9,6 +9,7 @@ import {
     resultSummary,
 } from '@/components/data-processing/job-utils';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
 
 type Props = {
@@ -17,7 +18,8 @@ type Props = {
 };
 
 export function JobRow({ job, onOpen }: Props) {
-    const meta = isActiveStatus(job.status) ? computeEta(job) : job.duration;
+    const { t } = useTranslation();
+    const meta = isActiveStatus(job.status) ? computeEta(job, t) : job.duration;
 
     return (
         <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
@@ -54,7 +56,7 @@ export function JobRow({ job, onOpen }: Props) {
                     <JobProgress job={job} className="mt-2 max-w-md" />
                 ) : (
                     <p className="mt-1 truncate text-xs text-muted-foreground">
-                        {resultSummary(job)}
+                        {resultSummary(job, t)}
                     </p>
                 )}
             </button>

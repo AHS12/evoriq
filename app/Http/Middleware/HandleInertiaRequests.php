@@ -2,10 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\AppLocale;
 use App\Http\Resources\Notification\NotificationResource;
 use App\Models\User;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
+use App\Services\Setting\LocaleService;
 use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -15,6 +17,7 @@ class HandleInertiaRequests extends Middleware
     public function __construct(
         protected NotificationService $notifications,
         protected NotificationPreferenceService $notificationPreferences,
+        protected LocaleService $locale,
     ) {}
 
     /**
@@ -63,6 +66,12 @@ class HandleInertiaRequests extends Middleware
                 'file' => $user instanceof User && $user->hasPermissionTo('file.view'),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'i18n' => [
+                'locale' => fn (): string => app()->getLocale(),
+                'fallbackLocale' => fn (): string => (string) config('app.fallback_locale', 'en'),
+                'translations' => fn (): array => $this->locale->dictionary(app()->getLocale()),
+                'supported' => AppLocale::shared(),
+            ],
             'notifications' => fn (): array => $this->notificationSummary($request),
             'activeJobs' => fn (): int => $this->activeJobCount($request),
         ];

@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cancel, destroy, duplicate, retry } from '@/routes/activity';
 import { download } from '@/routes/exports';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
 
 type Props = {
@@ -29,6 +30,7 @@ type Props = {
 
 export function JobActions({ job, onView }: Props) {
     const [confirmingDelete, setConfirmingDelete] = useState(false);
+    const { t } = useTranslation();
 
     const post = (url: string): void => {
         router.post(url, {}, { preserveScroll: true, preserveState: true });
@@ -41,7 +43,7 @@ export function JobActions({ job, onView }: Props) {
                     asChild
                     variant="ghost"
                     size="icon"
-                    aria-label={`Download ${job.name}`}
+                    aria-label={t('Download :name', { name: job.name })}
                 >
                     <a href={download.url(job.id)}>
                         <Download className="size-4" />
@@ -54,7 +56,7 @@ export function JobActions({ job, onView }: Props) {
                     <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Job actions"
+                        aria-label={t('Job actions')}
                     >
                         <MoreHorizontal className="size-4" />
                     </Button>
@@ -62,7 +64,7 @@ export function JobActions({ job, onView }: Props) {
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => onView(job)}>
                         <Eye className="size-4" />
-                        View details
+                        {t('View details')}
                     </DropdownMenuItem>
 
                     {job.can.duplicate && (
@@ -70,7 +72,7 @@ export function JobActions({ job, onView }: Props) {
                             onSelect={() => post(duplicate.url(job.id))}
                         >
                             <Copy className="size-4" />
-                            Run again
+                            {t('Run again')}
                         </DropdownMenuItem>
                     )}
 
@@ -79,7 +81,7 @@ export function JobActions({ job, onView }: Props) {
                             onSelect={() => post(retry.url(job.id))}
                         >
                             <RotateCcw className="size-4" />
-                            Retry
+                            {t('Retry')}
                         </DropdownMenuItem>
                     )}
 
@@ -88,7 +90,7 @@ export function JobActions({ job, onView }: Props) {
                             onSelect={() => post(cancel.url(job.id))}
                         >
                             <Ban className="size-4" />
-                            Stop
+                            {t('Stop')}
                         </DropdownMenuItem>
                     )}
 
@@ -100,7 +102,7 @@ export function JobActions({ job, onView }: Props) {
                                 onSelect={() => setConfirmingDelete(true)}
                             >
                                 <Trash2 className="size-4" />
-                                Delete
+                                {t('Delete')}
                             </DropdownMenuItem>
                         </>
                     )}
@@ -110,9 +112,12 @@ export function JobActions({ job, onView }: Props) {
             <ConfirmDialog
                 open={confirmingDelete}
                 onOpenChange={setConfirmingDelete}
-                title="Delete job?"
-                description={`"${job.name}" and its files will be permanently deleted.`}
-                confirmLabel="Delete"
+                title={t('Delete job?')}
+                description={t(
+                    '":name" and its files will be permanently deleted.',
+                    { name: job.name },
+                )}
+                confirmLabel={t('Delete')}
                 destructive
                 onConfirm={() => {
                     setConfirmingDelete(false);

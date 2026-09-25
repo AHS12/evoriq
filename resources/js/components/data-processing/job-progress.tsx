@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { formatNumber } from '@/components/data-processing/job-utils';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
 
 type Props = {
@@ -9,6 +10,7 @@ type Props = {
 
 export function JobProgress({ job, className }: Props) {
     const { total, processed, percentage, indeterminate } = job.progress;
+    const { t } = useTranslation();
 
     return (
         <div className={cn('space-y-1.5', className)}>
@@ -17,7 +19,7 @@ export function JobProgress({ job, className }: Props) {
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={indeterminate ? undefined : percentage}
-                aria-label={`${job.name} progress`}
+                aria-label={t(':name progress', { name: job.name })}
                 className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
             >
                 <div
@@ -32,7 +34,7 @@ export function JobProgress({ job, className }: Props) {
             <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
                     {indeterminate
-                        ? (job.stage ?? 'Processing…')
+                        ? (job.stage ?? t('Processing…'))
                         : `${formatNumber(processed)} / ${formatNumber(total)}`}
                 </span>
                 {!indeterminate && <span>{percentage}%</span>}

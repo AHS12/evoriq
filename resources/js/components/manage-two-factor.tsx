@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { Form } from '@inertiajs/react';
 import { ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +22,7 @@ export type Props = {
 };
 
 export default function ManageTwoFactor(props: Props) {
+    const { t } = useTranslation();
     const requiresConfirmation = props.requiresConfirmation ?? false;
     const twoFactorEnabled = props.twoFactorEnabled ?? false;
 
@@ -53,7 +55,7 @@ export default function ManageTwoFactor(props: Props) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Two-factor authentication</CardTitle>
+                <CardTitle>{t('Two-factor authentication')}</CardTitle>
                 <CardDescription>
                     Manage your two-factor authentication settings.
                 </CardDescription>

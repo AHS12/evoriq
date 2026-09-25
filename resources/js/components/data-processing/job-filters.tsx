@@ -9,6 +9,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 import type {
     JobStatus,
     JobStatusOption,
@@ -41,11 +42,13 @@ export function JobFilters({
     live,
     onToggleLive,
 }: Props) {
+    const { t } = useTranslation();
+
     const segments: { value: JobType | 'all'; label: string }[] = [
-        { value: 'all', label: 'All' },
+        { value: 'all', label: t('All') },
         ...types.map((option) => ({
             value: option.value,
-            label: `${option.label}s`,
+            label: t(`${option.label}s`),
         })),
     ];
 
@@ -75,7 +78,7 @@ export function JobFilters({
                     <Input
                         value={search}
                         onChange={(event) => onSearchChange(event.target.value)}
-                        placeholder="Search jobs…"
+                        placeholder={t('Search jobs…')}
                         className="pl-9"
                     />
                 </div>
@@ -87,10 +90,10 @@ export function JobFilters({
                     }
                 >
                     <SelectTrigger className="w-full sm:w-40">
-                        <SelectValue placeholder="All statuses" />
+                        <SelectValue placeholder={t('All statuses')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="all">{t('All statuses')}</SelectItem>
                         {statuses.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                                 {option.label}
@@ -108,12 +111,12 @@ export function JobFilters({
                     {live ? (
                         <>
                             <Pause className="size-4" />
-                            Live
+                            {t('Live')}
                         </>
                     ) : (
                         <>
                             <Play className="size-4" />
-                            Paused
+                            {t('Paused')}
                         </>
                     )}
                 </Button>

@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import { useZodForm } from '@/hooks/use-zod-form';
 import { userFormSchema } from '@/lib/schemas/user';
 import { store, update } from '@/routes/users';
@@ -37,6 +38,8 @@ export function UserForm({
     onCancel,
     onSuccess,
 }: Props) {
+    const { t } = useTranslation();
+
     const { form, errors, validate, setField } = useZodForm(
         {
             name: user?.name ?? '',
@@ -45,6 +48,7 @@ export function UserForm({
             status: user?.status ?? 'active',
         },
         userFormSchema,
+        t,
     );
 
     const submit = (event: FormEvent) => {
@@ -66,13 +70,13 @@ export function UserForm({
     return (
         <form onSubmit={submit} noValidate className="space-y-5">
             <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t('Name')}</Label>
                 <Input
                     id="name"
                     value={form.data.name}
                     onChange={(event) => setField('name', event.target.value)}
                     autoComplete="name"
-                    placeholder="Full name"
+                    placeholder={t('Full name')}
                     aria-invalid={Boolean(errors.name)}
                     autoFocus
                     required
@@ -81,7 +85,7 @@ export function UserForm({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="email">Email address</Label>
+                <Label htmlFor="email">{t('Email address')}</Label>
                 <Input
                     id="email"
                     type="email"
@@ -96,7 +100,7 @@ export function UserForm({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="roles">Roles</Label>
+                <Label htmlFor="roles">{t('Roles')}</Label>
                 <RoleSelect
                     id="roles"
                     roles={roles}
@@ -108,7 +112,7 @@ export function UserForm({
 
             {user && statuses.length > 0 && (
                 <div className="grid gap-2">
-                    <Label htmlFor="status">Status</Label>
+                    <Label htmlFor="status">{t('Status')}</Label>
                     <Select
                         value={form.data.status}
                         onValueChange={(value) =>
@@ -116,7 +120,7 @@ export function UserForm({
                         }
                     >
                         <SelectTrigger id="status" className="w-full">
-                            <SelectValue placeholder="Select a status" />
+                            <SelectValue placeholder={t('Select a status')} />
                         </SelectTrigger>
                         <SelectContent>
                             {statuses.map((option) => (
@@ -135,8 +139,9 @@ export function UserForm({
 
             {!user && (
                 <p className="text-sm text-muted-foreground">
-                    An invitation email will be sent so the user can set their
-                    own password.
+                    {t(
+                        'An invitation email will be sent so the user can set their own password.',
+                    )}
                 </p>
             )}
 
@@ -147,11 +152,11 @@ export function UserForm({
                     onClick={onCancel}
                     disabled={form.processing}
                 >
-                    Cancel
+                    {t('Cancel')}
                 </Button>
                 <Button type="submit" disabled={form.processing}>
                     {form.processing && <Spinner />}
-                    {user ? 'Save changes' : 'Create user'}
+                    {user ? t('Save changes') : t('Create user')}
                 </Button>
             </div>
         </form>

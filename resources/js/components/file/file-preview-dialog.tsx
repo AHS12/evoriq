@@ -15,6 +15,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/use-translation';
 
 type PreviewFile = {
     name: string;
@@ -31,6 +32,8 @@ type Props = {
 };
 
 export function FilePreviewDialog({ file, open, onOpenChange }: Props) {
+    const { t } = useTranslation();
+
     if (!file) {
         return null;
     }
@@ -54,7 +57,7 @@ export function FilePreviewDialog({ file, open, onOpenChange }: Props) {
                         {file.name}
                     </DialogTitle>
                     <DialogDescription className="truncate">
-                        {meta || file.mime_type || 'File'}
+                        {meta || file.mime_type || t('File')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -82,10 +85,10 @@ export function FilePreviewDialog({ file, open, onOpenChange }: Props) {
                         <div className="space-y-1">
                             <p className="flex items-center justify-center gap-1.5 text-sm font-medium">
                                 <EyeOff className="size-4" />
-                                No preview available
+                                {t('No preview available')}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                                Download this file to view its contents.
+                                {t('Download this file to view its contents.')}
                             </p>
                         </div>
                     </div>
@@ -96,7 +99,7 @@ export function FilePreviewDialog({ file, open, onOpenChange }: Props) {
                         <Button asChild variant="outline">
                             <a href={file.url} target="_blank" rel="noreferrer">
                                 <Download className="size-4" />
-                                Download
+                                {t('Download')}
                             </a>
                         </Button>
                     </DialogFooter>

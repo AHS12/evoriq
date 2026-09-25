@@ -45,7 +45,9 @@ import { index as activityIndex } from '@/routes/activity';
 import { destroy, index, store } from '@/routes/files';
 import type { FileEntry, Paginated } from '@/types';
 import { cn } from '@/lib/utils';
+import { appLocale } from '@/lib/locale';
 import { useDataTableFilters } from '@/hooks/use-data-table-filters';
+import { useTranslation } from '@/hooks/use-translation';
 
 type Props = {
     source: 'all' | 'generated';
@@ -61,16 +63,12 @@ type Props = {
     canViewGenerated: boolean;
 };
 
-function fileName(entry: FileEntry): string {
-    return entry.name || entry.file_name || 'Untitled file';
-}
-
 function formatDate(value: string | null): string {
     if (!value) {
         return '—';
     }
 
-    return new Date(value).toLocaleDateString(undefined, {
+    return new Date(value).toLocaleDateString(appLocale(), {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
@@ -78,16 +76,18 @@ function formatDate(value: string | null): string {
 }
 
 function SourceBadge({ entry }: { entry: FileEntry }) {
+    const { t } = useTranslation();
+
     if (entry.is_generated) {
         return (
             <Badge variant="secondary" className="gap-1">
                 <Sparkles className="size-3" />
-                System
+                {t('System')}
             </Badge>
         );
     }
 
-    return <Badge variant="outline">Uploaded</Badge>;
+    return <Badge variant="outline">{t('Uploaded')}</Badge>;
 }
 
 export default function FilesIndex({
@@ -104,6 +104,10 @@ export default function FilesIndex({
     const [previewFile, setPreviewFile] = useState<FileEntry | null>(null);
 
     const upload = useForm<{ file: File | null }>({ file: null });
+    const { t } = useTranslation();
+
+    const fileName = (entry: FileEntry): string =>
+        entry.name || entry.file_name || t('Untitled file');
 
     const { apply, isLoading } = useDataTableFilters(index.url(), {
         ...filters,
@@ -138,12 +142,14 @@ export default function FilesIndex({
 
     return (
         <>
-            <Head title="Files" />
+            <Head title={t('Files')} />
 
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Files"
-                    description="Everything stored here — your uploads and system-generated files."
+                    title={t('Files')}
+                    description={t(
+                        'Everything stored here — your uploads and system-generated files.',
+                    )}
                 />
 
                 <Tabs
@@ -153,10 +159,10 @@ export default function FilesIndex({
                     }
                 >
                     <TabsList>
-                        <TabsTrigger value="all">All files</TabsTrigger>
+                        <TabsTrigger value="all">{t('All files')}</TabsTrigger>
                         {canViewGenerated && (
                             <TabsTrigger value="generated">
-                                Generated
+                                {t('Generated')}
                             </TabsTrigger>
                         )}
                     </TabsList>
@@ -184,13 +190,18 @@ export default function FilesIndex({
                                     )}
                                 </div>
                                 <p className="text-sm font-medium">
-                                    Drag &amp; drop a file here, or click to
-                                    browse
+                                    {t(
+                                        'Drag & drop a file here, or click to browse',
+                                    )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     {upload.progress
-                                        ? `Uploading… ${upload.progress.percentage}%`
-                                        : 'PDF, images, documents and more'}
+                                        ? t('Uploading… :percentage%', {
+                                              percentage:
+                                                  upload.progress.percentage ??
+                                                  0,
+                                          })
+                                        : t('PDF, images, documents and more')}
                                 </p>
                                 <input
                                     id="file-upload"
@@ -220,7 +231,7 @@ export default function FilesIndex({
                                 setSearch(event.target.value);
                                 apply({ search: event.target.value, page: 1 });
                             }}
-                            placeholder="Search files…"
+                            placeholder={t('Search files…')}
                             className="pl-9"
                         />
                     </div>
@@ -240,10 +251,12 @@ export default function FilesIndex({
                             }}
                         >
                             <SelectTrigger className="w-40">
-                                <SelectValue placeholder="All types" />
+                                <SelectValue placeholder={t('All types')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All types</SelectItem>
+                                <SelectItem value="all">
+                                    {t('All types')}
+                                </SelectItem>
                                 {types.map((option) => (
                                     <SelectItem
                                         key={option.value}
@@ -261,7 +274,7 @@ export default function FilesIndex({
                             onClick={() =>
                                 setView(view === 'grid' ? 'list' : 'grid')
                             }
-                            aria-label="Toggle view"
+                            aria-label={t('Toggle view')}
                         >
                             {view === 'grid' ? (
                                 <List className="size-4" />
@@ -296,7 +309,9 @@ export default function FilesIndex({
                                                     entry.source !== 'upload'
                                                 }
                                                 className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-md bg-muted disabled:cursor-default"
-                                                aria-label={`Preview ${fileName(entry)}`}
+                                                aria-label={t('Preview :name', {
+                                                    name: fileName(entry),
+                                                })}
                                             >
                                                 <FileThumbnail
                                                     name={fileName(entry)}
@@ -318,7 +333,7 @@ export default function FilesIndex({
                                                     {formatSize(entry.size)} ·{' '}
                                                     {entry.is_generated
                                                         ? (entry.job_type_label ??
-                                                          'Generated')
+                                                          t('Generated'))
                                                         : entry.type_label}{' '}
                                                     ·{' '}
                                                     {formatDate(
@@ -335,7 +350,9 @@ export default function FilesIndex({
                                                             type="button"
                                                             variant="ghost"
                                                             size="icon"
-                                                            aria-label="Preview file"
+                                                            aria-label={t(
+                                                                'Preview file',
+                                                            )}
                                                             onClick={() =>
                                                                 setPreviewFile(
                                                                     entry,
@@ -351,7 +368,9 @@ export default function FilesIndex({
                                                                 asChild
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                aria-label="View job"
+                                                                aria-label={t(
+                                                                    'View job',
+                                                                )}
                                                             >
                                                                 <a
                                                                     href={activityIndex.url(
@@ -371,7 +390,9 @@ export default function FilesIndex({
                                                             asChild
                                                             variant="ghost"
                                                             size="icon"
-                                                            aria-label="Download"
+                                                            aria-label={t(
+                                                                'Download',
+                                                            )}
                                                         >
                                                             <a
                                                                 href={
@@ -388,7 +409,9 @@ export default function FilesIndex({
                                                             type="button"
                                                             variant="ghost"
                                                             size="icon"
-                                                            aria-label="Delete file"
+                                                            aria-label={t(
+                                                                'Delete file',
+                                                            )}
                                                             onClick={() =>
                                                                 setPendingDelete(
                                                                     entry,
@@ -415,13 +438,13 @@ export default function FilesIndex({
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Name</TableHead>
-                                            <TableHead>Source</TableHead>
-                                            <TableHead>Type</TableHead>
-                                            <TableHead>Size</TableHead>
-                                            <TableHead>Date</TableHead>
+                                            <TableHead>{t('Name')}</TableHead>
+                                            <TableHead>{t('Source')}</TableHead>
+                                            <TableHead>{t('Type')}</TableHead>
+                                            <TableHead>{t('Size')}</TableHead>
+                                            <TableHead>{t('Date')}</TableHead>
                                             <TableHead className="text-right">
-                                                Actions
+                                                {t('Actions')}
                                             </TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -441,7 +464,7 @@ export default function FilesIndex({
                                                 <TableCell>
                                                     {entry.is_generated
                                                         ? (entry.job_type_label ??
-                                                          'Generated')
+                                                          t('Generated'))
                                                         : entry.type_label}
                                                 </TableCell>
                                                 <TableCell>
@@ -460,7 +483,9 @@ export default function FilesIndex({
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                aria-label="Preview file"
+                                                                aria-label={t(
+                                                                    'Preview file',
+                                                                )}
                                                                 onClick={() =>
                                                                     setPreviewFile(
                                                                         entry,
@@ -476,7 +501,9 @@ export default function FilesIndex({
                                                                     asChild
                                                                     variant="ghost"
                                                                     size="icon"
-                                                                    aria-label="View job"
+                                                                    aria-label={t(
+                                                                        'View job',
+                                                                    )}
                                                                 >
                                                                     <a
                                                                         href={activityIndex.url(
@@ -496,7 +523,9 @@ export default function FilesIndex({
                                                                 asChild
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                aria-label="Download"
+                                                                aria-label={t(
+                                                                    'Download',
+                                                                )}
                                                             >
                                                                 <a
                                                                     href={
@@ -513,7 +542,9 @@ export default function FilesIndex({
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="icon"
-                                                                aria-label="Delete file"
+                                                                aria-label={t(
+                                                                    'Delete file',
+                                                                )}
                                                                 onClick={() =>
                                                                     setPendingDelete(
                                                                         entry,
@@ -543,13 +574,15 @@ export default function FilesIndex({
                         icon={FolderOpen}
                         title={
                             source === 'generated'
-                                ? 'No generated files yet'
-                                : 'No files yet'
+                                ? t('No generated files yet')
+                                : t('No files yet')
                         }
                         description={
                             source === 'generated'
-                                ? 'Completed exports and reports will appear here.'
-                                : 'Upload a file to see it here.'
+                                ? t(
+                                      'Completed exports and reports will appear here.',
+                                  )
+                                : t('Upload a file to see it here.')
                         }
                     />
                 )}
@@ -562,13 +595,16 @@ export default function FilesIndex({
                         setPendingDelete(null);
                     }
                 }}
-                title="Delete file?"
+                title={t('Delete file?')}
                 description={
                     pendingDelete
-                        ? `"${fileName(pendingDelete)}" will be permanently deleted. This cannot be undone.`
+                        ? t(
+                              '":name" will be permanently deleted. This cannot be undone.',
+                              { name: fileName(pendingDelete) },
+                          )
                         : undefined
                 }
-                confirmLabel="Delete"
+                confirmLabel={t('Delete')}
                 destructive
                 onConfirm={confirmDelete}
             />

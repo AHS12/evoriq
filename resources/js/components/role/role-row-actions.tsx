@@ -8,6 +8,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCan } from '@/hooks/use-can';
+import { useTranslation } from '@/hooks/use-translation';
 import type { Role } from '@/types';
 
 type Props = {
@@ -18,6 +19,7 @@ type Props = {
 
 export function RoleRowActions({ role, onEdit, onDelete }: Props) {
     const can = useCan();
+    const { t } = useTranslation();
 
     const isSuperAdmin = role.name === 'Super Admin';
     const canUpdate = can('role.update');
@@ -33,7 +35,7 @@ export function RoleRowActions({ role, onEdit, onDelete }: Props) {
                 <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={`Actions for ${role.name}`}
+                    aria-label={t('Actions for :name', { name: role.name })}
                 >
                     <MoreHorizontal className="size-4" />
                 </Button>
@@ -46,7 +48,7 @@ export function RoleRowActions({ role, onEdit, onDelete }: Props) {
                         ) : (
                             <Pencil className="mr-2 size-4" />
                         )}
-                        {isSuperAdmin ? 'View' : 'Edit'}
+                        {isSuperAdmin ? t('View') : t('Edit')}
                     </DropdownMenuItem>
                 )}
 
@@ -58,7 +60,7 @@ export function RoleRowActions({ role, onEdit, onDelete }: Props) {
                             onSelect={() => onDelete(role)}
                         >
                             <Trash2 className="mr-2 size-4" />
-                            Delete
+                            {t('Delete')}
                         </DropdownMenuItem>
                     </>
                 )}

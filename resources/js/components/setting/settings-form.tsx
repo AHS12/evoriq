@@ -9,6 +9,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import type { SettingGroup } from '@/types';
 
 type FormDefinition = {
@@ -23,15 +24,19 @@ type Props = {
 };
 
 export function SettingsForm({ group, action, description }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Form {...action} className="space-y-6">
             {({ processing, errors }) => (
                 <>
                     <Card>
                         <CardHeader>
-                            <CardTitle>{group.label}</CardTitle>
+                            <CardTitle>{t(group.label)}</CardTitle>
                             {description && (
-                                <CardDescription>{description}</CardDescription>
+                                <CardDescription>
+                                    {t(description)}
+                                </CardDescription>
                             )}
                         </CardHeader>
                         <CardContent className="grid gap-6 sm:grid-cols-2">
@@ -48,7 +53,7 @@ export function SettingsForm({ group, action, description }: Props) {
                     <div className="flex justify-end">
                         <Button disabled={processing}>
                             {processing && <Spinner />}
-                            Save changes
+                            {t('Save changes')}
                         </Button>
                     </div>
                 </>

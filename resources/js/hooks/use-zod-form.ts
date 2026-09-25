@@ -14,10 +14,14 @@ import { formatZodErrors, type ValidationErrors } from '@/lib/validation';
  * The server (Laravel FormRequest) stays the source of truth; this hook gives
  * instant feedback and blocks obviously invalid submissions. Client and server
  * errors are merged, so server-side messages still surface after a request.
+ *
+ * Zod messages are English source text; pass `translate` (e.g. `t` from
+ * `useTranslation`) to render them in the active locale.
  */
 export function useZodForm<TForm extends FormDataType<TForm>>(
     initialValues: TForm,
     schema: ZodType<TForm>,
+    translate?: (message: string) => string,
 ) {
     const form = useForm<TForm>(initialValues);
     const [clientErrors, setClientErrors] = useState<ValidationErrors>({});
@@ -30,7 +34,17 @@ export function useZodForm<TForm extends FormDataType<TForm>>(
             return true;
         }
 
-        setClientErrors(formatZodErrors(result.error));
+        const messages = formatZodErrors(result.error);
+        const translated = translate
+            ? Object.fromEntries(
+                  Object.entries(messages).map(([field, message]) => [
+                      field,
+                      translate(message),
+                  ]),
+              )
+            : messages;
+
+        setClientErrors(translated);
 
         return false;
     };

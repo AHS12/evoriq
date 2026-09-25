@@ -31,6 +31,7 @@ it('updates general settings', function () {
     $this->actingAs($user)
         ->patch(route('admin.settings.general.update'), [
             'system_name' => 'Acme',
+            'app_locale' => 'en',
             'timezone' => 'Europe/London',
             'date_format' => 'd/m/Y',
             'week_start' => 'sunday',
@@ -68,6 +69,7 @@ it('accepts any day as the week start', function () {
     $this->actingAs($user)
         ->patch(route('admin.settings.general.update'), [
             'system_name' => 'Acme',
+            'app_locale' => 'en',
             'timezone' => 'Europe/London',
             'date_format' => 'Y-m-d',
             'week_start' => 'friday',

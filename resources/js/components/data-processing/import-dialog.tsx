@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { useTranslation } from '@/hooks/use-translation';
 import { storeImport } from '@/routes/activity';
 import type { JobOptions } from '@/types';
 
@@ -61,6 +62,8 @@ function ImportForm({
             (lockEntity === undefined || entity.value === lockEntity),
     );
 
+    const { t } = useTranslation();
+
     const form = useForm<FormState>({
         entity_type: lockEntity ?? entities[0]?.value ?? '',
         file: null,
@@ -76,14 +79,14 @@ function ImportForm({
 
     const setFile = (file: File | null): void => {
         form.setData('file', file);
-        setFileError(file ? null : 'Choose a file to import.');
+        setFileError(file ? null : t('Choose a file to import.'));
     };
 
     const submit = (event: FormEvent): void => {
         event.preventDefault();
 
         if (!form.data.file) {
-            setFileError('Choose a file to import.');
+            setFileError(t('Choose a file to import.'));
 
             return;
         }
@@ -99,7 +102,7 @@ function ImportForm({
         <form onSubmit={submit} noValidate className="space-y-4">
             {lockEntity === undefined && (
                 <div className="grid gap-2">
-                    <Label htmlFor="import-entity">Entity</Label>
+                    <Label htmlFor="import-entity">{t('Entity')}</Label>
                     <Select
                         value={form.data.entity_type}
                         onValueChange={(value) =>
@@ -107,7 +110,7 @@ function ImportForm({
                         }
                     >
                         <SelectTrigger id="import-entity">
-                            <SelectValue placeholder="Choose an entity" />
+                            <SelectValue placeholder={t('Choose an entity')} />
                         </SelectTrigger>
                         <SelectContent>
                             {entities.map((entity) => (
@@ -127,7 +130,7 @@ function ImportForm({
             <ImportTemplateDownload entity={selectedEntity} />
 
             <div className="grid gap-2">
-                <Label htmlFor="import-file">File</Label>
+                <Label htmlFor="import-file">{t('File')}</Label>
                 <label
                     htmlFor="import-file"
                     onDragOver={(event: DragEvent) => event.preventDefault()}
@@ -147,7 +150,9 @@ function ImportForm({
                     <p className="text-sm font-medium">
                         {form.data.file
                             ? form.data.file.name
-                            : 'Drag & drop a .csv or .xlsx file, or click to browse'}
+                            : t(
+                                  'Drag & drop a .csv or .xlsx file, or click to browse',
+                              )}
                     </p>
                     <input
                         id="import-file"
@@ -164,9 +169,11 @@ function ImportForm({
 
             <div className="flex items-center justify-between rounded-lg border p-3">
                 <div>
-                    <p className="text-sm font-medium">Send invitations</p>
+                    <p className="text-sm font-medium">
+                        {t('Send invitations')}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                        Email new users a link to set their password.
+                        {t('Email new users a link to set their password.')}
                     </p>
                 </div>
                 <Switch
@@ -178,7 +185,7 @@ function ImportForm({
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="import-role">Default role</Label>
+                <Label htmlFor="import-role">{t('Default role')}</Label>
                 <Select
                     value={
                         form.data.default_role === ''
@@ -193,10 +200,10 @@ function ImportForm({
                     }
                 >
                     <SelectTrigger id="import-role">
-                        <SelectValue placeholder="No role" />
+                        <SelectValue placeholder={t('No role')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="none">No role</SelectItem>
+                        <SelectItem value="none">{t('No role')}</SelectItem>
                         {options.roles.map((role) => (
                             <SelectItem key={role} value={role}>
                                 {role}
@@ -205,7 +212,7 @@ function ImportForm({
                     </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                    Applied when a row doesn't specify its own roles.
+                    {t("Applied when a row doesn't specify its own roles.")}
                 </p>
                 <InputError message={form.errors.default_role} />
             </div>
@@ -217,11 +224,11 @@ function ImportForm({
                     onClick={onCancel}
                     disabled={form.processing}
                 >
-                    Cancel
+                    {t('Cancel')}
                 </Button>
                 <Button type="submit" disabled={form.processing}>
                     {form.processing && <Spinner className="size-4" />}
-                    Import
+                    {t('Import')}
                 </Button>
             </DialogFooter>
         </form>
@@ -234,14 +241,17 @@ export function ImportDialog({
     options,
     lockEntity,
 }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>New import</DialogTitle>
+                    <DialogTitle>{t('New import')}</DialogTitle>
                     <DialogDescription>
-                        Upload a file in the background. We'll notify you when
-                        it's done.
+                        {t(
+                            "Upload a file in the background. We'll notify you when it's done.",
+                        )}
                     </DialogDescription>
                 </DialogHeader>
 

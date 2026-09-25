@@ -18,6 +18,7 @@ import {
     SheetTitle,
 } from '@/components/ui/sheet';
 import { download } from '@/routes/exports';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
 
 type Props = {
@@ -36,6 +37,7 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 }
 
 export function JobDetailSheet({ job, open, onOpenChange }: Props) {
+    const { t } = useTranslation();
     const skipped =
         job?.errors.filter((error) => error.type === 'duplicate').length ?? 0;
 
@@ -88,16 +90,16 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
 
                             <section className="space-y-2">
                                 <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                    Timeline
+                                    {t('Timeline')}
                                 </h3>
                                 <div className="space-y-1">
                                     <MetaRow
-                                        label="Created"
+                                        label={t('Created')}
                                         value={relativeTime(job.created_at)}
                                     />
                                     {job.started_at && (
                                         <MetaRow
-                                            label="Started"
+                                            label={t('Started')}
                                             value={relativeTime(job.started_at)}
                                         />
                                     )}
@@ -105,8 +107,8 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                         <MetaRow
                                             label={
                                                 job.status === 'failed'
-                                                    ? 'Failed'
-                                                    : 'Finished'
+                                                    ? t('Failed')
+                                                    : t('Finished')
                                             }
                                             value={relativeTime(
                                                 job.completed_at,
@@ -115,7 +117,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                     )}
                                     {job.duration && (
                                         <MetaRow
-                                            label="Duration"
+                                            label={t('Duration')}
                                             value={job.duration}
                                         />
                                     )}
@@ -126,24 +128,24 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
 
                             <section className="space-y-2">
                                 <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                    Result
+                                    {t('Result')}
                                 </h3>
                                 <div className="space-y-1">
                                     {job.type === 'import' ? (
                                         <>
                                             <MetaRow
-                                                label="Created"
+                                                label={t('Created')}
                                                 value={formatNumber(
                                                     job.counts.created ??
                                                         job.success_count,
                                                 )}
                                             />
                                             <MetaRow
-                                                label="Skipped"
+                                                label={t('Skipped')}
                                                 value={formatNumber(skipped)}
                                             />
                                             <MetaRow
-                                                label="Failed"
+                                                label={t('Failed')}
                                                 value={formatNumber(
                                                     job.counts.failed ??
                                                         job.error_count,
@@ -152,7 +154,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                         </>
                                     ) : (
                                         <MetaRow
-                                            label="Rows"
+                                            label={t('Rows')}
                                             value={formatNumber(
                                                 job.processed_items,
                                             )}
@@ -166,7 +168,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                     <Separator />
                                     <section className="space-y-2">
                                         <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                            Artifact
+                                            {t('Artifact')}
                                         </h3>
                                         {job.artifacts.map((artifact) => (
                                             <div
@@ -199,7 +201,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                                                 )}
                                                             >
                                                                 <Download className="size-4" />
-                                                                Download
+                                                                {t('Download')}
                                                             </a>
                                                         </Button>
                                                     )}
@@ -214,7 +216,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                     <Separator />
                                     <section className="space-y-2">
                                         <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                            Parameters
+                                            {t('Parameters')}
                                         </h3>
                                         <div className="space-y-1">
                                             {parameters.map(([key, value]) => (
@@ -237,7 +239,9 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                     <Separator />
                                     <section className="space-y-2">
                                         <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                                            Issues ({job.errors.length})
+                                            {t('Issues (:count)', {
+                                                count: job.errors.length,
+                                            })}
                                         </h3>
                                         <JobIssueTable errors={job.errors} />
                                     </section>
@@ -246,7 +250,7 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
 
                             <div className="pt-2">
                                 <p className="text-xs break-all text-muted-foreground">
-                                    Job ID · {job.job_id}
+                                    {t('Job ID')} · {job.job_id}
                                 </p>
                             </div>
                         </div>

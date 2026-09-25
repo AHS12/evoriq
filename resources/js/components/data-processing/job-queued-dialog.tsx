@@ -11,6 +11,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { index } from '@/routes/activity';
+import { useTranslation } from '@/hooks/use-translation';
 import type { QueuedJob } from '@/types';
 
 /**
@@ -20,6 +21,7 @@ import type { QueuedJob } from '@/types';
  */
 export function JobQueuedDialog() {
     const [queued, setQueued] = useState<QueuedJob | null>(null);
+    const { t } = useTranslation();
 
     useEffect(
         () =>
@@ -54,22 +56,25 @@ export function JobQueuedDialog() {
                     <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
                         <CheckCircle2 className="size-6 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <DialogTitle>Your job is queued</DialogTitle>
+                    <DialogTitle>{t('Your job is queued')}</DialogTitle>
                     <DialogDescription>
                         {queued
-                            ? `“${queued.name}” is running`
-                            : 'It is running'}{' '}
-                        in the background. Follow its progress in Job activity —
-                        we'll notify you when it's ready.
+                            ? t(
+                                  '":name" is running in the background. Follow its progress in Job activity — we\'ll notify you when it\'s ready.',
+                                  { name: queued.name },
+                              )
+                            : t(
+                                  "Your job is running in the background. Follow its progress in Job activity — we'll notify you when it's ready.",
+                              )}
                     </DialogDescription>
                 </DialogHeader>
 
                 <DialogFooter className="sm:justify-center">
                     <Button variant="outline" onClick={close}>
-                        Close
+                        {t('Close')}
                     </Button>
                     <Button asChild onClick={close}>
-                        <a href={viewUrl}>View job activity</a>
+                        <a href={viewUrl}>{t('View job activity')}</a>
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -7,6 +7,7 @@ import {
     type LucideIcon,
 } from 'lucide-react';
 import { formatNumber } from '@/components/data-processing/job-utils';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { JobStats, JobStatus } from '@/types';
 
@@ -63,6 +64,8 @@ type Props = {
 };
 
 export function JobStatCards({ stats, selected, onSelect }: Props) {
+    const { t } = useTranslation();
+
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {CARDS.map((card) => {
@@ -82,7 +85,7 @@ export function JobStatCards({ stats, selected, onSelect }: Props) {
                     >
                         <div className="flex items-center justify-between">
                             <span className="text-xs text-muted-foreground">
-                                {card.label}
+                                {t(card.label)}
                             </span>
                             <Icon
                                 className={cn(

@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import type { FormEvent } from 'react';
 import { CircleCheck, TriangleAlert } from 'lucide-react';
 import InputError from '@/components/input-error';
@@ -26,6 +27,8 @@ type Props = {
 };
 
 export function DriversStep({ options, defaults, redis, onComplete }: Props) {
+    const { t } = useTranslation();
+
     const { form, errors, validate, setField } = useZodForm<DriverFormValues>(
         {
             session: defaults.session,
@@ -36,6 +39,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
             redis_password: defaults.redisPassword,
         },
         driverFormSchema,
+        t,
     );
 
     const usesRedis =
@@ -60,7 +64,9 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
     return (
         <form onSubmit={submit} noValidate className="space-y-4">
             <div className="space-y-1">
-                <h2 className="text-xl font-semibold">Runtime drivers</h2>
+                <h2 className="text-xl font-semibold">
+                    {t('Runtime drivers')}
+                </h2>
                 <p className="text-sm text-muted-foreground">
                     Sessions, cache and queued jobs. Redis is faster when
                     available; the database works everywhere.
@@ -70,7 +76,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
             {redis.available ? (
                 <Alert>
                     <CircleCheck />
-                    <AlertTitle>Redis detected</AlertTitle>
+                    <AlertTitle>{t('Redis detected')}</AlertTitle>
                     <AlertDescription>
                         {redis.message} We recommend Redis for all three
                         drivers.
@@ -79,7 +85,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
             ) : (
                 <Alert>
                     <TriangleAlert />
-                    <AlertTitle>Redis unavailable</AlertTitle>
+                    <AlertTitle>{t('Redis unavailable')}</AlertTitle>
                     <AlertDescription>
                         {redis.message} Falling back to the database is fine.
                     </AlertDescription>
@@ -89,7 +95,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
             <div className="grid gap-4 sm:grid-cols-3">
                 <DriverSelect
                     id="session"
-                    label="Sessions"
+                    label={t('Sessions')}
                     value={form.data.session}
                     options={options.session}
                     error={errors.session}
@@ -97,7 +103,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                 />
                 <DriverSelect
                     id="cache"
-                    label="Cache"
+                    label={t('Cache')}
                     value={form.data.cache}
                     options={options.cache}
                     error={errors.cache}
@@ -105,7 +111,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                 />
                 <DriverSelect
                     id="queue"
-                    label="Queue"
+                    label={t('Queue')}
                     value={form.data.queue}
                     options={options.queue}
                     error={errors.queue}
@@ -116,7 +122,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
             {usesRedis && (
                 <div className="grid gap-2 sm:grid-cols-3">
                     <div className="grid gap-2 sm:col-span-2">
-                        <Label htmlFor="redis_host">Redis host</Label>
+                        <Label htmlFor="redis_host">{t('Redis host')}</Label>
                         <Input
                             id="redis_host"
                             value={form.data.redis_host}
@@ -128,7 +134,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                         <InputError message={errors.redis_host} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="redis_port">Port</Label>
+                        <Label htmlFor="Port">{t('Port')}</Label>
                         <Input
                             id="redis_port"
                             type="number"
@@ -163,7 +169,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
             <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={form.processing}>
                     {form.processing && <Spinner />}
-                    Save &amp; continue
+                    {t('Save & continue')}
                 </Button>
             </div>
         </form>

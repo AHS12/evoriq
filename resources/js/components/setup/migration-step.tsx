@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { Check } from 'lucide-react';
 import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
@@ -12,6 +13,8 @@ type Props = {
 };
 
 export function MigrationStep({ migrated, seeded, onComplete }: Props) {
+    const { t } = useTranslation();
+
     const { post, processing, errors } = useForm({ migrate: '' });
 
     const run = () => {
@@ -25,7 +28,9 @@ export function MigrationStep({ migrated, seeded, onComplete }: Props) {
     return (
         <div className="space-y-4">
             <div className="space-y-1">
-                <h2 className="text-xl font-semibold">Set up the database</h2>
+                <h2 className="text-xl font-semibold">
+                    {t('Set up the database')}
+                </h2>
                 <p className="text-sm text-muted-foreground">
                     Creates the tables and seeds roles, permissions and default
                     settings.
@@ -34,11 +39,11 @@ export function MigrationStep({ migrated, seeded, onComplete }: Props) {
 
             <ul className="divide-y rounded-lg border text-sm">
                 <li className="flex items-center justify-between p-3">
-                    <span>Schema migrated</span>
+                    <span>{t('Schema migrated')}</span>
                     <Status done={migrated} />
                 </li>
                 <li className="flex items-center justify-between p-3">
-                    <span>Roles &amp; settings seeded</span>
+                    <span>{t('Roles & settings seeded')}</span>
                     <Status done={seeded} />
                 </li>
             </ul>
@@ -48,7 +53,7 @@ export function MigrationStep({ migrated, seeded, onComplete }: Props) {
             <div className="flex justify-end pt-2">
                 <Button onClick={run} disabled={processing}>
                     {processing && <Spinner />}
-                    {migrated ? 'Run migrations again' : 'Run migrations'}
+                    {migrated ? t('Run migrations again') : t('Run migrations')}
                 </Button>
             </div>
         </div>
@@ -56,11 +61,13 @@ export function MigrationStep({ migrated, seeded, onComplete }: Props) {
 }
 
 function Status({ done }: { done: boolean }) {
+    const { t } = useTranslation();
+
     return done ? (
         <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
             <Check className="size-4" /> Done
         </span>
     ) : (
-        <span className="text-xs text-muted-foreground">Pending</span>
+        <span className="text-xs text-muted-foreground">{t('Pending')}</span>
     );
 }

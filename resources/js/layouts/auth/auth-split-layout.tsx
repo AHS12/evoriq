@@ -3,7 +3,9 @@ import { BarChart3, GitCompareArrows, RefreshCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { ThemeToggle } from '@/components/app/theme-toggle';
+import { LanguageToggle } from '@/components/app/language-toggle';
 import { home } from '@/routes';
+import { useTranslation } from '@/hooks/use-translation';
 import type { AuthLayoutProps } from '@/types';
 
 const highlights: { icon: LucideIcon; text: string }[] = [
@@ -18,6 +20,7 @@ export default function AuthSplitLayout({
     description,
 }: AuthLayoutProps) {
     const { name } = usePage().props;
+    const { t } = useTranslation();
     const appName = name ?? 'Evoriq';
 
     return (
@@ -61,7 +64,8 @@ export default function AuthSplitLayout({
             </div>
 
             <div className="relative flex flex-col justify-center px-6 py-12 lg:px-12">
-                <div className="absolute top-4 right-4 lg:top-6 lg:right-6">
+                <div className="absolute top-4 right-4 flex items-center gap-2 lg:top-6 lg:right-6">
+                    <LanguageToggle />
                     <ThemeToggle />
                 </div>
 
@@ -76,10 +80,10 @@ export default function AuthSplitLayout({
 
                     <div className="space-y-1.5">
                         <h1 className="text-xl font-semibold tracking-tight">
-                            {title}
+                            {title ? t(title) : null}
                         </h1>
                         <p className="text-sm text-muted-foreground">
-                            {description}
+                            {description ? t(description) : null}
                         </p>
                     </div>
 

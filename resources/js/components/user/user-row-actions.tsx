@@ -17,6 +17,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useCan } from '@/hooks/use-can';
+import { useTranslation } from '@/hooks/use-translation';
 import { invite, passwordReset, suspend } from '@/routes/users';
 import type { Auth, User } from '@/types';
 
@@ -29,6 +30,7 @@ type Props = {
 export function UserRowActions({ user, onEdit, onDelete }: Props) {
     const can = useCan();
     const { auth } = usePage<{ auth: Auth }>().props;
+    const { t } = useTranslation();
 
     const isTargetSuperAdmin = user.roles?.includes('Super Admin') ?? false;
     const isSelf = auth.user?.id === user.id;
@@ -49,7 +51,7 @@ export function UserRowActions({ user, onEdit, onDelete }: Props) {
                 <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={`Actions for ${user.name}`}
+                    aria-label={t('Actions for :name', { name: user.name })}
                 >
                     <MoreHorizontal className="size-4" />
                 </Button>
@@ -58,7 +60,7 @@ export function UserRowActions({ user, onEdit, onDelete }: Props) {
                 {canEdit && (
                     <DropdownMenuItem onSelect={() => onEdit(user)}>
                         <Pencil className="mr-2 size-4" />
-                        Edit
+                        {t('Edit')}
                     </DropdownMenuItem>
                 )}
 
@@ -75,7 +77,7 @@ export function UserRowActions({ user, onEdit, onDelete }: Props) {
                         }
                     >
                         <MailPlus className="mr-2 size-4" />
-                        Resend invitation
+                        {t('Resend invitation')}
                     </DropdownMenuItem>
                 )}
 
@@ -90,7 +92,7 @@ export function UserRowActions({ user, onEdit, onDelete }: Props) {
                         }
                     >
                         <KeyRound className="mr-2 size-4" />
-                        Send password reset
+                        {t('Send password reset')}
                     </DropdownMenuItem>
                 )}
 
@@ -109,12 +111,12 @@ export function UserRowActions({ user, onEdit, onDelete }: Props) {
                         {user.status === 'suspended' ? (
                             <>
                                 <UserCheck className="mr-2 size-4" />
-                                Reactivate
+                                {t('Reactivate')}
                             </>
                         ) : (
                             <>
                                 <Ban className="mr-2 size-4" />
-                                Suspend
+                                {t('Suspend')}
                             </>
                         )}
                     </DropdownMenuItem>
@@ -128,7 +130,7 @@ export function UserRowActions({ user, onEdit, onDelete }: Props) {
                             onSelect={() => onDelete(user)}
                         >
                             <Trash2 className="mr-2 size-4" />
-                            Delete
+                            {t('Delete')}
                         </DropdownMenuItem>
                     </>
                 )}

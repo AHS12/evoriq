@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { JobRow } from '@/components/data-processing/job-row';
 import { groupJobsByDay } from '@/components/data-processing/job-utils';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
 
 type Props = {
@@ -9,7 +10,8 @@ type Props = {
 };
 
 export function JobList({ jobs, onOpen }: Props) {
-    const groups = useMemo(() => groupJobsByDay(jobs), [jobs]);
+    const { t } = useTranslation();
+    const groups = useMemo(() => groupJobsByDay(jobs, t), [jobs, t]);
 
     return (
         <div className="overflow-hidden rounded-xl border">

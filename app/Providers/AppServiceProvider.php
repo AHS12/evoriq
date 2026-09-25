@@ -56,6 +56,16 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureDevCommands();
         $this->configureAudit();
+        $this->configureTranslations();
+    }
+
+    /**
+     * Load the application dictionaries from lang/app/{locale}.json so the
+     * laravel-lang publisher can keep lang/{locale}/** untouched.
+     */
+    protected function configureTranslations(): void
+    {
+        $this->app->make('translation.loader')->addJsonPath(lang_path('app'));
     }
 
     /**

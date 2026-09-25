@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -15,9 +16,11 @@ type Props = {
 };
 
 export default function AcceptInvitation({ user, action }: Props) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Set your password" />
+            <Head title={t('Set your password')} />
 
             <Form
                 action={action}
@@ -27,7 +30,7 @@ export default function AcceptInvitation({ user, action }: Props) {
                 {({ processing, errors }) => (
                     <div className="grid gap-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">{t('Email')}</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -38,14 +41,14 @@ export default function AcceptInvitation({ user, action }: Props) {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password">{t('Password')}</Label>
                             <PasswordInput
                                 id="password"
                                 name="password"
                                 autoComplete="new-password"
                                 className="mt-1 block w-full"
                                 autoFocus
-                                placeholder="Password"
+                                placeholder={t('Password')}
                             />
                             <InputError message={errors.password} />
                         </div>
@@ -59,7 +62,7 @@ export default function AcceptInvitation({ user, action }: Props) {
                                 name="password_confirmation"
                                 autoComplete="new-password"
                                 className="mt-1 block w-full"
-                                placeholder="Confirm password"
+                                placeholder={t('Confirm password')}
                             />
                             <InputError
                                 message={errors.password_confirmation}

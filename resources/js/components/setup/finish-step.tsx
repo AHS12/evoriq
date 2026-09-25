@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,19 +31,25 @@ export function FinishStep({
     onBack,
     onSubmit,
 }: Props) {
+    const { t } = useTranslation();
+
     return (
         <div className="space-y-4">
             <div className="space-y-1">
-                <h2 className="text-xl font-semibold">Ready to go</h2>
+                <h2 className="text-xl font-semibold">{t('Ready to go')}</h2>
                 <p className="text-sm text-muted-foreground">
                     {hasSuperAdmin
-                        ? "We'll finish setup using your existing super administrator account."
-                        : "We'll create your super administrator account and sign you in."}
+                        ? t(
+                              "We'll finish setup using your existing super administrator account.",
+                          )
+                        : t(
+                              "We'll create your super administrator account and sign you in.",
+                          )}
                 </p>
             </div>
 
             <div className="grid gap-2">
-                <Label htmlFor="app_name_finish">Workspace name</Label>
+                <Label htmlFor="app_name_finish">{t('Workspace name')}</Label>
                 <Input
                     id="app_name_finish"
                     value={data.app_name}
@@ -56,15 +63,18 @@ export function FinishStep({
                 {hasSuperAdmin && existingAdmin ? (
                     <>
                         <SummaryRow
-                            label="Administrator"
+                            label={t('Administrator')}
                             value={existingAdmin.name}
                         />
-                        <SummaryRow label="Email" value={existingAdmin.email} />
+                        <SummaryRow
+                            label={t('Email')}
+                            value={existingAdmin.email}
+                        />
                     </>
                 ) : (
                     <>
-                        <SummaryRow label="Name" value={data.name} />
-                        <SummaryRow label="Email" value={data.email} />
+                        <SummaryRow label={t('Name')} value={data.name} />
+                        <SummaryRow label={t('Email')} value={data.email} />
                     </>
                 )}
             </dl>
@@ -75,7 +85,7 @@ export function FinishStep({
                     onClick={onBack}
                     disabled={processing}
                 >
-                    Back
+                    {t('Back')}
                 </Button>
                 <Button onClick={onSubmit} disabled={processing}>
                     {processing && <Spinner />}
