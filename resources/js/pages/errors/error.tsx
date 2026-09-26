@@ -11,6 +11,7 @@ import type { LucideIcon } from 'lucide-react';
 import AppLogoIcon from '@/components/app-logo-icon';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 import { home } from '@/routes';
 
 type Props = {
@@ -70,12 +71,13 @@ const fallback: ErrorContent = {
 
 export default function ErrorPage({ status }: Props) {
     const { name } = usePage().props;
+    const { t } = useTranslation();
     const appName = name ?? 'Evoriq';
     const { icon: Icon, title, description } = content[status] ?? fallback;
 
     return (
         <>
-            <Head title={title} />
+            <Head title={t(title)} />
 
             <div className="flex min-h-svh flex-col bg-background">
                 <header className="flex h-16 items-center justify-between px-4 sm:px-6">
@@ -96,25 +98,25 @@ export default function ErrorPage({ status }: Props) {
                         </div>
 
                         <p className="mt-6 text-sm font-medium text-muted-foreground">
-                            Error {status}
+                            {t('Error :status', { status })}
                         </p>
                         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
-                            {title}
+                            {t(title)}
                         </h1>
                         <p className="mt-3 text-sm text-pretty text-muted-foreground">
-                            {description}
+                            {t(description)}
                         </p>
 
                         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                             <Button asChild>
-                                <Link href={home()}>Back to home</Link>
+                                <Link href={home()}>{t('Back to home')}</Link>
                             </Button>
                             <Button
                                 type="button"
                                 variant="outline"
                                 onClick={() => window.history.back()}
                             >
-                                Go back
+                                {t('Go back')}
                             </Button>
                         </div>
                     </div>

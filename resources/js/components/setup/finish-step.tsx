@@ -89,7 +89,7 @@ export function FinishStep({
                 </Button>
                 <Button onClick={onSubmit} disabled={processing}>
                     {processing && <Spinner />}
-                    Complete setup
+                    {t('Complete setup')}
                 </Button>
             </div>
         </div>

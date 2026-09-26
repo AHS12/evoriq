@@ -77,7 +77,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
                 <aside className="w-full lg:w-56">
                     <nav
                         className="flex flex-row gap-1 overflow-x-auto lg:flex-col"
-                        aria-label="Settings"
+                        aria-label={t('Settings')}
                     >
                         {items.map((item) => (
                             <Button

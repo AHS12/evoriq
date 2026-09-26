@@ -1,5 +1,6 @@
 import { Head } from '@inertiajs/react';
 import { SettingsForm } from '@/components/setting/settings-form';
+import { useTranslation } from '@/hooks/use-translation';
 import { update } from '@/routes/admin/settings/notifications';
 import type { SettingGroup } from '@/types';
 
@@ -8,13 +9,17 @@ type Props = {
 };
 
 export default function NotificationSettings({ group }: Props) {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Notification settings" />
+            <Head title={t('Notification settings')} />
             <SettingsForm
                 group={group}
                 action={update.form()}
-                description="Control in-app notifications and how long they are kept."
+                description={t(
+                    'Control in-app notifications and how long they are kept.',
+                )}
             />
         </>
     );

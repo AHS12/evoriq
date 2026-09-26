@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { PermissionGroup } from '@/components/role/permission-group';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 import type { Permission } from '@/types';
 
 type Props = {
@@ -18,6 +19,8 @@ export function PermissionMatrix({
     readOnly = false,
     allowSystemPermissions = false,
 }: Props) {
+    const { t } = useTranslation();
+
     const groups = useMemo(() => {
         const map = new Map<string, Permission[]>();
 
@@ -59,7 +62,7 @@ export function PermissionMatrix({
                             ])
                         }
                     >
-                        Select all
+                        {t('Select all')}
                     </Button>
                     <Button
                         type="button"
@@ -73,7 +76,7 @@ export function PermissionMatrix({
                             )
                         }
                     >
-                        Clear
+                        {t('Clear')}
                     </Button>
                 </div>
             )}

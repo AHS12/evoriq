@@ -17,40 +17,45 @@ import {
     DEFAULT_APPEARANCE,
     useAppearancePreferences,
 } from '@/hooks/use-appearance';
+import { useTranslation } from '@/hooks/use-translation';
 
 export default function AppearanceSettings() {
     const { update } = useAppearancePreferences();
+    const { t } = useTranslation();
 
     return (
         <>
-            <Head title="Appearance settings" />
+            <Head title={t('Appearance settings')} />
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Appearance</CardTitle>
+                    <CardTitle>{t('Appearance')}</CardTitle>
                     <CardDescription>
-                        Choose how Evoriq looks. Your preferences are saved to
-                        your account and follow you across devices.
+                        {t(
+                            'Choose how Evoriq looks. Your preferences are saved to your account and follow you across devices.',
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
-                        <p className="text-sm font-medium">Mode</p>
+                        <p className="text-sm font-medium">{t('Mode')}</p>
                         <AppearanceTabs />
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-sm font-medium">Theme</p>
+                        <p className="text-sm font-medium">{t('Theme')}</p>
                         <ThemePicker />
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-sm font-medium">Accent color</p>
+                        <p className="text-sm font-medium">
+                            {t('Accent color')}
+                        </p>
                         <AccentPicker />
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-sm font-medium">Language</p>
+                        <p className="text-sm font-medium">{t('Language')}</p>
                         <LanguageSelect className="w-48" />
                     </div>
 
@@ -63,7 +68,7 @@ export default function AppearanceSettings() {
                             onClick={() => update({ ...DEFAULT_APPEARANCE })}
                         >
                             <RotateCcw className="size-4" />
-                            Reset to defaults
+                            {t('Reset to defaults')}
                         </Button>
                     </div>
                 </CardContent>

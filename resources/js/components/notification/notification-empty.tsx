@@ -1,5 +1,6 @@
 import { BellOff } from 'lucide-react';
 import { EmptyState } from '@/components/app/empty-state';
+import { useTranslation } from '@/hooks/use-translation';
 
 type Props = {
     className?: string;
@@ -7,11 +8,15 @@ type Props = {
 };
 
 export function NotificationEmpty({ className, description }: Props) {
+    const { t } = useTranslation();
+
     return (
         <EmptyState
             icon={BellOff}
-            title="You're all caught up"
-            description={description ?? 'New notifications will appear here.'}
+            title={t("You're all caught up")}
+            description={
+                description ?? t('New notifications will appear here.')
+            }
             className={className}
         />
     );

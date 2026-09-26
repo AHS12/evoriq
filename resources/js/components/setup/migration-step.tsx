@@ -32,8 +32,9 @@ export function MigrationStep({ migrated, seeded, onComplete }: Props) {
                     {t('Set up the database')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    Creates the tables and seeds roles, permissions and default
-                    settings.
+                    {t(
+                        'Creates the tables and seeds roles, permissions and default settings.',
+                    )}
                 </p>
             </div>
 
@@ -65,7 +66,7 @@ function Status({ done }: { done: boolean }) {
 
     return done ? (
         <span className="flex items-center gap-1.5 text-sm font-medium text-primary">
-            <Check className="size-4" /> Done
+            <Check className="size-4" /> {t('Done')}
         </span>
     ) : (
         <span className="text-xs text-muted-foreground">{t('Pending')}</span>

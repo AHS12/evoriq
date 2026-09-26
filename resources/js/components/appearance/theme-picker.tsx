@@ -1,10 +1,12 @@
 import { Check } from 'lucide-react';
 import { useAppearancePreferences } from '@/hooks/use-appearance';
+import { useTranslation } from '@/hooks/use-translation';
 import { THEME_OPTIONS } from '@/lib/appearance';
 import { cn } from '@/lib/utils';
 
 export function ThemePicker() {
     const { preferences, update } = useAppearancePreferences();
+    const { t } = useTranslation();
 
     return (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -29,7 +31,7 @@ export function ThemePicker() {
                             style={{ backgroundColor: theme.swatch }}
                         />
                         <span className="flex-1 text-sm font-medium">
-                            {theme.label}
+                            {t(theme.label)}
                         </span>
                         {active && <Check className="size-4 text-primary" />}
                     </button>

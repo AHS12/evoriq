@@ -12,7 +12,7 @@ import { update } from '@/routes/locale';
 import { cn } from '@/lib/utils';
 
 export function LanguageToggle() {
-    const { locale, supported } = useTranslation();
+    const { t, locale, supported } = useTranslation();
 
     const switchTo = (code: string) => {
         if (code === locale) {
@@ -39,7 +39,7 @@ export function LanguageToggle() {
                     variant="ghost"
                     size="icon"
                     className="size-9"
-                    aria-label="Change language"
+                    aria-label={t('Change language')}
                 >
                     <Languages className="size-5" />
                 </Button>

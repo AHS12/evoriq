@@ -17,6 +17,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { appLocale } from '@/lib/locale';
 import type { CommandRun, CommandRunStatus, MaintenanceAction } from '@/types';
@@ -48,6 +49,7 @@ function formatTimestamp(value: string | null): string {
 }
 
 export function CommandRuns({ runs, actions }: Props) {
+    const { t } = useTranslation();
     const [active, setActive] = useState<CommandRun | null>(null);
 
     const labels = new Map(actions.map((action) => [action.key, action.label]));
@@ -56,15 +58,17 @@ export function CommandRuns({ runs, actions }: Props) {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Recent runs</CardTitle>
+                    <CardTitle>{t('Recent runs')}</CardTitle>
                     <CardDescription>
-                        Commands run in the background. Progress updates live.
+                        {t(
+                            'Commands run in the background. Progress updates live.',
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {runs.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
-                            No commands have been run yet.
+                            {t('No commands have been run yet.')}
                         </p>
                     ) : (
                         <ul className="divide-y">
@@ -122,7 +126,7 @@ export function CommandRuns({ runs, actions }: Props) {
                                                 onClick={() => setActive(run)}
                                             >
                                                 <TerminalSquare className="size-4" />
-                                                Output
+                                                {t('Output')}
                                             </Button>
                                         )}
                                     </div>
@@ -155,7 +159,7 @@ export function CommandRuns({ runs, actions }: Props) {
                     <pre className="max-h-96 overflow-auto rounded-lg border bg-muted/50 p-4 text-xs whitespace-pre-wrap">
                         {active?.error_message ??
                             active?.output ??
-                            'No output.'}
+                            t('No output.')}
                     </pre>
                 </DialogContent>
             </Dialog>

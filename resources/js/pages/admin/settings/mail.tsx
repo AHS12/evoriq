@@ -10,6 +10,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import { test, update } from '@/routes/admin/settings/mail';
 import type { SettingGroup } from '@/types';
 
@@ -19,26 +20,30 @@ type Props = {
 
 export default function MailSettings({ group }: Props) {
     const { post, processing } = useForm({});
+    const { t } = useTranslation();
 
     const sendTest = () => post(test.url());
 
     return (
         <>
-            <Head title="Mail settings" />
+            <Head title={t('Mail settings')} />
 
             <div className="space-y-6">
                 <SettingsForm
                     group={group}
                     action={update.form()}
-                    description="Configure the SMTP provider used to send email."
+                    description={t(
+                        'Configure the SMTP provider used to send email.',
+                    )}
                 />
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Send a test email</CardTitle>
+                        <CardTitle>{t('Send a test email')}</CardTitle>
                         <CardDescription>
-                            Sends a test message to your account email using the
-                            settings above.
+                            {t(
+                                'Sends a test message to your account email using the settings above.',
+                            )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -49,7 +54,7 @@ export default function MailSettings({ group }: Props) {
                             disabled={processing}
                         >
                             {processing ? <Spinner /> : <Send />}
-                            Send test email
+                            {t('Send test email')}
                         </Button>
                     </CardContent>
                 </Card>

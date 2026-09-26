@@ -36,8 +36,9 @@ export function AdminStep({
                     {t('Super administrator')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    This account has full access. Additional users are created
-                    by you later.
+                    {t(
+                        'This account has full access. Additional users are created by you later.',
+                    )}
                 </p>
             </div>
 

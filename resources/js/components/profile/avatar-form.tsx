@@ -5,6 +5,7 @@ import InputError from '@/components/input-error';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     destroy as destroyAvatar,
     update as updateAvatar,
@@ -24,6 +25,7 @@ export function AvatarForm() {
     const inputRef = useRef<HTMLInputElement>(null);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string>();
+    const { t } = useTranslation();
 
     if (!user) {
         return null;
@@ -90,7 +92,7 @@ export function AvatarForm() {
                         onClick={() => inputRef.current?.click()}
                     >
                         {processing ? <Spinner /> : <Upload />}
-                        Upload avatar
+                        {t('Upload avatar')}
                     </Button>
 
                     {user.avatar && (
@@ -102,13 +104,13 @@ export function AvatarForm() {
                             onClick={remove}
                         >
                             <Trash2 />
-                            Remove
+                            {t('Remove')}
                         </Button>
                     )}
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                    PNG, JPG or WebP, up to 2 MB.
+                    {t('PNG, JPG or WebP, up to 2 MB.')}
                 </p>
 
                 <InputError message={error} />

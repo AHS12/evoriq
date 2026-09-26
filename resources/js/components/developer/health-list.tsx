@@ -6,7 +6,15 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useTranslation } from '@/hooks/use-translation';
 import type { HealthCheck } from '@/types';
+
+const statusKeys: Record<string, string> = {
+    ok: 'OK',
+    warning: 'Warning',
+    failed: 'Failed',
+    crashed: 'Crashed',
+};
 
 function statusVariant(
     status: string,
@@ -29,12 +37,14 @@ type Props = {
 };
 
 export function HealthList({ health }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Health checks</CardTitle>
+                <CardTitle>{t('Health checks')}</CardTitle>
                 <CardDescription>
-                    Current application health status.
+                    {t('Current application health status.')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="divide-y">
@@ -50,7 +60,7 @@ export function HealthList({ health }: Props) {
                             </p>
                         </div>
                         <Badge variant={statusVariant(check.status)}>
-                            {check.status}
+                            {t(statusKeys[check.status] ?? check.status)}
                         </Badge>
                     </div>
                 ))}

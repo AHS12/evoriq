@@ -95,8 +95,9 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
             <div className="space-y-1">
                 <h2 className="text-xl font-semibold">{t('Database')}</h2>
                 <p className="text-sm text-muted-foreground">
-                    Where Evoriq stores its synchronized data. SQLite works out
-                    of the box with no server required.
+                    {t(
+                        'Where Evoriq stores its synchronized data. SQLite works out of the box with no server required.',
+                    )}
                 </p>
             </div>
 
@@ -113,8 +114,11 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                                 value={driver.value}
                                 disabled={!driver.available}
                             >
-                                {driver.label}
-                                {!driver.available && ' (extension missing)'}
+                                {driver.available
+                                    ? driver.label
+                                    : t(':label (extension missing)', {
+                                          label: driver.label,
+                                      })}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -213,7 +217,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                         placeholder="database/database.sqlite"
                     />
                     <p className="text-xs text-muted-foreground">
-                        Created automatically if it does not exist.
+                        {t('Created automatically if it does not exist.')}
                     </p>
                     <InputError message={errors.database} />
                 </div>
@@ -229,9 +233,11 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                         className="mt-0.5"
                     />
                     <span>
-                        Create the database if it does not exist
+                        {t('Create the database if it does not exist')}
                         <span className="block text-xs text-muted-foreground">
-                            Requires a user with permission to create databases.
+                            {t(
+                                'Requires a user with permission to create databases.',
+                            )}
                         </span>
                     </span>
                 </label>
@@ -244,7 +250,7 @@ export function DatabaseStep({ drivers, defaults, onComplete }: Props) {
                     onClick={testConnection}
                     disabled={form.processing}
                 >
-                    Test connection
+                    {t('Test connection')}
                 </Button>
                 <Button type="submit" disabled={form.processing || !selected}>
                     {form.processing && <Spinner />}

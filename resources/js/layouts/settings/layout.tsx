@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useCurrentUrl } from '@/hooks/use-current-url';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editNotifications } from '@/routes/notification-preferences';
 import { edit } from '@/routes/profile';
@@ -30,19 +31,20 @@ const sidebarNavItems: NavItem[] = [
 
 export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
+    const { t } = useTranslation();
 
     return (
         <div className="space-y-6 p-4 md:p-6">
             <PageHeader
-                title="Account"
-                description="Manage your profile, security and appearance."
+                title={t('Account')}
+                description={t('Manage your profile, security and appearance.')}
             />
 
             <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
                 <aside className="w-full lg:w-48 lg:shrink-0">
                     <nav
                         className="flex flex-row gap-1 overflow-x-auto lg:flex-col"
-                        aria-label="Account"
+                        aria-label={t('Account')}
                     >
                         {sidebarNavItems.map((item, index) => (
                             <Button
@@ -58,7 +60,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                                     {item.icon && (
                                         <item.icon className="h-4 w-4" />
                                     )}
-                                    {item.title}
+                                    {t(item.title)}
                                 </Link>
                             </Button>
                         ))}

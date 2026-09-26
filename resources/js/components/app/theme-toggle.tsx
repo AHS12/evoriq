@@ -10,6 +10,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { AppearanceMode } from '@/hooks/use-appearance';
 import { useAppearancePreferences } from '@/hooks/use-appearance';
+import { useTranslation } from '@/hooks/use-translation';
 import { MODE_OPTIONS, THEME_OPTIONS } from '@/lib/appearance';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const modeIcons: Record<AppearanceMode, LucideIcon> = {
 
 export function ThemeToggle() {
     const { preferences, update } = useAppearancePreferences();
+    const { t } = useTranslation();
     const Current = modeIcons[preferences.mode] ?? Monitor;
 
     return (
@@ -30,7 +32,7 @@ export function ThemeToggle() {
                     variant="ghost"
                     size="icon"
                     className="size-9"
-                    aria-label="Appearance settings"
+                    aria-label={t('Appearance settings')}
                 >
                     <Current className="size-5" />
                 </Button>
@@ -38,7 +40,7 @@ export function ThemeToggle() {
             <PopoverContent align="end" className="w-72 space-y-4">
                 <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">
-                        Mode
+                        {t('Mode')}
                     </p>
                     <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
                         {MODE_OPTIONS.map(({ value, label }) => {
@@ -59,7 +61,7 @@ export function ThemeToggle() {
                                     )}
                                 >
                                     <Icon className="size-3.5" />
-                                    {label}
+                                    {t(label)}
                                 </button>
                             );
                         })}
@@ -68,7 +70,7 @@ export function ThemeToggle() {
 
                 <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">
-                        Theme
+                        {t('Theme')}
                     </p>
                     <div className="grid grid-cols-3 gap-2">
                         {THEME_OPTIONS.map((theme) => {
@@ -95,7 +97,7 @@ export function ThemeToggle() {
                                             backgroundColor: theme.swatch,
                                         }}
                                     />
-                                    {theme.label}
+                                    {t(theme.label)}
                                 </button>
                             );
                         })}
@@ -104,7 +106,7 @@ export function ThemeToggle() {
 
                 <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">
-                        Accent
+                        {t('Accent')}
                     </p>
                     <AccentPicker swatchClassName="size-7" />
                 </div>
@@ -112,14 +114,14 @@ export function ThemeToggle() {
                 <div className="flex items-center justify-between gap-3 border-t pt-3">
                     <span className="flex items-center gap-2 text-sm">
                         <Contrast className="size-4 text-muted-foreground" />
-                        High contrast
+                        {t('High contrast')}
                     </span>
                     <Switch
                         checked={preferences.contrast === 'high'}
                         onCheckedChange={(checked) =>
                             update({ contrast: checked ? 'high' : 'normal' })
                         }
-                        aria-label="Toggle high contrast"
+                        aria-label={t('Toggle high contrast')}
                     />
                 </div>
             </PopoverContent>

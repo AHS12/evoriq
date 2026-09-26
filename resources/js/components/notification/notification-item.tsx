@@ -1,6 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { X } from 'lucide-react';
 import type { MouseEvent } from 'react';
+import { useTranslation } from '@/hooks/use-translation';
 import { notificationIcon, priorityClasses } from '@/lib/notification';
 import { cn } from '@/lib/utils';
 import { destroy, read } from '@/routes/notifications';
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function NotificationItemRow({ notification, compact = false }: Props) {
+    const { t } = useTranslation();
     const Icon = notificationIcon(notification);
 
     const markRead = (): void => {
@@ -101,7 +103,7 @@ export function NotificationItemRow({ notification, compact = false }: Props) {
             <button
                 type="button"
                 onClick={dismiss}
-                aria-label="Dismiss notification"
+                aria-label={t('Dismiss notification')}
                 className="absolute top-2 right-2 hidden rounded-md p-1 text-muted-foreground group-hover:block hover:bg-accent hover:text-foreground"
             >
                 <X className="size-3.5" />

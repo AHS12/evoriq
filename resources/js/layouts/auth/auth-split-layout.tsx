@@ -41,7 +41,7 @@ export default function AuthSplitLayout({
 
                 <div className="relative z-10 max-w-md space-y-6">
                     <h2 className="text-2xl font-semibold tracking-tight text-balance">
-                        Historical time analytics for Clockify.
+                        {t('Historical time analytics for Clockify.')}
                     </h2>
                     <ul className="space-y-3 text-sm text-primary-foreground/70">
                         {highlights.map((highlight) => (
@@ -52,7 +52,7 @@ export default function AuthSplitLayout({
                                 <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary-foreground/10">
                                     <highlight.icon className="size-4" />
                                 </span>
-                                {highlight.text}
+                                {t(highlight.text)}
                             </li>
                         ))}
                     </ul>

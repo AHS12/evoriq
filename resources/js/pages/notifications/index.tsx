@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDataTableFilters } from '@/hooks/use-data-table-filters';
+import { useTranslation } from '@/hooks/use-translation';
 import { index as notificationsIndex, readAll } from '@/routes/notifications';
 import type {
     NotificationFilter,
@@ -59,6 +60,7 @@ export default function NotificationsIndex({
     const { apply } = useDataTableFilters(notificationsIndex.url(), filters, {
         only: ['feed'],
     });
+    const { t } = useTranslation();
 
     const markAllRead = (): void => {
         router.post(
@@ -78,11 +80,11 @@ export default function NotificationsIndex({
 
     return (
         <>
-            <Head title="Notifications" />
+            <Head title={t('Notifications')} />
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <PageHeader
-                    title="Notifications"
-                    description="Everything that needs your attention."
+                    title={t('Notifications')}
+                    description={t('Everything that needs your attention.')}
                     actions={
                         <Button
                             variant="outline"
@@ -90,7 +92,7 @@ export default function NotificationsIndex({
                             onClick={markAllRead}
                         >
                             <CheckCheck />
-                            Mark all read
+                            {t('Mark all read')}
                         </Button>
                     }
                 />
@@ -106,8 +108,10 @@ export default function NotificationsIndex({
                         }
                     >
                         <TabsList>
-                            <TabsTrigger value="all">All</TabsTrigger>
-                            <TabsTrigger value="unread">Unread</TabsTrigger>
+                            <TabsTrigger value="all">{t('All')}</TabsTrigger>
+                            <TabsTrigger value="unread">
+                                {t('Unread')}
+                            </TabsTrigger>
                         </TabsList>
                     </Tabs>
 
@@ -121,16 +125,18 @@ export default function NotificationsIndex({
                         }
                     >
                         <SelectTrigger className="w-44">
-                            <SelectValue placeholder="All priorities" />
+                            <SelectValue placeholder={t('All priorities')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All priorities</SelectItem>
+                            <SelectItem value="all">
+                                {t('All priorities')}
+                            </SelectItem>
                             {priorities.map((priority) => (
                                 <SelectItem
                                     key={priority.value}
                                     value={priority.value}
                                 >
-                                    {priority.label}
+                                    {t(priority.label)}
                                 </SelectItem>
                             ))}
                         </SelectContent>

@@ -5,6 +5,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useTranslation } from '@/hooks/use-translation';
 
 const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100];
 
@@ -15,17 +16,19 @@ type Props = {
 };
 
 export function DataTablePerPage({ value, onChange, disabled }: Props) {
+    const { t } = useTranslation();
+
     return (
         <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">
-                Per page
+                {t('Per page')}
             </span>
             <Select
                 value={String(value)}
                 onValueChange={(next) => onChange(Number(next))}
                 disabled={disabled}
             >
-                <SelectTrigger className="w-18" aria-label="Rows per page">
+                <SelectTrigger className="w-18" aria-label={t('Rows per page')}>
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

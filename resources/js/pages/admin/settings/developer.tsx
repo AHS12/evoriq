@@ -14,6 +14,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslation } from '@/hooks/use-translation';
 import type {
     DeveloperTool,
     HealthCheck,
@@ -43,6 +44,7 @@ export default function DeveloperSettings({
     system,
     maintenance,
 }: Props) {
+    const { t } = useTranslation();
     const activeRuns = maintenance.runs.filter((run) => !run.finished).length;
     const hasActiveRun = activeRuns > 0;
     const { start, stop } = usePoll(
@@ -61,17 +63,17 @@ export default function DeveloperSettings({
 
     return (
         <>
-            <Head title="Developer settings" />
+            <Head title={t('Developer settings')} />
 
             <Tabs defaultValue="overview" className="space-y-6">
                 <TabsList>
                     <TabsTrigger value="overview">
                         <LayoutDashboard />
-                        Overview
+                        {t('Overview')}
                     </TabsTrigger>
                     <TabsTrigger value="commands">
                         <Wrench />
-                        Commands
+                        {t('Commands')}
                         {activeRuns > 0 && (
                             <Badge variant="secondary" className="ml-1">
                                 {activeRuns}
@@ -90,43 +92,55 @@ export default function DeveloperSettings({
                     <div className="grid items-start gap-4 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
-                                <CardTitle>System</CardTitle>
+                                <CardTitle>{t('System')}</CardTitle>
                                 <CardDescription>
-                                    Runtime and cache status.
+                                    {t('Runtime and cache status.')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="divide-y">
                                 <InfoRow
-                                    label="Environment"
+                                    label={t('Environment')}
                                     value={system.environment}
                                 />
                                 <InfoRow
-                                    label="PHP"
+                                    label={t('PHP')}
                                     value={system.php_version}
                                 />
                                 <InfoRow
-                                    label="Laravel"
+                                    label={t('Laravel')}
                                     value={system.laravel_version}
                                 />
                                 <InfoRow
-                                    label="Timezone"
+                                    label={t('Timezone')}
                                     value={system.timezone}
                                 />
                                 <InfoRow
-                                    label="Debug mode"
-                                    value={system.debug ? 'On' : 'Off'}
+                                    label={t('Debug mode')}
+                                    value={system.debug ? t('On') : t('Off')}
                                 />
                                 <InfoRow
-                                    label="Config cached"
-                                    value={system.config_cached ? 'Yes' : 'No'}
+                                    label={t('Config cached')}
+                                    value={
+                                        system.config_cached
+                                            ? t('Yes')
+                                            : t('No')
+                                    }
                                 />
                                 <InfoRow
-                                    label="Routes cached"
-                                    value={system.routes_cached ? 'Yes' : 'No'}
+                                    label={t('Routes cached')}
+                                    value={
+                                        system.routes_cached
+                                            ? t('Yes')
+                                            : t('No')
+                                    }
                                 />
                                 <InfoRow
-                                    label="Events cached"
-                                    value={system.events_cached ? 'Yes' : 'No'}
+                                    label={t('Events cached')}
+                                    value={
+                                        system.events_cached
+                                            ? t('Yes')
+                                            : t('No')
+                                    }
                                 />
                             </CardContent>
                         </Card>
@@ -151,11 +165,13 @@ export default function DeveloperSettings({
                     ) : (
                         <Card>
                             <CardHeader>
-                                <CardTitle>Maintenance disabled</CardTitle>
+                                <CardTitle>
+                                    {t('Maintenance disabled')}
+                                </CardTitle>
                                 <CardDescription>
-                                    In-app maintenance actions are turned off.
-                                    Enable the maintenance actions flag to run
-                                    commands from the UI.
+                                    {t(
+                                        'In-app maintenance actions are turned off. Enable the maintenance actions flag to run commands from the UI.',
+                                    )}
                                 </CardDescription>
                             </CardHeader>
                         </Card>

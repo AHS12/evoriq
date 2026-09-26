@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     maintenance,
     maintenanceMode as maintenanceModeRoute,
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function MaintenanceActions({ actions, maintenanceMode, runs }: Props) {
+    const { t } = useTranslation();
     const [pending, setPending] = useState<MaintenanceAction | null>(null);
     const [processing, setProcessing] = useState(false);
     const [toggling, setToggling] = useState(false);
@@ -68,26 +70,30 @@ export function MaintenanceActions({ actions, maintenanceMode, runs }: Props) {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>Maintenance</CardTitle>
+                    <CardTitle>{t('Maintenance')}</CardTitle>
                     <CardDescription>
-                        Run maintenance commands. Restricted to super admins.
+                        {t(
+                            'Run maintenance commands. Restricted to super admins.',
+                        )}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between gap-4 rounded-lg border p-3">
                         <div>
-                            <p className="font-medium">Maintenance mode</p>
+                            <p className="font-medium">
+                                {t('Maintenance mode')}
+                            </p>
                             <p className="text-sm text-muted-foreground">
-                                Take the application offline for visitors. The
-                                developer tools stay reachable so you can turn
-                                it back on.
+                                {t(
+                                    'Take the application offline for visitors. The developer tools stay reachable so you can turn it back on.',
+                                )}
                             </p>
                         </div>
                         <Switch
                             checked={maintenanceMode}
                             onCheckedChange={toggleMaintenanceMode}
                             disabled={toggling}
-                            aria-label="Toggle maintenance mode"
+                            aria-label={t('Toggle maintenance mode')}
                         />
                     </div>
 
@@ -109,8 +115,9 @@ export function MaintenanceActions({ actions, maintenanceMode, runs }: Props) {
                     {busy && (
                         <p className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Spinner className="size-4" />
-                            A command is running. New runs are queued after it
-                            finishes.
+                            {t(
+                                'A command is running. New runs are queued after it finishes.',
+                            )}
                         </p>
                     )}
                 </CardContent>
@@ -123,9 +130,13 @@ export function MaintenanceActions({ actions, maintenanceMode, runs }: Props) {
                         setPending(null);
                     }
                 }}
-                title={pending ? `Run "${pending.label}"?` : 'Run action?'}
+                title={
+                    pending
+                        ? t('Run ":name"?', { name: pending.label })
+                        : t('Run action?')
+                }
                 description={pending?.description}
-                confirmLabel="Run"
+                confirmLabel={t('Run')}
                 loading={processing}
                 onConfirm={run}
             />

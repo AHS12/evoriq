@@ -86,7 +86,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="Time analytics for Clockify" />
+            <Head title={t('Time analytics for Clockify')} />
 
             <div className="flex min-h-svh flex-col bg-background">
                 <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur">
@@ -121,7 +121,9 @@ export default function Welcome() {
                         <div className="mx-auto w-full max-w-6xl px-4 py-20 text-center sm:px-6 lg:py-28">
                             <div className="flex justify-center">
                                 <Badge variant="outline">
-                                    Historical time analytics for Clockify
+                                    {t(
+                                        'Historical time analytics for Clockify',
+                                    )}
                                 </Badge>
                             </div>
 

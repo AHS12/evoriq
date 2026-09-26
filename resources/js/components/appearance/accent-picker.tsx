@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react';
 import { useAppearancePreferences } from '@/hooks/use-appearance';
+import { useTranslation } from '@/hooks/use-translation';
 import { ACCENT_PRESETS } from '@/lib/appearance';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +14,7 @@ const RAINBOW =
 
 export function AccentPicker({ className, swatchClassName = 'size-9' }: Props) {
     const { preferences, update } = useAppearancePreferences();
+    const { t } = useTranslation();
 
     const isPreset = ACCENT_PRESETS.some(
         (preset) =>
@@ -30,7 +32,7 @@ export function AccentPicker({ className, swatchClassName = 'size-9' }: Props) {
                     <button
                         key={preset.color}
                         type="button"
-                        aria-label={preset.label}
+                        aria-label={t(preset.label)}
                         aria-pressed={active}
                         onClick={() => update({ accent: preset.color })}
                         className={cn(
@@ -48,7 +50,7 @@ export function AccentPicker({ className, swatchClassName = 'size-9' }: Props) {
             })}
 
             <label
-                title="Custom color"
+                title={t('Custom color')}
                 className={cn(
                     'relative flex cursor-pointer items-center justify-center overflow-hidden rounded-full border ring-offset-2 ring-offset-background transition',
                     swatchClassName,
@@ -65,7 +67,7 @@ export function AccentPicker({ className, swatchClassName = 'size-9' }: Props) {
                     value={preferences.accent}
                     onChange={(event) => update({ accent: event.target.value })}
                     className="absolute inset-0 size-full cursor-pointer opacity-0"
-                    aria-label="Custom accent color"
+                    aria-label={t('Custom accent color')}
                 />
                 {!isPreset && (
                     <Check className="pointer-events-none size-4 text-white" />

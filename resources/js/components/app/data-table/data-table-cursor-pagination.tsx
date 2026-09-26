@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { CursorPaginationMeta } from '@/types';
 
@@ -19,6 +20,7 @@ export function DataTableCursorPagination({
     className,
 }: Props) {
     const { per_page, next_cursor, prev_cursor } = meta;
+    const { t } = useTranslation();
 
     return (
         <div
@@ -28,17 +30,11 @@ export function DataTableCursorPagination({
             )}
         >
             <p className="text-sm text-muted-foreground">
-                {prev_cursor === null && next_cursor === null ? (
-                    'No results'
-                ) : (
-                    <>
-                        Showing up to{' '}
-                        <span className="font-medium text-foreground">
-                            {per_page}
-                        </span>{' '}
-                        entries per page
-                    </>
-                )}
+                {prev_cursor === null && next_cursor === null
+                    ? t('No results')
+                    : t('Showing up to :count entries per page', {
+                          count: per_page,
+                      })}
             </p>
 
             <div className="flex items-center gap-2">
@@ -50,7 +46,7 @@ export function DataTableCursorPagination({
                     onClick={onPrevious}
                 >
                     <ChevronLeft />
-                    Previous
+                    {t('Previous')}
                 </Button>
                 <Button
                     type="button"
@@ -59,7 +55,7 @@ export function DataTableCursorPagination({
                     disabled={disabled || next_cursor === null}
                     onClick={onNext}
                 >
-                    Next
+                    {t('Next')}
                     <ChevronRight />
                 </Button>
             </div>

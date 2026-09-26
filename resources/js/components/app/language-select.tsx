@@ -12,7 +12,7 @@ import { useTranslation } from '@/hooks/use-translation';
 import { update } from '@/routes/locale';
 
 export function LanguageSelect({ className }: { className?: string }) {
-    const { locale, supported } = useTranslation();
+    const { t, locale, supported } = useTranslation();
     const [switching, setSwitching] = useState(false);
 
     const switchTo = (code: string) => {
@@ -44,7 +44,7 @@ export function LanguageSelect({ className }: { className?: string }) {
 
     return (
         <Select value={locale} onValueChange={switchTo} disabled={switching}>
-            <SelectTrigger className={className} aria-label="Language">
+            <SelectTrigger className={className} aria-label={t('Language')}>
                 <SelectValue>{current?.name ?? locale}</SelectValue>
             </SelectTrigger>
             <SelectContent>

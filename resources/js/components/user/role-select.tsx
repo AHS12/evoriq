@@ -5,6 +5,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from '@/components/ui/popover';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -22,8 +23,11 @@ export function RoleSelect({
     onChange,
     disabled = false,
     id,
-    placeholder = 'Select roles',
+    placeholder,
 }: Props) {
+    const { t } = useTranslation();
+    const placeholderText = placeholder ?? t('Select roles');
+
     const toggle = (role: string) => {
         onChange(
             value.includes(role)
@@ -49,7 +53,7 @@ export function RoleSelect({
                             value.length === 0 && 'text-muted-foreground',
                         )}
                     >
-                        {value.length > 0 ? value.join(', ') : placeholder}
+                        {value.length > 0 ? value.join(', ') : placeholderText}
                     </span>
                     <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
                 </Button>
@@ -85,7 +89,7 @@ export function RoleSelect({
 
                     {roles.length === 0 && (
                         <p className="px-2 py-3 text-sm text-muted-foreground">
-                            No roles available.
+                            {t('No roles available.')}
                         </p>
                     )}
                 </div>

@@ -7,6 +7,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { useTranslation } from '@/hooks/use-translation';
 import type { JobError } from '@/types';
 
 type Props = {
@@ -14,14 +15,16 @@ type Props = {
 };
 
 export function JobIssueTable({ errors }: Props) {
+    const { t } = useTranslation();
+
     return (
         <div className="overflow-hidden rounded-lg border">
             <Table>
                 <TableHeader>
                     <TableRow>
-                        <TableHead className="w-16">Row</TableHead>
-                        <TableHead className="w-28">Type</TableHead>
-                        <TableHead>Message</TableHead>
+                        <TableHead className="w-16">{t('Row')}</TableHead>
+                        <TableHead className="w-28">{t('Type')}</TableHead>
+                        <TableHead>{t('Message')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>

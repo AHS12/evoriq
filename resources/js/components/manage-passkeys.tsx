@@ -58,7 +58,7 @@ export default function ManagePasskeys(props: Props) {
             <CardHeader>
                 <CardTitle>{t('Passkeys')}</CardTitle>
                 <CardDescription>
-                    Manage your passkeys for passwordless sign-in.
+                    {t('Manage your passkeys for passwordless sign-in.')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">

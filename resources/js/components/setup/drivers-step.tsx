@@ -68,8 +68,9 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                     {t('Runtime drivers')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                    Sessions, cache and queued jobs. Redis is faster when
-                    available; the database works everywhere.
+                    {t(
+                        'Sessions, cache and queued jobs. Redis is faster when available; the database works everywhere.',
+                    )}
                 </p>
             </div>
 
@@ -78,8 +79,8 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                     <CircleCheck />
                     <AlertTitle>{t('Redis detected')}</AlertTitle>
                     <AlertDescription>
-                        {redis.message} We recommend Redis for all three
-                        drivers.
+                        {redis.message}{' '}
+                        {t('We recommend Redis for all three drivers.')}
                     </AlertDescription>
                 </Alert>
             ) : (
@@ -87,7 +88,8 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                     <TriangleAlert />
                     <AlertTitle>{t('Redis unavailable')}</AlertTitle>
                     <AlertDescription>
-                        {redis.message} Falling back to the database is fine.
+                        {redis.message}{' '}
+                        {t('Falling back to the database is fine.')}
                     </AlertDescription>
                 </Alert>
             )}
@@ -150,7 +152,7 @@ export function DriversStep({ options, defaults, redis, onComplete }: Props) {
                     </div>
                     <div className="grid gap-2 sm:col-span-3">
                         <Label htmlFor="redis_password">
-                            Redis password (optional)
+                            {t('Redis password (optional)')}
                         </Label>
                         <Input
                             id="redis_password"

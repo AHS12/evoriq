@@ -3,6 +3,7 @@ import { Monitor, Moon, Sun } from 'lucide-react';
 import type { HTMLAttributes } from 'react';
 import type { AppearanceMode } from '@/hooks/use-appearance';
 import { useAppearancePreferences } from '@/hooks/use-appearance';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 
 const modes: { value: AppearanceMode; label: string; icon: LucideIcon }[] = [
@@ -16,11 +17,12 @@ export default function AppearanceTabs({
     ...props
 }: HTMLAttributes<HTMLDivElement>) {
     const { preferences, update } = useAppearancePreferences();
+    const { t } = useTranslation();
 
     return (
         <div
             role="radiogroup"
-            aria-label="Color mode"
+            aria-label={t('Color mode')}
             className={cn(
                 'inline-flex gap-1 rounded-lg bg-muted p-1',
                 className,
@@ -42,7 +44,7 @@ export default function AppearanceTabs({
                     )}
                 >
                     <Icon className="size-4" />
-                    {label}
+                    {t(label)}
                 </button>
             ))}
         </div>

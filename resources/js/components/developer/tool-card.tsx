@@ -8,6 +8,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { useTranslation } from '@/hooks/use-translation';
 import type { DeveloperTool } from '@/types';
 
 type Props = {
@@ -15,13 +16,15 @@ type Props = {
 };
 
 export function ToolCard({ tool }: Props) {
+    const { t } = useTranslation();
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
                     {tool.title}
                     <Badge variant={tool.available ? 'default' : 'outline'}>
-                        {tool.available ? 'Available' : 'Unavailable'}
+                        {tool.available ? t('Available') : t('Unavailable')}
                     </Badge>
                 </CardTitle>
                 <CardDescription>{tool.description}</CardDescription>
@@ -29,7 +32,7 @@ export function ToolCard({ tool }: Props) {
             <CardContent>
                 <Button asChild variant="outline">
                     <a href={tool.href} target="_blank" rel="noreferrer">
-                        Open
+                        {t('Open')}
                         <ExternalLink className="size-4" />
                     </a>
                 </Button>

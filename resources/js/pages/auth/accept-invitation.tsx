@@ -55,7 +55,7 @@ export default function AcceptInvitation({ user, action }: Props) {
 
                         <div className="grid gap-2">
                             <Label htmlFor="password_confirmation">
-                                Confirm password
+                                {t('Confirm password')}
                             </Label>
                             <PasswordInput
                                 id="password_confirmation"
@@ -76,7 +76,7 @@ export default function AcceptInvitation({ user, action }: Props) {
                             disabled={processing}
                         >
                             {processing && <Spinner />}
-                            Set password and continue
+                            {t('Set password and continue')}
                         </Button>
                     </div>
                 )}

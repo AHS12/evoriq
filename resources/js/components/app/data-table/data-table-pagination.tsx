@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import type { PaginationMeta } from '@/types';
 
@@ -16,6 +17,7 @@ export function DataTablePagination({
     disabled = false,
     className,
 }: Props) {
+    const { t } = useTranslation();
     const { current_page, last_page, from, to, total } = meta;
 
     return (
@@ -26,29 +28,21 @@ export function DataTablePagination({
             )}
         >
             <p className="text-sm text-muted-foreground">
-                {total === 0 ? (
-                    'No results'
-                ) : (
-                    <>
-                        Showing{' '}
-                        <span className="font-medium text-foreground">
-                            {from}
-                        </span>
-                        –
-                        <span className="font-medium text-foreground">
-                            {to}
-                        </span>{' '}
-                        of{' '}
-                        <span className="font-medium text-foreground">
-                            {total}
-                        </span>
-                    </>
-                )}
+                {total === 0
+                    ? t('No results')
+                    : t('Showing :from–:to of :total', {
+                          from: from ?? 0,
+                          to: to ?? 0,
+                          total,
+                      })}
             </p>
 
             <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">
-                    Page {current_page} of {last_page}
+                    {t('Page :current of :last', {
+                        current: current_page,
+                        last: last_page,
+                    })}
                 </span>
                 <Button
                     type="button"
@@ -58,7 +52,7 @@ export function DataTablePagination({
                     onClick={() => onPageChange(current_page - 1)}
                 >
                     <ChevronLeft />
-                    Previous
+                    {t('Previous')}
                 </Button>
                 <Button
                     type="button"
@@ -67,7 +61,7 @@ export function DataTablePagination({
                     disabled={disabled || current_page >= last_page}
                     onClick={() => onPageChange(current_page + 1)}
                 >
-                    Next
+                    {t('Next')}
                     <ChevronRight />
                 </Button>
             </div>

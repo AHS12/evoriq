@@ -12,10 +12,12 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useNotificationPoll } from '@/hooks/use-notification-poll';
 import { useNotifications } from '@/hooks/use-notifications';
+import { useTranslation } from '@/hooks/use-translation';
 import { index as notificationsIndex, readAll } from '@/routes/notifications';
 
 export function NotificationBell() {
     const { unread_count, recent } = useNotifications();
+    const { t } = useTranslation();
     useNotificationPoll();
     const [open, setOpen] = useState(false);
 
@@ -34,7 +36,7 @@ export function NotificationBell() {
                     variant="ghost"
                     size="icon"
                     className="relative size-9"
-                    aria-label="Notifications"
+                    aria-label={t('Notifications')}
                 >
                     <Bell className="size-5" />
                     {unread_count > 0 && (
@@ -46,10 +48,10 @@ export function NotificationBell() {
             </PopoverTrigger>
             <PopoverContent align="end" className="w-96 p-0">
                 <div className="flex items-center justify-between px-4 py-3">
-                    <p className="text-sm font-medium">Notifications</p>
+                    <p className="text-sm font-medium">{t('Notifications')}</p>
                     {unread_count > 0 && (
                         <Button variant="ghost" size="sm" onClick={markAllRead}>
-                            Mark all read
+                            {t('Mark all read')}
                         </Button>
                     )}
                 </div>
@@ -73,7 +75,7 @@ export function NotificationBell() {
                             href={notificationsIndex()}
                             onClick={() => setOpen(false)}
                         >
-                            View all
+                            {t('View all')}
                         </Link>
                     </Button>
                 </div>

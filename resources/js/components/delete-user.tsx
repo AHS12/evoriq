@@ -1,3 +1,4 @@
+import { useTranslation } from '@/hooks/use-translation';
 import { Form } from '@inertiajs/react';
 import { useRef } from 'react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
@@ -23,17 +24,19 @@ import {
 import { Label } from '@/components/ui/label';
 
 export default function DeleteUser() {
+    const { t } = useTranslation();
     const passwordInput = useRef<HTMLInputElement>(null);
 
     return (
         <Card className="border-destructive/30">
             <CardHeader>
                 <CardTitle className="text-destructive">
-                    Delete account
+                    {t('Delete account')}
                 </CardTitle>
                 <CardDescription>
-                    Once your account is deleted, all of its resources and data
-                    will also be permanently deleted. This cannot be undone.
+                    {t(
+                        'Once your account is deleted, all of its resources and data will also be permanently deleted. This cannot be undone.',
+                    )}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -43,18 +46,17 @@ export default function DeleteUser() {
                             variant="destructive"
                             data-test="delete-user-button"
                         >
-                            Delete account
+                            {t('Delete account')}
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogTitle>
-                            Are you sure you want to delete your account?
+                            {t('Are you sure you want to delete your account?')}
                         </DialogTitle>
                         <DialogDescription>
-                            Once your account is deleted, all of its resources
-                            and data will also be permanently deleted. Please
-                            enter your password to confirm you would like to
-                            permanently delete your account.
+                            {t(
+                                'Once your account is deleted, all of its resources and data will also be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.',
+                            )}
                         </DialogDescription>
 
                         <Form
@@ -73,14 +75,14 @@ export default function DeleteUser() {
                                             htmlFor="password"
                                             className="sr-only"
                                         >
-                                            Password
+                                            {t('Password')}
                                         </Label>
 
                                         <PasswordInput
                                             id="password"
                                             name="password"
                                             ref={passwordInput}
-                                            placeholder="Password"
+                                            placeholder={t('Password')}
                                             autoComplete="current-password"
                                         />
 
@@ -95,7 +97,7 @@ export default function DeleteUser() {
                                                     resetAndClearErrors()
                                                 }
                                             >
-                                                Cancel
+                                                {t('Cancel')}
                                             </Button>
                                         </DialogClose>
 
@@ -108,7 +110,7 @@ export default function DeleteUser() {
                                                 type="submit"
                                                 data-test="confirm-delete-user-button"
                                             >
-                                                Delete account
+                                                {t('Delete account')}
                                             </button>
                                         </Button>
                                     </DialogFooter>
