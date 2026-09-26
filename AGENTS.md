@@ -507,6 +507,11 @@ i18n layer. **Every user-visible string must be translatable.** Rules:
 - **Locale switching does a full page reload** (`POST /locale` →
   `window.location.reload()`). `appLocale()` reads `<html lang>`, which is
   only set on a full load — never switch locale with a soft Inertia visit.
+- **One shared language switcher.** The header toggle and the Settings →
+  General language field both render `components/app/language-select` and POST
+  `/locale` — keep them in sync rather than adding new switchers. The settings
+  form does not manage `app_locale` (its validation rule is `sometimes`), so
+  the switcher is never part of the form payload.
 - **Dates/numbers** use `appLocale()` from `lib/locale.ts` with the `Intl`
   APIs; the locale middleware resolves user preference → session → global
   setting → `en`.

@@ -91,6 +91,39 @@ export default function Setup({
         .filter((requirement) => requirement.required)
         .every((requirement) => requirement.passed);
 
+    // Errors can arrive while the user is on a later step (server validation
+    // after submitting from Finish, or client validation on hidden fields) —
+    // move the wizard to the step that owns the failing fields. Only armed
+    // around a submit attempt, so errors never block free navigation.
+    const errorStep: Step | null = (() => {
+        const keys = Object.keys(errors);
+
+        if (keys.some((key) => key !== 'app_name')) {
+            return hasSuperAdmin ? 'finish' : 'admin';
+        }
+
+        if (keys.includes('app_name')) {
+            return 'finish';
+        }
+
+        return null;
+    })();
+
+    const [awaitingErrorFocus, setAwaitingErrorFocus] = useState(false);
+
+    useEffect(() => {
+        if (!awaitingErrorFocus) {
+            return;
+        }
+
+        if (errorStep) {
+            setStep(errorStep);
+            setAwaitingErrorFocus(false);
+        } else if (!form.processing) {
+            setAwaitingErrorFocus(false);
+        }
+    }, [awaitingErrorFocus, errorStep, form.processing]);
+
     const stepLabels = hasSuperAdmin
         ? [t('Welcome'), t('Database'), t('Migrate'), t('Drivers'), t('Finish')]
         : [
@@ -134,6 +167,8 @@ export default function Setup({
     };
 
     const complete = () => {
+        setAwaitingErrorFocus(true);
+
         if (!validate()) {
             return;
         }
