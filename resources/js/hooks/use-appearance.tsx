@@ -222,6 +222,17 @@ function persistAppearance(preferences: AppearancePreferences): void {
     }, PERSIST_DEBOUNCE_MS);
 }
 
+/**
+ * Drop a scheduled appearance save. Used before visits that must not be
+ * cancelled by the debounced PATCH (e.g. the locale switch reload).
+ */
+export function cancelPendingAppearancePersist(): void {
+    if (persistTimer) {
+        clearTimeout(persistTimer);
+        persistTimer = null;
+    }
+}
+
 export type UseAppearanceReturn = {
     readonly appearance: AppearanceMode;
     readonly preferences: AppearancePreferences;

@@ -92,7 +92,7 @@ enum SettingKey: string
     {
         return match ($this) {
             self::SYSTEM_NAME => __('Application display name'),
-            self::APP_LOCALE => __('Default language for guests and new users'),
+            self::APP_LOCALE => __('Language for your account. New users and guests start with the default.'),
             self::TIMEZONE => __('Default timezone for dates and reports'),
             self::DATE_FORMAT => __('How dates are displayed across the app'),
             self::WEEK_START => __('First day of the week for reports'),
@@ -230,7 +230,7 @@ enum SettingKey: string
     {
         return match ($this) {
             self::SYSTEM_NAME => ['required', 'string', 'max:255'],
-            self::APP_LOCALE => ['required', 'in:'.implode(',', array_column(AppLocale::cases(), 'value'))],
+            self::APP_LOCALE => ['sometimes', 'required', 'in:'.implode(',', array_column(AppLocale::cases(), 'value'))],
             self::TIMEZONE => ['required', 'string', 'timezone'],
             self::DATE_FORMAT => ['required', 'string', 'max:20'],
             self::WEEK_START => ['required', 'in:monday,tuesday,wednesday,thursday,friday,saturday,sunday'],

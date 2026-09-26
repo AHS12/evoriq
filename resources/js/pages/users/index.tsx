@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { ImportDialog } from '@/components/data-processing/import-dialog';
 import { UserFormDialog } from '@/components/user/user-form-dialog';
+import { UserDetailsSheet } from '@/components/user/user-details-sheet';
 import { UserRowActions } from '@/components/user/user-row-actions';
 import { UserStatusBadge } from '@/components/user/user-status-badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -80,6 +81,7 @@ export default function UsersIndex({
     const [role, setRole] = useState(filters.role ?? 'all');
     const [status, setStatus] = useState(filters.status ?? 'all');
     const [pendingDelete, setPendingDelete] = useState<User | null>(null);
+    const [detailsUser, setDetailsUser] = useState<User | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [exportOpen, setExportOpen] = useState(false);
@@ -189,7 +191,10 @@ export default function UsersIndex({
             enableSorting: false,
             header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
-                <div className="flex justify-end">
+                <div
+                    className="flex justify-end"
+                    onClick={(event) => event.stopPropagation()}
+                >
                     <UserRowActions
                         user={row.original}
                         onEdit={openEdit}
@@ -341,6 +346,7 @@ export default function UsersIndex({
                         isLoading={isLoading}
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
+                        onRowClick={setDetailsUser}
                         emptyState={{
                             icon: Users,
                             title: t('No users found'),
@@ -358,6 +364,19 @@ export default function UsersIndex({
                     />
                 </div>
             </div>
+
+            <UserDetailsSheet
+                user={detailsUser}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDetailsUser(null);
+                    }
+                }}
+                onEdit={(user) => {
+                    setDetailsUser(null);
+                    openEdit(user);
+                }}
+            />
 
             <ConfirmDialog
                 open={pendingDelete !== null}

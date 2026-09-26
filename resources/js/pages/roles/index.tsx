@@ -9,6 +9,7 @@ import { DataTablePagination } from '@/components/app/data-table/data-table-pagi
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
 import { PageHeader } from '@/components/app/page-header';
 import { RoleFormDialog } from '@/components/role/role-form-dialog';
+import { RoleDetailsSheet } from '@/components/role/role-details-sheet';
 import { RoleRowActions } from '@/components/role/role-row-actions';
 import { SystemRoleBadge } from '@/components/role/system-role-badge';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
 
     const [search, setSearch] = useState(filters.search ?? '');
     const [pendingDelete, setPendingDelete] = useState<Role | null>(null);
+    const [detailsRole, setDetailsRole] = useState<Role | null>(null);
     const [formOpen, setFormOpen] = useState(false);
     const [editingRole, setEditingRole] = useState<Role | null>(null);
 
@@ -147,7 +149,10 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
             enableSorting: false,
             header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
-                <div className="flex justify-end">
+                <div
+                    className="flex justify-end"
+                    onClick={(event) => event.stopPropagation()}
+                >
                     <RoleRowActions
                         role={row.original}
                         onEdit={openEdit}
@@ -212,6 +217,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                         isLoading={isLoading}
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
+                        onRowClick={setDetailsRole}
                         emptyState={{
                             icon: ShieldCheck,
                             title: t('No roles found'),
@@ -249,6 +255,20 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                 confirmLabel={t('Delete')}
                 destructive
                 onConfirm={confirmDelete}
+            />
+
+            <RoleDetailsSheet
+                role={detailsRole}
+                permissions={permissions}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDetailsRole(null);
+                    }
+                }}
+                onEdit={(role) => {
+                    setDetailsRole(null);
+                    openEdit(role);
+                }}
             />
 
             <RoleFormDialog
