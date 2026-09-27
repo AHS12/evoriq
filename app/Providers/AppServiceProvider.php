@@ -8,6 +8,7 @@ use App\Listeners\Backup\RecordBackupSuccess;
 use App\Services\Clockify\ClockifyClient;
 use App\Services\Clockify\ClockifyPaginator;
 use App\Services\Clockify\ClockifyRateLimiter;
+use App\Support\OrganizationContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\DevCommands;
 use Illuminate\Support\Facades\Date;
@@ -26,6 +27,15 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->registerClockifyServices();
+        $this->registerOrganizationContext();
+    }
+
+    /**
+     * Resolve the current organization once per request/job.
+     */
+    protected function registerOrganizationContext(): void
+    {
+        $this->app->singleton(OrganizationContext::class);
     }
 
     /**

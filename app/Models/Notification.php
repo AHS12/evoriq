@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\NotificationPriority;
+use App\Models\Concerns\BelongsToOrganization;
 use Database\Factories\NotificationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $action_url
  * @property array<string, mixed>|null $data
  * @property string|null $group_key
+ * @property int|null $organization_id
  * @property int|null $created_by
  * @property Carbon|null $expires_at
  * @property int|null $updated_by
@@ -31,12 +33,15 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'type', 'priority', 'title', 'body', 'action_url', 'data', 'group_key',
-    'created_by', 'expires_at',
+    'organization_id', 'created_by', 'expires_at',
 ])]
 class Notification extends Model
 {
-    /** @use HasFactory<NotificationFactory> */
-    use HasFactory;
+    /**
+     * @use HasFactory<NotificationFactory>
+     * @use BelongsToOrganization<Notification>
+     */
+    use BelongsToOrganization, HasFactory;
 
     /**
      * Get the attributes that should be cast.

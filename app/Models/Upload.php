@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AuditLogName;
 use App\Enums\MediaCollection;
 use App\Enums\UploadType;
+use App\Models\Concerns\BelongsToOrganization;
 use Database\Factories\UploadFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -27,6 +28,7 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property string|null $file_name
  * @property string|null $mime_type
  * @property int|null $size
+ * @property int|null $organization_id
  * @property int|null $created_by
  * @property int|null $updated_by
  * @property Carbon|null $created_at
@@ -34,12 +36,15 @@ use Spatie\MediaLibrary\MediaCollections\Models\Media;
  * @property-read User|null $creator
  */
 #[Fillable([
-    'uuid', 'type', 'media_id', 'url', 'name', 'file_name', 'mime_type', 'size', 'created_by', 'updated_by',
+    'uuid', 'type', 'media_id', 'url', 'name', 'file_name', 'mime_type', 'size', 'organization_id', 'created_by', 'updated_by',
 ])]
 class Upload extends Model implements HasMedia
 {
-    /** @use HasFactory<UploadFactory> */
-    use HasFactory;
+    /**
+     * @use HasFactory<UploadFactory>
+     * @use BelongsToOrganization<Upload>
+     */
+    use BelongsToOrganization, HasFactory;
 
     use InteractsWithMedia;
     use LogsActivity;

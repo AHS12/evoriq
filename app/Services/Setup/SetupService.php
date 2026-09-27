@@ -8,6 +8,7 @@ use App\Enums\SettingKey;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use Database\Seeders\OrganizationSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Database\Seeders\SettingSeeder;
@@ -54,6 +55,7 @@ class SetupService
      * @var list<class-string>
      */
     public const REQUIRED_SEEDERS = [
+        OrganizationSeeder::class,
         PermissionSeeder::class,
         RoleSeeder::class,
         SettingSeeder::class,

@@ -7,6 +7,7 @@ use App\Enums\AuditLogName;
 use App\Enums\MediaCollection;
 use App\Enums\UserRole;
 use App\Enums\UserStatus;
+use App\Models\Concerns\BelongsToOrganization;
 use App\Notifications\ResetPasswordNotification;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -38,6 +39,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property UserStatus $status
  * @property string|null $invitation_token
  * @property Carbon|null $invitation_sent_at
+ * @property int|null $organization_id
  * @property int|null $created_by
  * @property int|null $updated_by
  * @property string|null $two_factor_secret
@@ -49,12 +51,15 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $updated_at
  */
 #[Appends(['avatar'])]
-#[Fillable(['name', 'email', 'email_verified_at', 'password', 'status', 'invitation_token', 'invitation_sent_at', 'created_by', 'updated_by'])]
+#[Fillable(['name', 'email', 'email_verified_at', 'password', 'status', 'invitation_token', 'invitation_sent_at', 'organization_id', 'created_by', 'updated_by'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token', 'invitation_token'])]
 class User extends Authenticatable implements HasMedia, MustVerifyEmail, PasskeyUser
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, HasSettings, InteractsWithMedia, LogsActivity, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+    /**
+     * @use HasFactory<UserFactory>
+     * @use BelongsToOrganization<User>
+     */
+    use BelongsToOrganization, HasFactory, HasRoles, HasSettings, InteractsWithMedia, LogsActivity, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
      * Configure the automatic audit trail for the model.

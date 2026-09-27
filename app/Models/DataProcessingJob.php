@@ -6,6 +6,7 @@ use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\DataProcessingJobType;
 use App\Enums\ExportFormat;
+use App\Models\Concerns\BelongsToOrganization;
 use Database\Factories\DataProcessingJobFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -43,6 +44,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $started_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $cancel_requested_at
+ * @property int|null $organization_id
  * @property int|null $user_id
  * @property int|null $created_by
  * @property int|null $updated_by
@@ -55,12 +57,15 @@ use Illuminate\Support\Carbon;
     'input_disk', 'input_path', 'input_size', 'input_mime_type',
     'file_name', 'file_disk', 'file_path', 'original_file_name', 'file_size', 'mime_type',
     'total_items', 'processed_items', 'success_count', 'error_count', 'errors', 'error_message',
-    'started_at', 'completed_at', 'cancel_requested_at', 'user_id', 'created_by', 'updated_by',
+    'started_at', 'completed_at', 'cancel_requested_at', 'user_id', 'organization_id', 'created_by', 'updated_by',
 ])]
 class DataProcessingJob extends Model
 {
-    /** @use HasFactory<DataProcessingJobFactory> */
-    use HasFactory;
+    /**
+     * @use HasFactory<DataProcessingJobFactory>
+     * @use BelongsToOrganization<DataProcessingJob>
+     */
+    use BelongsToOrganization, HasFactory;
 
     /**
      * Get the attributes that should be cast.

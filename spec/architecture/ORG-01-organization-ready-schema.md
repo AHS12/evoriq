@@ -1,6 +1,6 @@
 # ORG-01 — Organization-ready schema
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** architecture
 - **Estimate:** M
 - **Depends on:** —
@@ -119,19 +119,19 @@ server-side (same rule as ownership — `AGENTS.md` §7.11).
 
 ## 7. Acceptance criteria
 
-- [ ] `organizations` exists with one default row after migrate+seed.
-- [ ] The listed tables carry an indexed `organization_id`.
-- [ ] Creating an org-owned model without an explicit org sets the default org.
-- [ ] Queries on org-owned models are scoped to the current org; a test proves
+- [x] `organizations` exists with one default row after migrate+seed.
+- [x] The listed tables carry an indexed `organization_id`.
+- [x] Creating an org-owned model without an explicit org sets the default org.
+- [x] Queries on org-owned models are scoped to the current org; a test proves
       two orgs cannot see each other's rows.
-- [ ] Existing behavior (single org) is unchanged; existing feature tests pass.
-- [ ] `AGENTS.md` §7.11 amended; `TDR.md` §40 amendment note added.
-- [ ] `composer check` passes.
+- [x] Existing behavior (single org) is unchanged; existing feature tests pass.
+- [x] `AGENTS.md` §7.11 amended; `TDR.md` §40 amendment note added.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
 - **Unit** `tests/Unit/OrganizationContextTest.php`: resolution order
-  (selected → user → default), caching, `set()`.
+  (selected → user → default), memoization, `reset()`.
 - **Feature** `tests/Feature/Organization/OrganizationScopeTest.php`:
   - auto-set on create;
   - global scope isolates organizations;
@@ -141,6 +141,15 @@ server-side (same rule as ownership — `AGENTS.md` §7.11).
 
 ## 9. Notes & open questions
 
+- **Implemented deviation:** the current app models that receive the column
+  (`User`, `DataProcessingJob`, `Notification`, `Upload`) also use
+  `BelongsToOrganization`, so the feature is exercised today instead of waiting
+  for `SYNC-01`/`ENT-01`. `OrganizationSeeder` backfills those small tables to
+  the default org so existing rows stay visible; the wide Clockify/analytics
+  tables are instead born with the column (no backfill cliff).
+- **Re-entrancy guard:** `OrganizationContext` marks itself resolved *before*
+  resolving so the `User` global scope (triggered while the auth user loads)
+  cannot recurse.
 - **User ↔ org:** nullable `users.organization_id` now; if true multi-org
   arrives, migrate to an `organization_user` pivot with roles. Record as a
   follow-up when multi-org is green-lit.

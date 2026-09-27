@@ -253,12 +253,27 @@ public function store(StoreReportRequest $request, ReportService $service)
 - Keep Clockify IDs separate from internal IDs; use upsert semantics keyed by the
   Clockify ID.
 
-### 7.11 Single-tenant data access
+### 7.11 Single-tenant data access (organization-ready)
 
-Evoriq is **single-tenant** — there are no organizations or tenant scopes.
-Ownership is tracked with plain foreign keys (e.g. `user_id`); derive the owning
-user from `auth()->id()` in the service and never accept it from the client.
-Enforce access with policies on every action.
+Evoriq is **single-organization** — there is no organization switcher, tenant
+scoping UI or per-org authorization. The database is nonetheless
+**organization-ready**: an `organizations` table exists with one seeded default
+organization, and organization-owned tables carry a nullable `organization_id`.
+
+- Ownership is tracked with plain foreign keys (e.g. `user_id`); derive the
+  owning user from `auth()->id()` in the service and never accept it from the
+  client. **`organization_id` is likewise never accepted from the client** — it
+  is resolved server-side by `App\Support\OrganizationContext`.
+- Models that belong to an organization use
+  `App\Models\Concerns\BelongsToOrganization`: it stamps the current org on
+  create and applies an `organization` global scope. Escape the scope with
+  `withoutOrganizationScope()` (seeders, backfills, admin tooling) or target a
+  specific org with `forOrganization($id)`.
+- The current organization resolves explicit selection → authenticated user's
+  org → default org (`Organization::default()`), memoized per request/job.
+- New organization-owned tables (`clockify_*`, `daily_*`/`monthly_*`, pipeline)
+  must add `organization_id` from day one and fold it into their natural keys.
+  See `spec/architecture/ORG-01-organization-ready-schema.md` and `DEC-005`.
 
 When combining `where` / `orWhere`, group the `orWhere` in a closure so the
 conditions bind as intended:

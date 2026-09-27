@@ -19,7 +19,7 @@ the verified API contract in `reference/clockify-api.md`.
 
 | ID       | Spec                                                                 | Est | Status | Depends | Scope |
 | -------- | -------------------------------------------------------------------- | --- | ------ | ------- | ----- |
-| `ORG-01` | [Organization-ready schema](architecture/ORG-01-organization-ready-schema.md) | M | Draft | — | `organizations` table + `organization_id` on all Clockify/pipeline/analytics tables; single default org now, multi-org later. Blocks all data-model specs. |
+| `ORG-01` | [Organization-ready schema](architecture/ORG-01-organization-ready-schema.md) | M | Done | — | `organizations` table + `organization_id` on all Clockify/pipeline/analytics tables; single default org now, multi-org later. Blocks all data-model specs. |
 
 ## Phase 0 — Craft & UI foundations
 
