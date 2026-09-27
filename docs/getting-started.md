@@ -1,7 +1,7 @@
 # Getting started
 
-Get the starter kit running in a few commands. For a deeper walkthrough —
-including local environment tools like Herd, Laragon, Lerd and EnvKit — see
+Get Evoriq running in a few commands. For a deeper walkthrough — including
+local environment tools like EnvKit, Herd, Laragon and Lerd — see
 [installation.md](installation.md).
 
 ## Requirements
@@ -18,8 +18,8 @@ including local environment tools like Herd, Laragon, Lerd and EnvKit — see
 ## 1. Clone and install
 
 ```sh
-git clone https://github.com/AHS12/laravel-react-inertia-starter-kit.git
-cd laravel-react-inertia-starter-kit
+git clone https://github.com/AHS12/evoriq.git
+cd evoriq
 composer setup
 ```
 
@@ -43,7 +43,7 @@ Then open <http://localhost:8000>.
 After `composer setup` (or `migrate --seed`) in a local environment:
 
 ```
-Email:    superadmin@example.test
+Email:    superadmin@evoriq.test
 Password: 123456
 ```
 
@@ -73,8 +73,10 @@ Both paths (CLI and installer) converge on the same code — start with either.
 Once logged in you get: Fortify authentication (2FA, passkeys), RBAC with
 system roles, user & role management, settings, a notification center, media
 uploads, an audit trail at `/audit-logs`, a Data Processing Center for async
-exports/imports at `/activity`, developer tools, and 5-language
-internationalization.
+exports/imports at `/activity`, scheduled backups with an optional S3/R2
+destination, developer tools, and 5-language internationalization. The
+**Clockify HTTP client** (a single rate-limited, paginated integration
+boundary) is in place for the synchronization engine.
 
 Re-run onboarding locally anytime with `php artisan setup:reset`
 (`--fresh` also deletes users). Development only.

@@ -17,7 +17,7 @@ tools that take the pain out of running PHP on your machine.
 
 ## Local environment tools
 
-You can run the kit with plain PHP + Composer, but these tools give you
+You can run Evoriq with plain PHP + Composer, but these tools give you
 managed PHP, a database and a nice URL in one package. **No Docker is
 required** — the project ships no Docker support.
 
@@ -126,7 +126,7 @@ Maintenance when `DEVELOPER_MAINTENANCE_ACTIONS` is on.
 ## Seeded super admin (local/testing only)
 
 ```
-Email:    superadmin@example.test
+Email:    superadmin@evoriq.test
 Password: 123456
 ```
 
@@ -143,15 +143,15 @@ admin.
 | queue   | `php artisan queue:listen --queue=critical,default,heavy`  |
 | vite    | `npm run dev`                                              |
 
-Long-running work (exports/imports) runs on the queue, so keep a worker
-alive — it is included in `composer run dev`.
+Long-running work (exports/imports and backups) runs on the queue, so keep a
+worker alive — it is included in `composer run dev`. The scheduler must also
+be running (`php artisan schedule:work` locally) for scheduled backups.
 
 ## Production notes
 
-This is a starter kit, not a deploy script. When you deploy your own product
-built on it, follow standard Laravel production practice: set `APP_DEBUG=false`,
-configure a real queue worker + supervisor, run the scheduler
-(`php artisan schedule:work` or cron), use Redis where available, serve over
-HTTPS, and run `npm run build`. **Horizon** monitors queues in production but
+Evoriq is a product, not a deploy script. When you deploy it, follow standard
+Laravel production practice: set `APP_DEBUG=false`, configure a real queue
+worker + supervisor, run the scheduler (`php artisan schedule:work` or cron),
+use Redis where available, serve over HTTPS, and run `npm run build`. **Horizon** monitors queues in production but
 requires `ext-pcntl`/`ext-posix` and therefore runs on **Linux only**; on
 Windows use `php artisan queue:work`.

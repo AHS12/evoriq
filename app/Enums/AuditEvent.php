@@ -29,6 +29,7 @@ enum AuditEvent: string
 
     case SETTING_UPDATED = 'setting_updated';
     case NOTIFICATION_PREFERENCES_UPDATED = 'notification_preferences_updated';
+    case STORAGE_UPDATED = 'storage_updated';
 
     case AVATAR_UPDATED = 'avatar_updated';
     case AVATAR_REMOVED = 'avatar_removed';
@@ -38,6 +39,10 @@ enum AuditEvent: string
     case IMPORT_COMPLETED = 'import_completed';
     case IMPORT_FAILED = 'import_failed';
     case PROCESSING_CANCELLED = 'processing_cancelled';
+
+    case BACKUP_TRIGGERED = 'backup_triggered';
+    case BACKUP_COMPLETED = 'backup_completed';
+    case BACKUP_FAILED = 'backup_failed';
 
     public function label(): string
     {
@@ -63,6 +68,7 @@ enum AuditEvent: string
             self::USER_REACTIVATED => 'User reactivated',
             self::SETTING_UPDATED => 'Setting updated',
             self::NOTIFICATION_PREFERENCES_UPDATED => 'Notification preferences updated',
+            self::STORAGE_UPDATED => 'Remote storage updated',
 
             self::AVATAR_UPDATED => 'Avatar updated',
             self::AVATAR_REMOVED => 'Avatar removed',
@@ -71,6 +77,9 @@ enum AuditEvent: string
             self::IMPORT_COMPLETED => 'Import completed',
             self::IMPORT_FAILED => 'Import failed',
             self::PROCESSING_CANCELLED => 'Processing cancelled',
+            self::BACKUP_TRIGGERED => 'Backup triggered',
+            self::BACKUP_COMPLETED => 'Backup completed',
+            self::BACKUP_FAILED => 'Backup failed',
         };
     }
 

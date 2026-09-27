@@ -32,6 +32,20 @@ Common problems and their fixes.
 - **Horizon won't start on Windows** — it is Linux-only
   (`ext-pcntl`/`ext-posix`); use `php artisan queue:work` instead.
 
+## Backups
+
+- **A backup run fails with a `pg_dump`/`mysqldump` error** — the database
+  dump tool must be on `PATH` (`pg_dump` for PostgreSQL). A missing binary is
+  recorded as a failed run with the underlying message; nothing is corrupted.
+- **The archive can't be built** — the ZIP extension (`ext-zip`) must be
+  enabled in PHP.
+- **The remote copy is skipped** — enable it under **Settings → Remote
+  storage** (it must be enabled and fully configured) and turn on **Also send
+  backups to remote storage**.
+- **Scheduled backups don't run** — the scheduler must be running
+  (`php artisan schedule:work` locally); `backup:schedule-tick` evaluates the
+  settings every five minutes.
+
 ## Frontend
 
 - **Wayfinder route helpers missing for a new route** — regenerate with
@@ -51,5 +65,5 @@ Common problems and their fixes.
 
 ## Still stuck?
 
-Search [existing issues](https://github.com/AHS12/laravel-react-inertia-starter-kit/issues)
-or open one using the bug report template.
+Search [existing issues](https://github.com/AHS12/evoriq/issues) or open one
+using the bug report template.

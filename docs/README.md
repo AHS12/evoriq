@@ -1,14 +1,16 @@
 # Documentation
 
-Welcome to the documentation for the **Laravel React Inertia Starter Kit** —
-a production-ready Laravel + Inertia/React starter kit.
+Welcome to the **Evoriq** documentation — a historical time analytics and
+reporting platform built on top of [Clockify](https://clockify.me). Clockify
+remains the time-tracking source of truth; Evoriq synchronizes data into
+PostgreSQL and provides analytics, reporting, comparisons and exports.
 
 ## Guides
 
 | Guide                                        | What it covers                                                    |
 | -------------------------------------------- | ----------------------------------------------------------------- |
 | [Getting started](getting-started.md)         | Install, boot the app, first login — the fastest path to running   |
-| [Installation](installation.md)               | Full setup details and local environment tools (Herd, Laragon, Lerd, EnvKit) |
+| [Installation](installation.md)               | Full setup details and local environment tools (EnvKit, Herd, Laragon, Lerd) |
 | [Configuration](configuration.md)             | `.env` variables, database, drivers & Redis, mail                  |
 | [Backups](backups.md)                         | Scheduled backups, remote S3/R2 destinations, retention, restore   |
 | [Architecture](architecture.md)               | Service–Repository pattern, project structure, backend/frontend conventions |
@@ -31,6 +33,7 @@ a production-ready Laravel + Inertia/React starter kit.
 
 ## Contributing
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) in the repository root for the
-development workflow, code conventions and the quality gate. Security issues
-are handled privately — see [SECURITY.md](../SECURITY.md).
+See [`AGENTS.md`](../AGENTS.md) for the architecture, conventions and the
+required quality gate (`composer check`), and [`TDR.md`](../TDR.md) for the
+full technical design. The `.agents/` directory holds the enforced rules and
+task skills.

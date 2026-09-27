@@ -1,6 +1,8 @@
 import { Link } from '@inertiajs/react';
 import {
     Bell,
+    CloudUpload,
+    DatabaseBackup,
     History,
     Mail,
     Palette,
@@ -17,10 +19,12 @@ import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
 import { edit as appearanceEdit } from '@/routes/admin/settings/appearance';
 import { edit as auditEdit } from '@/routes/admin/settings/audit';
+import { edit as backupEdit } from '@/routes/admin/settings/backup';
 import { edit as developerEdit } from '@/routes/admin/settings/developer';
 import { edit as generalEdit } from '@/routes/admin/settings/general';
 import { edit as mailEdit } from '@/routes/admin/settings/mail';
 import { edit as notificationsEdit } from '@/routes/admin/settings/notifications';
+import { edit as storageEdit } from '@/routes/admin/settings/storage';
 import type { NavItem } from '@/types';
 
 export default function AdminLayout({ children }: PropsWithChildren) {
@@ -48,6 +52,16 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             title: 'Audit log',
             href: auditEdit(),
             icon: History,
+        },
+        {
+            title: 'Remote storage',
+            href: storageEdit(),
+            icon: CloudUpload,
+        },
+        {
+            title: 'Backups',
+            href: backupEdit(),
+            icon: DatabaseBackup,
         },
         {
             title: 'Appearance',

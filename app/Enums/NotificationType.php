@@ -21,6 +21,8 @@ enum NotificationType: string
     case JOB_CANCELLED = 'job.cancelled';
     case CLOCKIFY_SYNC_COMPLETED = 'clockify.sync.completed';
     case CLOCKIFY_SYNC_FAILED = 'clockify.sync.failed';
+    case BACKUP_FAILED = 'backup.failed';
+    case BACKUP_UNHEALTHY = 'backup.unhealthy';
 
     public function label(): string
     {
@@ -36,6 +38,8 @@ enum NotificationType: string
             self::JOB_CANCELLED => 'Job cancelled',
             self::CLOCKIFY_SYNC_COMPLETED => 'Sync completed',
             self::CLOCKIFY_SYNC_FAILED => 'Sync failed',
+            self::BACKUP_FAILED => 'Backup failed',
+            self::BACKUP_UNHEALTHY => 'Backup unhealthy',
         };
     }
 
@@ -47,8 +51,8 @@ enum NotificationType: string
             self::EXPORT_COMPLETED, self::IMPORT_COMPLETED, self::REPORT_COMPLETED,
             self::CLOCKIFY_SYNC_COMPLETED => NotificationPriority::SUCCESS,
             self::EXPORT_FAILED, self::IMPORT_FAILED, self::REPORT_FAILED,
-            self::CLOCKIFY_SYNC_FAILED => NotificationPriority::CRITICAL,
-            self::JOB_CANCELLED => NotificationPriority::WARNING,
+            self::CLOCKIFY_SYNC_FAILED, self::BACKUP_FAILED => NotificationPriority::CRITICAL,
+            self::JOB_CANCELLED, self::BACKUP_UNHEALTHY => NotificationPriority::WARNING,
         };
     }
 
@@ -69,6 +73,8 @@ enum NotificationType: string
             self::JOB_CANCELLED => 'ban',
             self::CLOCKIFY_SYNC_COMPLETED => 'refresh-cw',
             self::CLOCKIFY_SYNC_FAILED => 'alert-triangle',
+            self::BACKUP_FAILED => 'archive-x',
+            self::BACKUP_UNHEALTHY => 'shield-alert',
         };
     }
 

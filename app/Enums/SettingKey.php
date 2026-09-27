@@ -2,6 +2,7 @@
 
 namespace App\Enums;
 
+use Closure;
 use DateTimeZone;
 
 /**
@@ -31,6 +32,17 @@ enum SettingKey: string
     case AUDIT_RETENTION_SETTINGS = 'audit_retention_settings';
     case AUDIT_RETENTION_DOMAIN = 'audit_retention_domain';
 
+    case BACKUP_ENABLED = 'backup_enabled';
+    case BACKUP_FREQUENCY = 'backup_frequency';
+    case BACKUP_TIME = 'backup_time';
+    case BACKUP_SEND_TO_REMOTE = 'backup_send_to_remote';
+    case BACKUP_KEEP_DAYS = 'backup_keep_days';
+    case BACKUP_MAX_STORAGE_MB = 'backup_max_storage_mb';
+    case BACKUP_MAX_AGE_DAYS = 'backup_max_age_days';
+    case BACKUP_NOTIFY_ON_FAILURE = 'backup_notify_on_failure';
+    case BACKUP_EMAIL_ENABLED = 'backup_email_enabled';
+    case BACKUP_EMAIL_RECIPIENTS = 'backup_email_recipients';
+
     case MAIL_MAILER = 'mail_mailer';
     case MAIL_HOST = 'mail_host';
     case MAIL_PORT = 'mail_port';
@@ -53,6 +65,10 @@ enum SettingKey: string
             self::NOTIFICATION_ENABLED, self::NOTIFICATION_RETENTION_DAYS => 'notifications',
             self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
             self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => 'audit',
+            self::BACKUP_ENABLED, self::BACKUP_FREQUENCY, self::BACKUP_TIME, self::BACKUP_SEND_TO_REMOTE,
+            self::BACKUP_KEEP_DAYS, self::BACKUP_MAX_STORAGE_MB, self::BACKUP_MAX_AGE_DAYS,
+            self::BACKUP_NOTIFY_ON_FAILURE, self::BACKUP_EMAIL_ENABLED,
+            self::BACKUP_EMAIL_RECIPIENTS => 'backup',
             self::MAIL_MAILER, self::MAIL_HOST, self::MAIL_PORT, self::MAIL_USERNAME,
             self::MAIL_PASSWORD, self::MAIL_ENCRYPTION, self::MAIL_FROM_ADDRESS,
             self::MAIL_FROM_NAME => 'mail',
@@ -76,6 +92,16 @@ enum SettingKey: string
             self::AUDIT_RETENTION_RBAC => __('Roles & permissions log retention'),
             self::AUDIT_RETENTION_SETTINGS => __('Settings log retention'),
             self::AUDIT_RETENTION_DOMAIN => __('Domain log retention'),
+            self::BACKUP_ENABLED => __('Enable backups'),
+            self::BACKUP_FREQUENCY => __('Backup frequency'),
+            self::BACKUP_TIME => __('Backup time'),
+            self::BACKUP_SEND_TO_REMOTE => __('Also send backups to remote storage'),
+            self::BACKUP_KEEP_DAYS => __('Keep all backups for (days)'),
+            self::BACKUP_MAX_STORAGE_MB => __('Maximum backup storage (MB)'),
+            self::BACKUP_MAX_AGE_DAYS => __('Backup freshness check (days)'),
+            self::BACKUP_NOTIFY_ON_FAILURE => __('Notify on backup failure'),
+            self::BACKUP_EMAIL_ENABLED => __('Email backup archives'),
+            self::BACKUP_EMAIL_RECIPIENTS => __('Email recipients'),
             self::MAIL_MAILER => __('Mailer'),
             self::MAIL_HOST => __('SMTP host'),
             self::MAIL_PORT => __('SMTP port'),
@@ -104,6 +130,16 @@ enum SettingKey: string
             self::AUDIT_RETENTION_RBAC => __('How long role and permission changes are kept before pruning'),
             self::AUDIT_RETENTION_SETTINGS => __('How long setting changes are kept before pruning'),
             self::AUDIT_RETENTION_DOMAIN => __('How long domain events (exports, imports, uploads) are kept before pruning'),
+            self::BACKUP_ENABLED => __('Take scheduled backups of files and the database'),
+            self::BACKUP_FREQUENCY => __('How often a scheduled backup runs'),
+            self::BACKUP_TIME => __('Time of day the scheduled backup runs'),
+            self::BACKUP_SEND_TO_REMOTE => __('Keep the local backup and also send a copy to the remote storage when it is configured'),
+            self::BACKUP_KEEP_DAYS => __('Days to keep every backup before cleanup keeps only dailies, weeklies and monthlies'),
+            self::BACKUP_MAX_STORAGE_MB => __('Oldest backups are removed once backups use more than this many megabytes'),
+            self::BACKUP_MAX_AGE_DAYS => __('A backup older than this many days is flagged as unhealthy'),
+            self::BACKUP_NOTIFY_ON_FAILURE => __('Send an in-app notification when a backup fails or is unhealthy'),
+            self::BACKUP_EMAIL_ENABLED => __('Email the backup archive to backup managers after each successful backup (skipped for very large archives)'),
+            self::BACKUP_EMAIL_RECIPIENTS => __('Comma-separated email addresses that receive the backup archive. Leave empty to email the backup managers.'),
             self::MAIL_MAILER => __('Transport used to send email'),
             self::MAIL_HOST => __('SMTP server hostname'),
             self::MAIL_PORT => __('SMTP server port'),
@@ -132,6 +168,16 @@ enum SettingKey: string
             self::AUDIT_RETENTION_RBAC => 365,
             self::AUDIT_RETENTION_SETTINGS => 180,
             self::AUDIT_RETENTION_DOMAIN => 90,
+            self::BACKUP_ENABLED => true,
+            self::BACKUP_FREQUENCY => 'daily',
+            self::BACKUP_TIME => '01:30',
+            self::BACKUP_SEND_TO_REMOTE => false,
+            self::BACKUP_KEEP_DAYS => 14,
+            self::BACKUP_MAX_STORAGE_MB => 5000,
+            self::BACKUP_MAX_AGE_DAYS => 1,
+            self::BACKUP_NOTIFY_ON_FAILURE => true,
+            self::BACKUP_EMAIL_ENABLED => false,
+            self::BACKUP_EMAIL_RECIPIENTS => null,
             default => null,
         };
     }
@@ -139,8 +185,11 @@ enum SettingKey: string
     public function type(): string
     {
         return match ($this) {
-            self::EXPORT_CLEANUP_DAYS, self::MAIL_PORT, self::NOTIFICATION_RETENTION_DAYS => 'integer',
-            self::NOTIFICATION_ENABLED => 'boolean',
+            self::EXPORT_CLEANUP_DAYS, self::MAIL_PORT, self::NOTIFICATION_RETENTION_DAYS,
+            self::BACKUP_KEEP_DAYS, self::BACKUP_MAX_STORAGE_MB, self::BACKUP_MAX_AGE_DAYS => 'integer',
+            self::NOTIFICATION_ENABLED, self::BACKUP_ENABLED, self::BACKUP_NOTIFY_ON_FAILURE,
+            self::BACKUP_SEND_TO_REMOTE, self::BACKUP_EMAIL_ENABLED => 'boolean',
+            self::BACKUP_FREQUENCY, self::BACKUP_TIME => 'select',
             self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
             self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => 'select',
             self::TIMEZONE, self::MAIL_MAILER, self::MAIL_ENCRYPTION, self::WEEK_START,
@@ -183,6 +232,11 @@ enum SettingKey: string
             self::APP_LOCALE => AppLocale::options(),
             self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
             self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => self::retentionOptions(),
+            self::BACKUP_FREQUENCY => [
+                ['label' => __('Daily'), 'value' => 'daily'],
+                ['label' => __('Weekly'), 'value' => 'weekly'],
+            ],
+            self::BACKUP_TIME => self::backupTimeOptions(),
             default => [],
         };
     }
@@ -206,6 +260,23 @@ enum SettingKey: string
     }
 
     /**
+     * Run-time choices for the scheduled backup time. Times inside the DST
+     * transition window (02:00–03:00) are deliberately excluded.
+     *
+     * @return array<int, array{label: string, value: string}>
+     */
+    private static function backupTimeOptions(): array
+    {
+        return [
+            ['label' => '00:30', 'value' => '00:30'],
+            ['label' => '01:30', 'value' => '01:30'],
+            ['label' => '04:30', 'value' => '04:30'],
+            ['label' => '05:30', 'value' => '05:30'],
+            ['label' => '23:30', 'value' => '23:30'],
+        ];
+    }
+
+    /**
      * Whether the value must be encrypted at rest and never sent to the client.
      */
     public function isSecret(): bool
@@ -224,7 +295,7 @@ enum SettingKey: string
     /**
      * Validation rules for this setting.
      *
-     * @return array<int, string>
+     * @return array<int, string|Closure(string, mixed, Closure(string): void): void>
      */
     public function rules(): array
     {
@@ -239,6 +310,25 @@ enum SettingKey: string
             self::NOTIFICATION_RETENTION_DAYS => ['required', 'integer', 'min:1', 'max:3650'],
             self::AUDIT_RETENTION_AUTH, self::AUDIT_RETENTION_SECURITY, self::AUDIT_RETENTION_RBAC,
             self::AUDIT_RETENTION_SETTINGS, self::AUDIT_RETENTION_DOMAIN => ['required', 'integer', 'min:30', 'max:3650'],
+            self::BACKUP_ENABLED => ['required', 'boolean'],
+            self::BACKUP_FREQUENCY => ['required', 'in:daily,weekly'],
+            self::BACKUP_TIME => ['required', 'in:00:30,01:30,04:30,05:30,23:30'],
+            self::BACKUP_SEND_TO_REMOTE => ['required', 'boolean'],
+            self::BACKUP_KEEP_DAYS => ['required', 'integer', 'min:3', 'max:365'],
+            self::BACKUP_MAX_STORAGE_MB => ['required', 'integer', 'min:100', 'max:1000000'],
+            self::BACKUP_MAX_AGE_DAYS => ['required', 'integer', 'min:1', 'max:30'],
+            self::BACKUP_NOTIFY_ON_FAILURE => ['required', 'boolean'],
+            self::BACKUP_EMAIL_ENABLED => ['required', 'boolean'],
+            self::BACKUP_EMAIL_RECIPIENTS => [
+                'nullable', 'string', 'max:1000',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    foreach (preg_split('/[,\s]+/', (string) $value, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $email) {
+                        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                            $fail(__('Each recipient must be a valid email address.'));
+                        }
+                    }
+                },
+            ],
             self::MAIL_MAILER => ['required', 'in:smtp,log,array'],
             self::MAIL_HOST => ['nullable', 'string', 'max:255'],
             self::MAIL_PORT => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -289,6 +379,7 @@ enum SettingKey: string
             'notifications' => __('Notifications'),
             'audit' => __('Audit log'),
             'mail' => __('Mail'),
+            'backup' => __('Backups'),
         ];
     }
 }

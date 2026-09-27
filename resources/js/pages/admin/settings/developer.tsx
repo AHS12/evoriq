@@ -15,7 +15,9 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
+import { appLocale } from '@/lib/locale';
 import type {
+    BackupDevStatus,
     DeveloperTool,
     HealthCheck,
     MaintenanceConfig,
@@ -26,6 +28,7 @@ type Props = {
     tools: DeveloperTool[];
     health: HealthCheck[];
     system: SystemInfo;
+    backup: BackupDevStatus;
     maintenance: MaintenanceConfig;
 };
 
@@ -42,6 +45,7 @@ export default function DeveloperSettings({
     tools,
     health,
     system,
+    backup,
     maintenance,
 }: Props) {
     const { t } = useTranslation();
@@ -94,7 +98,7 @@ export default function DeveloperSettings({
                             <CardHeader>
                                 <CardTitle>{t('System')}</CardTitle>
                                 <CardDescription>
-                                    {t('Runtime and cache status.')}
+                                    {t('Runtime, cache and backup status.')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="divide-y">
@@ -140,6 +144,32 @@ export default function DeveloperSettings({
                                         system.events_cached
                                             ? t('Yes')
                                             : t('No')
+                                    }
+                                />
+                                <InfoRow
+                                    label={t('Next backup run')}
+                                    value={
+                                        backup.next_run_at
+                                            ? new Date(
+                                                  backup.next_run_at,
+                                              ).toLocaleString(appLocale(), {
+                                                  dateStyle: 'short',
+                                                  timeStyle: 'short',
+                                              })
+                                            : t('Not scheduled')
+                                    }
+                                />
+                                <InfoRow
+                                    label={t('Last backup')}
+                                    value={
+                                        backup.last_backup_at
+                                            ? new Date(
+                                                  backup.last_backup_at,
+                                              ).toLocaleString(appLocale(), {
+                                                  dateStyle: 'short',
+                                                  timeStyle: 'short',
+                                              })
+                                            : t('No backup yet')
                                     }
                                 />
                             </CardContent>

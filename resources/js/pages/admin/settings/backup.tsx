@@ -1,6 +1,5 @@
 import { Head, router, usePoll } from '@inertiajs/react';
-import { History } from 'lucide-react';
-import { DatabaseBackup } from 'lucide-react';
+import { DatabaseBackup, History } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BackupRuns } from '@/components/backup/backup-runs';
 import { ConfirmDialog } from '@/components/app/confirm-dialog';
@@ -12,8 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { appLocale } from '@/lib/locale';
 import { run, update } from '@/routes/admin/settings/backup';
-import type { BackupStatus, SettingGroup } from '@/types';
-import type { BackupRun, Paginated } from '@/types';
+import type { BackupRun, BackupStatus, Paginated, SettingGroup } from '@/types';
 
 type Props = {
     group: SettingGroup;
@@ -92,7 +90,7 @@ export default function BackupSettings({ group, runs, status }: Props) {
 
     return (
         <>
-            <Head title="Backup settings" />
+            <Head title={t('Backup settings')} />
 
             <Tabs value={tab} onValueChange={changeTab} className="space-y-6">
                 <TabsList>

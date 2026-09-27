@@ -1,6 +1,6 @@
 # Backups
 
-The starter ships with an automated backup system built on
+Evoriq ships with an automated backup system built on
 [spatie/laravel-backup](https://spatie.be/docs/laravel-backup). It archives all
 application files plus a database dump into a single zip, stores it on the
 configured destination, prunes old archives and continuously checks the health
@@ -95,10 +95,9 @@ restore:
 
 1. Download the backup zip from **Settings → Backups → Run history** (or pull
    it from the remote bucket).
-2. **Database:** unzip, locate the dump (e.g. `laravel_react_starter.sql`) and
-   import it:
+2. **Database:** unzip, locate the dump (e.g. `evoriq.sql`) and import it:
    ```sh
-   psql -h 127.0.0.1 -U postgres -d laravel_react_starter -f laravel_react_starter.sql
+   psql -h 127.0.0.1 -U postgres -d evoriq -f evoriq.sql
    ```
 3. **Files:** copy the archived application directories back into the project,
    preserving `.env` (or restore it selectively — the zip contains it).

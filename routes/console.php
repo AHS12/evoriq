@@ -19,6 +19,13 @@ Schedule::command('notifications:prune')->daily();
 // Retention: prune audit log entries per each channel's retention window.
 Schedule::command('audit:clean')->dailyAt('03:30');
 
+// Backups: the tick evaluates the backup settings and dispatches the backup,
+// cleanup and health-check work that is due (DB-driven schedule).
+Schedule::command('backup:schedule-tick')
+    ->everyFiveMinutes()
+    ->runInBackground()
+    ->withoutOverlapping();
+
 // Application health: run the checks and keep the schedule heartbeat fresh.
 Schedule::command('health:check')->everyFiveMinutes();
 Schedule::command('health:schedule-check-heartbeat')->everyMinute();

@@ -1,9 +1,9 @@
 # Architecture
 
-The kit follows a strict **Service–Repository** architecture so product work
-can start on day one: controllers are thin, services own business logic and
-transactions, repositories own every database query, and DTOs are the typed
-currency between the HTTP layer and services.
+Evoriq follows a strict **Service–Repository** architecture: controllers are
+thin, services own business logic and transactions, repositories own every
+database query, and DTOs are the typed currency between the HTTP layer and
+services.
 
 ```text
 HTTP request
@@ -50,7 +50,10 @@ Key rules:
   `auth()->id()` in the service, never trusted from the client.
 
 External integrations belong under `app/Services/{Vendor}/**` as
-infrastructure — never inside module services.
+infrastructure — never inside module services. The Clockify integration
+(`app/Services/Clockify/**`) is the single HTTP boundary to Clockify (client,
+paginator, rate limiter); controllers, models, jobs and services must never
+call the Clockify API directly.
 
 ## Audit trail
 
@@ -68,6 +71,16 @@ and runs as a queued job on the `heavy` channel. The single producer entry
 point is `DataProcessingJobService::dispatch(JobRequest)`. Entities are
 registered on `App\Enums\DataEntity`; exporter/importer classes live in
 `app/Exports` and `app/Imports`. The UI lives at `/activity`.
+
+## Backups
+
+The backup system is built on `spatie/laravel-backup`. The scheduler runs a
+lightweight `backup:schedule-tick` command every five minutes that reads the
+backup settings and dispatches the backup, cleanup and health-check work that
+is due — so the schedule is database-driven and needs no restart when settings
+change. Runs are recorded on `App\Models\BackupRun`, actual backups run on the
+`heavy` queue channel, and finished archives can be downloaded from the run
+history. See [backups.md](backups.md).
 
 ## RBAC
 

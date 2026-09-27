@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Backup\BackupController;
 use App\Http\Controllers\Developer\DeveloperController;
 use App\Http\Controllers\Setting\AppearanceController;
 use App\Http\Controllers\Setting\MailSettingController;
 use App\Http\Controllers\Setting\SettingController;
+use App\Http\Controllers\Setting\StorageSettingController;
 use App\Http\Middleware\EnsureDeveloperAccess;
 use Illuminate\Support\Facades\Route;
 
@@ -52,6 +54,37 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             ->middleware('can:settings.update')
             ->defaults('group', 'audit')
             ->name('audit.update');
+
+        Route::get('storage', [StorageSettingController::class, 'edit'])
+            ->middleware('can:settings.view')
+            ->name('storage.edit');
+
+        Route::patch('storage', [StorageSettingController::class, 'update'])
+            ->middleware('can:settings.update')
+            ->name('storage.update');
+
+        Route::post('storage/test', [StorageSettingController::class, 'test'])
+            ->middleware('can:settings.update')
+            ->name('storage.test');
+
+        Route::get('backup', [BackupController::class, 'index'])
+            ->middleware('can:backup.view')
+            ->name('backup.edit');
+
+        Route::post('backup/run', [BackupController::class, 'run'])
+            ->middleware('can:backup.manage')
+            ->name('backup.run');
+
+        Route::get('backup-runs/{backupRun}/download', [BackupController::class, 'download'])
+            ->middleware('can:backup.view')
+            ->name('backup.download');
+
+        // The backup settings form posts through the shared settings
+        // controller; gated by backup.manage instead of settings.update.
+        Route::patch('backup', [SettingController::class, 'update'])
+            ->middleware('can:backup.manage')
+            ->defaults('group', 'backup')
+            ->name('backup.update');
 
         Route::get('appearance', [AppearanceController::class, 'edit'])
             ->middleware('can:settings.view')

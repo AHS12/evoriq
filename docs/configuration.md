@@ -10,7 +10,7 @@ APP_URL=http://localhost:8000
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=laravel_react_starter
+DB_DATABASE=evoriq
 DB_USERNAME=postgres
 DB_PASSWORD=
 
@@ -55,7 +55,8 @@ php artisan schedule:work              # run the scheduler locally
 ```
 
 Scheduled work (`routes/console.php`): audit log retention pruning,
-completed data-processing cleanup, health checks and Pulse metrics.
+completed data-processing cleanup, the backup schedule tick, health checks and
+Pulse metrics.
 
 **Queue driver:** Redis by default in production setups (`QUEUE_CONNECTION=redis`);
 `database` and `file` are selectable. `retry_after` must exceed the longest
@@ -79,11 +80,56 @@ The `/setup` wizard can write database and driver settings to `.env` for you —
 see [getting-started.md](getting-started.md). It refuses to run once setup is
 completed; use `php artisan setup:reset` to re-open it in development.
 
+## Clockify integration
+
+Evoriq synchronizes data from [Clockify](https://clockify.me). Clockify IDs are
+kept separate from internal IDs and every request goes through the single
+rate-limited, paginated HTTP boundary (`app/Services/Clockify/**`); credentials
+are stored per-connection and encrypted, never exposed to the frontend.
+
+```dotenv
+CLOCKIFY_API_URL=https://api.clockify.me/api/v1
+CLOCKIFY_REPORTS_URL=https://reports.api.clockify.me/v1
+CLOCKIFY_TIMEOUT=30
+CLOCKIFY_RETRY_TIMES=3
+CLOCKIFY_RATE_LIMIT_RPS=50
+CLOCKIFY_PAGE_SIZE=200
+```
+
+## Backups & remote storage
+
+Scheduled backups (files + database) are configured in-app under
+**Administration → Settings → Backups**; the schedule, destination and
+retention windows are database settings, not `.env`. Backups always land on
+the local `backups` disk, and can optionally mirror to an S3/R2 bucket
+configured under **Administration → Settings → Remote storage** (written to
+`.env` as `AWS_*`). These keys are the config-level fallbacks:
+
+```dotenv
+AWS_ENABLED=false
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=
+AWS_ENDPOINT=
+
+BACKUP_ARCHIVE_PASSWORD=
+BACKUP_MAX_AGE_DAYS=1
+BACKUP_MAX_MB=5000
+BACKUP_KEEP_DAYS=14
+BACKUP_EMAIL_MAX_ATTACHMENT_MB=10
+BACKUP_EMAIL_TO=
+DB_DUMP_TIMEOUT=900
+```
+
+See [backups.md](backups.md) for the full guide.
+
 ## Settings vs environment
 
-- **Infrastructure** (database, drivers, mail transport) lives in `.env`.
+- **Infrastructure** (database, drivers, mail transport, Clockify and remote
+  storage credentials) lives in `.env`.
 - **Application behavior** (appearance, locale defaults, audit retention,
-  feature toggles) lives in global settings editable at
+  backup schedule, feature toggles) lives in global settings editable at
   **Administration → Settings**, backed by `App\Enums\SettingKey`.
 - **Per-user preferences** (appearance, language) are stored per user and
   resolved by the locale/appearance middleware.

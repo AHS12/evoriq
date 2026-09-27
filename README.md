@@ -25,6 +25,8 @@ of time.
 - **Media & file uploads** via `spatie/laravel-medialibrary`.
 - **Async exports** tracked as data-processing jobs and generated in the
   background.
+- **Automated backups** — scheduled file and database backups with a run
+  history, health checks and an optional S3/R2 off-site destination.
 - **Developer tooling** — Telescope, Pulse, Horizon and health checks.
 - **First-run browser installer** — configure the database and runtime drivers
   without touching `.env` by hand.
@@ -188,8 +190,9 @@ composer run queue                     # or: php artisan queue:work --queue=crit
 php artisan schedule:work              # run the scheduler locally
 ```
 
-Scheduled work (`routes/console.php`): completed data-processing cleanup,
-health checks and Pulse metrics.
+Scheduled work (`routes/console.php`): audit log retention pruning, completed
+data-processing cleanup, the backup schedule tick, health checks and Pulse
+metrics.
 
 **Horizon** monitors queues in production but requires `ext-pcntl`/`ext-posix`
 and therefore runs on **Linux only**. On Windows use `php artisan queue:work`.
@@ -287,6 +290,26 @@ php artisan test --testsuite=Unit      # unit only
 
 Tests use Pest with `RefreshDatabase` against an in-memory SQLite database
 (`phpunit.xml`). The suite seeds RBAC and settings in every feature test.
+
+---
+
+## Documentation
+
+Full guides live in [`docs/`](docs/README.md):
+
+| Guide | What it covers |
+| ----- | -------------- |
+| [Getting started](docs/getting-started.md) | Install, boot the app, first login |
+| [Installation](docs/installation.md) | Setup details and local environment tools |
+| [Configuration](docs/configuration.md) | `.env`, drivers & Redis, Clockify, backups, mail |
+| [Backups](docs/backups.md) | Scheduled backups, S3/R2 destinations, retention, restore |
+| [Architecture](docs/architecture.md) | Service–Repository, Clockify boundary, backups |
+| [Testing](docs/testing.md) | Pest, the quality gate, git hooks |
+| [Translations](docs/translations.md) | The 5-locale i18n layer |
+| [Troubleshooting](docs/troubleshooting.md) | Common problems and fixes |
+
+The full technical design is in [`TDR.md`](TDR.md); the architecture and
+contributor conventions are in [`AGENTS.md`](AGENTS.md).
 
 ---
 

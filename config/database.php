@@ -97,6 +97,11 @@ return [
             'prefix_indexes' => true,
             'search_path' => 'public',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'dump' => [
+                // spatie/laravel-backup uses pg_dump; give large databases a
+                // generous window before the dump process is killed.
+                'timeout' => (int) env('DB_DUMP_TIMEOUT', 900),
+            ],
         ],
 
         'sqlsrv' => [
