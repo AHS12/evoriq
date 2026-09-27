@@ -1,7 +1,7 @@
 import { usePoll } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
 import { useNotifications } from '@/hooks/use-notifications';
+import { toast } from '@/lib/toast';
 import type { NotificationItem, NotificationPreferences } from '@/types';
 
 /**
@@ -59,7 +59,10 @@ function announce(
     }
 
     if (preferences.inapp) {
-        toast(item.title, { description: item.body ?? undefined });
+        toast.info(item.title, {
+            description: item.body ?? undefined,
+            id: `notification-${item.id}`,
+        });
 
         if (preferences.sound) {
             playChime();

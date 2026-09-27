@@ -79,7 +79,7 @@ export function JobStatCards({ stats, selected, onSelect }: Props) {
                         onClick={() => onSelect(active ? 'all' : card.status)}
                         aria-pressed={active}
                         className={cn(
-                            'rounded-xl border bg-card p-3 text-left transition-colors hover:bg-muted/40',
+                            'rounded-xl border bg-card p-3 text-left transition-smooth-fast hover:bg-muted/40',
                             active && 'border-primary ring-1 ring-primary',
                         )}
                     >

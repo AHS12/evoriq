@@ -24,7 +24,7 @@ export function JobProgress({ job, className }: Props) {
             >
                 <div
                     className={cn(
-                        'h-full rounded-full bg-primary transition-[width] duration-500 ease-out motion-reduce:transition-none',
+                        'h-full rounded-full bg-primary transition-[width] duration-slow ease-standard motion-reduce:transition-none',
                         indeterminate &&
                             'animate-pulse motion-reduce:animate-none',
                     )}

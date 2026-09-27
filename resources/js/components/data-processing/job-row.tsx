@@ -22,7 +22,7 @@ export function JobRow({ job, onOpen }: Props) {
     const meta = isActiveStatus(job.status) ? computeEta(job, t) : job.duration;
 
     return (
-        <div className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/40">
+        <div className="flex items-start gap-3 px-4 py-3 transition-smooth-fast hover:bg-muted/40">
             <JobTypeIcon icon={job.entity_icon ?? job.type_icon} />
 
             <button

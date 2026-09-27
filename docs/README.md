@@ -16,6 +16,7 @@ PostgreSQL and provides analytics, reporting, comparisons and exports.
 | [Architecture](architecture.md)               | Service–Repository pattern, project structure, backend/frontend conventions |
 | [Testing](testing.md)                         | Pest setup, the quality gate, git hooks                           |
 | [Translations](translations.md)               | The 5-locale i18n layer and how to add strings                    |
+| [UI conventions](ui-conventions.md)           | Motion tokens, feedback primitives, skeletons, toasts, live regions |
 | [Troubleshooting](troubleshooting.md)         | Common problems and fixes                                         |
 
 ## In the application

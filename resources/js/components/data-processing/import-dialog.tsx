@@ -226,8 +226,7 @@ function ImportForm({
                 >
                     {t('Cancel')}
                 </Button>
-                <Button type="submit" disabled={form.processing}>
-                    {form.processing && <Spinner className="size-4" />}
+                <Button type="submit" loading={form.processing}>
                     {t('Import')}
                 </Button>
             </DialogFooter>

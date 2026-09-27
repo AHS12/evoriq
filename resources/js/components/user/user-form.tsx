@@ -11,7 +11,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { useZodForm } from '@/hooks/use-zod-form';
 import { userFormSchema } from '@/lib/schemas/user';
@@ -154,8 +153,7 @@ export function UserForm({
                 >
                     {t('Cancel')}
                 </Button>
-                <Button type="submit" disabled={form.processing}>
-                    {form.processing && <Spinner />}
+                <Button type="submit" loading={form.processing}>
                     {user ? t('Save changes') : t('Create user')}
                 </Button>
             </div>

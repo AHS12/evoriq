@@ -1,4 +1,5 @@
-import { Pause, Play, Search } from 'lucide-react';
+import { Play, Search } from 'lucide-react';
+import { LiveDot } from '@/components/feedback/live-dot';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -110,7 +111,7 @@ export function JobFilters({
                 >
                     {live ? (
                         <>
-                            <Pause className="size-4" />
+                            <LiveDot />
                             {t('Live')}
                         </>
                     ) : (

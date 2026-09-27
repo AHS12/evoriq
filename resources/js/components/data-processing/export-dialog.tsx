@@ -17,7 +17,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { useZodForm } from '@/hooks/use-zod-form';
 import {
@@ -145,8 +144,7 @@ function ExportForm({
                 >
                     {t('Cancel')}
                 </Button>
-                <Button type="submit" disabled={form.processing}>
-                    {form.processing && <Spinner className="size-4" />}
+                <Button type="submit" loading={form.processing}>
                     {t('Export')}
                 </Button>
             </DialogFooter>

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { toast } from 'sonner';
+import { toast } from '@/lib/toast';
 import type { DataProcessingJob, JobStatus } from '@/types';
 
 const FINAL_STATUSES: JobStatus[] = ['completed', 'failed', 'cancelled'];
@@ -34,11 +34,20 @@ export function useJobTransitions(jobs: DataProcessingJob[]): void {
                         : job.status_label;
 
                 if (job.status === 'failed') {
-                    toast.error(job.name, { description });
+                    toast.error(job.name, {
+                        description,
+                        id: `job-${job.id}`,
+                    });
                 } else if (job.status === 'cancelled') {
-                    toast.info(job.name, { description });
+                    toast.info(job.name, {
+                        description,
+                        id: `job-${job.id}`,
+                    });
                 } else {
-                    toast.success(job.name, { description });
+                    toast.success(job.name, {
+                        description,
+                        id: `job-${job.id}`,
+                    });
                 }
             }
         });

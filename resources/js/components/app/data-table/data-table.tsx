@@ -8,7 +8,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { EmptyState } from '@/components/app/empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { TableSkeleton } from '@/components/feedback/skeleton-table';
 import {
     Table,
     TableBody,
@@ -71,7 +71,7 @@ export function DataTable<TData, TValue>({
     return (
         <div
             className={cn(
-                'overflow-hidden rounded-xl border transition-opacity',
+                'overflow-hidden rounded-xl border transition-opacity duration-fast ease-standard',
                 isLoading &&
                     rows.length > 0 &&
                     'pointer-events-none opacity-60',
@@ -97,15 +97,7 @@ export function DataTable<TData, TValue>({
                 </TableHeader>
                 <TableBody>
                     {isLoading && rows.length === 0 ? (
-                        columns.map((column, index) => (
-                            <TableRow key={column.id ?? `skeleton-${index}`}>
-                                {columns.map((cell, cellIndex) => (
-                                    <TableCell key={cell.id ?? cellIndex}>
-                                        <Skeleton className="h-5 w-full" />
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        ))
+                        <TableSkeleton columns={columns.length} rows={5} />
                     ) : rows.length > 0 ? (
                         rows.map((row) => (
                             <TableRow

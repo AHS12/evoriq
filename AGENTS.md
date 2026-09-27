@@ -464,6 +464,10 @@ Entry::where(function ($q) {
 - Always provide dark-mode styles (`dark:`); use semantic tokens
   (`text-muted-foreground`, `border-sidebar-border`).
 - Mobile-first; keep spacing consistent with existing pages.
+- **Motion & feedback** follow the FND-01 vocabulary: duration/easing tokens
+  (`duration-fast`, `ease-standard`, `transition-smooth`), the
+  `components/feedback/*` primitives, the `Button` `loading` prop and the
+  shared `@/lib/toast` helper. See [`docs/ui-conventions.md`](docs/ui-conventions.md).
 
 ### 8.7 Hooks & state
 

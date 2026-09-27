@@ -10,6 +10,7 @@ import { JobDetailSheet } from '@/components/data-processing/job-detail-sheet';
 import { JobFilters } from '@/components/data-processing/job-filters';
 import { JobList } from '@/components/data-processing/job-list';
 import { JobStatCards } from '@/components/data-processing/job-stat-cards';
+import { ListSkeleton } from '@/components/feedback/skeleton-list';
 import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/use-can';
 import { useDataTableFilters } from '@/hooks/use-data-table-filters';
@@ -158,7 +159,9 @@ export default function DataProcessingIndex({
                     aria-live="polite"
                     aria-busy={activeJobs > 0}
                 >
-                    {jobs.data.length > 0 ? (
+                    {activeJobs > 0 && jobs.data.length === 0 ? (
+                        <ListSkeleton rows={3} />
+                    ) : jobs.data.length > 0 ? (
                         <>
                             <JobList jobs={jobs.data} onOpen={openJob} />
                             <DataTablePagination

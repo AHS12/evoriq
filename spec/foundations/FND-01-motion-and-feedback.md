@@ -1,6 +1,6 @@
 # FND-01 — Motion & feedback system
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** foundations
 - **Estimate:** M
 - **Depends on:** —
@@ -120,25 +120,42 @@ None.
 
 ## 7. Acceptance criteria
 
-- [ ] Motion tokens exist and are used by at least one refactored component.
-- [ ] `prefers-reduced-motion` disables ambient/shimmer animation app-wide.
-- [ ] `Button` supports a `loading` prop used on all submit buttons in
+- [x] Motion tokens exist and are used by at least one refactored component.
+- [x] `prefers-reduced-motion` disables ambient/shimmer animation app-wide.
+- [x] `Button` supports a `loading` prop used on all submit buttons in
       refactored surfaces.
-- [ ] Skeleton components exist and are used by the pipeline + one list page.
-- [ ] Toast tones/dedupe are centralized; no component calls `toast` with raw
+- [x] Skeleton components exist and are used by the pipeline + one list page.
+- [x] Toast tones/dedupe are centralized; no component calls `toast` with raw
       options.
-- [ ] No `framer-motion`/`motion` dependency added.
-- [ ] Docs snippet explains the conventions.
+- [x] No `framer-motion`/`motion` dependency added.
+- [x] Docs snippet explains the conventions.
 
 ## 8. Tests
 
-- No JS test runner yet (FND-09). Until then: verify via a component smoke check
-  in an Inertia feature test page render (button loading state) and manual
-  review. When FND-09 lands, add unit tests for the toast helper and the
-  reduced-motion guard if it has logic.
+- No JS test runner yet (FND-09). Verified via `npm run types:check`,
+  `npm run check`, `npm run build` (tokens/utilities compile) and the backend
+  Inertia feature suite (`composer check`). When FND-09 lands, add unit tests
+  for the toast helper and the reduced-motion guard if it has logic.
 
 ## 9. Notes & open questions
 
+- **Token names:** Tailwind v4 exposes durations through the
+  `--transition-duration-*` namespace (`duration-fast`, …) and easings through
+  `--ease-*` (`ease-standard`, …); `transition-smooth` /
+  `transition-smooth-fast` compose them. The spec's `--duration-*` names are
+  realised through that namespace so the utilities are generated.
+- **`ui/button.tsx` edit:** the `loading` prop was added in place (additive and
+  backwards compatible) as the spec requires, despite the general "do not edit
+  `components/ui/*`" rule. A future shadcn re-publish would drop it; re-apply.
+  `asChild` buttons must keep a single element child, so the spinner is only
+  injected for real `<button>`s (slotted buttons get `aria-busy` + `disabled`
+  only).
+- **Wiring:** `ListSkeleton` is used on `/activity`, `TableSkeleton` by the
+  shared `DataTable` (users, roles, audit logs, files), `ChartSkeleton` /
+  `CardSkeleton` are ready for FND-04/FND-05. `LiveDot` is wired into the
+  activity "Live" toggle; `LiveRegion` is available for PIPE.
+- **Reduced motion:** `motion-safe:animate-pulse` is the preferred pattern for
+  ambient pulsing; the global media query is the safety net.
 - Confirm `tw-animate-css` is enough for entrance/exit of Radix primitives; if
   not, extend with data-state variants rather than adding a lib.
 - Decide whether tokens should also drive `view-transition-name` for

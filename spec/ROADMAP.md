@@ -28,7 +28,7 @@ most-reused UI pieces first.
 
 | ID       | Spec                                                       | Est | Status | Depends | Scope |
 | -------- | ---------------------------------------------------------- | --- | ------ | ------- | ----- |
-| `FND-01` | [Motion & feedback system](foundations/FND-01-motion-and-feedback.md) | M | Draft | — | Motion tokens, reduced-motion, transitions, skeletons, optimistic + toast conventions. |
+| `FND-01` | [Motion & feedback system](foundations/FND-01-motion-and-feedback.md) | M | Done | — | Motion tokens, reduced-motion, transitions, skeletons, optimistic + toast conventions. |
 | `FND-02` | [Formatting utilities](foundations/FND-02-formatting-utilities.md) | S | Draft | — | `lib/format.ts`: duration/hours/percent/currency/bytes/compact-number/relative-time, locale-aware. |
 | `FND-03` | [Date-range & period picker](foundations/FND-03-date-range-picker.md) | M | Draft | FND-02 | Preset periods + custom range + comparison period; URL/Inertia-synced. |
 | `FND-04` | Charting foundation                                   | L | stub | FND-02 | Pick + wrap a chart lib; themable series, axis, tooltip, legend, empty/loading. |

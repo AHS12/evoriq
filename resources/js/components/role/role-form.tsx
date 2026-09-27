@@ -4,7 +4,6 @@ import { PermissionMatrix } from '@/components/role/permission-matrix';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { useZodForm } from '@/hooks/use-zod-form';
 import { roleFormSchema } from '@/lib/schemas/role';
@@ -100,8 +99,7 @@ export function RoleForm({ permissions, role, onCancel, onSuccess }: Props) {
                     {isSuperAdmin ? t('Close') : t('Cancel')}
                 </Button>
                 {!isSuperAdmin && (
-                    <Button type="submit" disabled={form.processing}>
-                        {form.processing && <Spinner />}
+                    <Button type="submit" loading={form.processing}>
                         {role ? t('Save changes') : t('Create role')}
                     </Button>
                 )}
