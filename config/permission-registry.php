@@ -135,4 +135,11 @@ return [
         ],
     ],
 
+    'backup' => [
+        'permissions' => [
+            ['name' => 'backup.view', 'group' => 'backup', 'description' => 'View backups and the run history', 'is_system' => true],
+            ['name' => 'backup.manage', 'group' => 'backup', 'description' => 'Run backups and manage backup settings', 'is_system' => true],
+        ],
+    ],
+
 ];

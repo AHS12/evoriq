@@ -3,6 +3,7 @@
 use Ahs12\Setanjo\Facades\Settings;
 use App\Enums\SettingKey;
 use App\Mail\TestMail;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Mail;
 
@@ -83,6 +84,8 @@ it('accepts any day as the week start', function () {
 it('encrypts the mail password at rest', function () {
     $user = makeUserWithPermissions(['settings.view', 'settings.update']);
 
+    Artisan::shouldReceive('call')->once()->with('queue:restart');
+
     $this->actingAs($user)
         ->patch(route('admin.settings.mail.update'), [
             'mail_mailer' => 'smtp',
@@ -100,6 +103,27 @@ it('encrypts the mail password at rest', function () {
 
     expect($stored)->not->toBe('secret-pass')
         ->and(Crypt::decryptString($stored))->toBe('secret-pass');
+});
+
+it('does not restart the queue workers for groups that are read at runtime', function () {
+    $user = admin();
+
+    Artisan::shouldReceive('call')->never();
+
+    $this->actingAs($user)
+        ->patch(route('admin.settings.backup.update'), [
+            'backup_enabled' => '1',
+            'backup_frequency' => 'daily',
+            'backup_time' => '04:30',
+            'backup_send_to_remote' => '0',
+            'backup_keep_days' => '14',
+            'backup_max_storage_mb' => '5000',
+            'backup_max_age_days' => '1',
+            'backup_notify_on_failure' => '1',
+            'backup_email_enabled' => '0',
+            'backup_email_recipients' => '',
+        ])
+        ->assertRedirect(route('admin.settings.backup.edit'));
 });
 
 it('queues a test email', function () {

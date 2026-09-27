@@ -3,12 +3,14 @@
 namespace App\Providers;
 
 use App\Models\AuditActivity;
+use App\Models\BackupRun;
 use App\Models\DataProcessingJob;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Upload;
 use App\Models\User;
 use App\Policies\AuditLogPolicy;
+use App\Policies\BackupRunPolicy;
 use App\Policies\DataProcessingJobPolicy;
 use App\Policies\PermissionPolicy;
 use App\Policies\RolePolicy;
@@ -31,6 +33,7 @@ class AuthServiceProvider extends ServiceProvider
         DataProcessingJob::class => DataProcessingJobPolicy::class,
         Upload::class => UploadPolicy::class,
         AuditActivity::class => AuditLogPolicy::class,
+        BackupRun::class => BackupRunPolicy::class,
     ];
 
     /**

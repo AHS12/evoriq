@@ -7,6 +7,7 @@ use App\Http\Requests\Setting\UpdateSettingsRequest;
 use App\Services\Setting\SettingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -41,6 +42,12 @@ class SettingController extends Controller
         $group = (string) $request->route('group');
 
         $this->settings->update($request->validated());
+
+        // Groups applied at boot time by SettingsServiceProvider are stale in
+        // long-running queue workers until they restart.
+        if (in_array($group, ['general', 'mail'], true)) {
+            Artisan::call('queue:restart');
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Developer;
 
+use App\Enums\BackupRunType;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Developer\CommandRunResource;
+use App\Repositories\Contracts\BackupRunRepositoryInterface;
+use App\Services\Backup\BackupScheduleService;
 use App\Services\Developer\CommandRunService;
 use App\Services\Developer\DeveloperService;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +26,8 @@ class DeveloperController extends Controller
     public function __construct(
         private readonly DeveloperService $developer,
         private readonly CommandRunService $commandRuns,
+        private readonly BackupScheduleService $backupSchedule,
+        private readonly BackupRunRepositoryInterface $backupRuns,
     ) {}
 
     /**
@@ -36,6 +41,7 @@ class DeveloperController extends Controller
             'tools' => $this->tools(),
             'health' => $this->health(),
             'system' => $this->developer->system(),
+            'backup' => $this->backupStatus(),
             'maintenance' => [
                 'enabled' => $this->developer->maintenanceEnabled(),
                 'mode' => $this->developer->maintenanceMode(),
@@ -104,6 +110,28 @@ class DeveloperController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * A compact backup status summary for the developer overview.
+     *
+     * @return array<string, mixed>
+     */
+    private function backupStatus(): array
+    {
+        $latestBackup = $this->backupRuns->latestOfType(BackupRunType::BACKUP, status: null);
+        $latestMonitor = $this->backupRuns->latestOfType(BackupRunType::MONITOR);
+
+        return [
+            'enabled' => $this->backupSchedule->isEnabled(),
+            'next_run_at' => $this->backupSchedule->nextRunAt()?->toIso8601String(),
+            'last_backup_at' => $latestBackup?->completed_at?->toIso8601String()
+                ?? $latestBackup?->created_at?->toIso8601String(),
+            'last_backup_status' => $latestBackup?->status->value,
+            'health' => $latestMonitor?->status->value,
+            'storage_used_mb' => $this->backupSchedule->localDiskUsageMb(),
+            'storage_max_mb' => $this->backupSchedule->maxStorageMb(),
+        ];
     }
 
     /**
