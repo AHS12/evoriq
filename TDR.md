@@ -2275,6 +2275,14 @@ The application must:
 > application; there are no organizations or tenant scopes. This supersedes the
 > earlier multi-organization design.
 
+> **Amendment (2026-09-27 — `spec/DECISIONS.md` DEC-005):** the product remains
+> single-organization, but the **database is organization-ready**. An
+> `organizations` table and `organization_id` columns are added from day one
+> (one default organization, no tenant UI), so multi-org can be introduced later
+> without a migration cliff. Clockify's `cakeOrganizationId` maps to
+> `organizations.clockify_organization_id`. See
+> `spec/architecture/ORG-01-organization-ready-schema.md`.
+
 Data belongs to the application as a whole. Where a record has an owner, it is
 tracked with a plain foreign key (e.g. `user_id`) and derived from the
 authenticated user — never accepted from the client.
