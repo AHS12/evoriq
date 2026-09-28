@@ -18,6 +18,7 @@ declare module '@inertiajs/core' {
             i18n: I18n;
             notifications: NotificationSummary;
             activeJobs: number;
+            pipeline_revision: string;
             [key: string]: unknown;
         };
     }

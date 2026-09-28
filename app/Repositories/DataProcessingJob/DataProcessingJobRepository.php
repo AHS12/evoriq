@@ -109,6 +109,17 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
             ->count();
     }
 
+    public function pipelineRevision(?int $userId = null): string
+    {
+        $query = DataProcessingJob::query()
+            ->when($userId !== null, fn (Builder $builder): Builder => $builder->where('user_id', $userId));
+
+        $count = (clone $query)->count();
+        $latest = (clone $query)->max('updated_at');
+
+        return $count.'|'.($latest !== null ? (string) $latest : '0');
+    }
+
     public function staleProcessingBefore(CarbonInterface $cutoff): Collection
     {
         return DataProcessingJob::query()

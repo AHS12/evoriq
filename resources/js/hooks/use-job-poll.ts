@@ -1,61 +1,32 @@
-import { usePoll } from '@inertiajs/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLivePoll } from '@/hooks/use-live-poll';
+import { index } from '@/routes/activity';
 
 /**
- * How often the Job Center refreshes while work is in progress.
+ * Props the Job Center polls. Kept in one place so the page and the sidebar
+ * badge resolve to the same shared registry entry (one request per interval).
  */
-const ACTIVE_INTERVAL = 3000;
+export const ACTIVITY_POLL_PROPS = [
+    'jobs',
+    'stats',
+    'activeJobs',
+    'pipeline_revision',
+];
 
 /**
  * Keeps the Job Center fresh by polling the shared page props.
  *
- * Polling only runs while there is active work, the tab is visible and the
- * user has not paused it. Returns a `live` flag plus pause/resume controls so
- * the UI can show a "Live / Paused" state.
+ * A thin wrapper over the shared live-poll transport (PIPE-03): polling only
+ * runs while there is active work, the tab is visible and the user has not
+ * paused it. Returns a `live` flag plus pause/resume controls so the UI can
+ * show a "Live / Paused" state.
  */
 export function useJobPoll(active: boolean) {
-    const [live, setLive] = useState(true);
-
-    const { start, stop } = usePoll(
-        ACTIVE_INTERVAL,
-        { only: ['jobs', 'stats', 'activeJobs'] },
-        { autoStart: false },
-    );
-
-    const startRef = useRef(start);
-    const stopRef = useRef(stop);
-    const activeRef = useRef(active);
-    const liveRef = useRef(live);
-
-    startRef.current = start;
-    stopRef.current = stop;
-    activeRef.current = active;
-    liveRef.current = live;
-
-    useEffect(() => {
-        if (typeof document === 'undefined') {
-            return;
-        }
-
-        const update = (): void => {
-            if (document.hidden || !activeRef.current || !liveRef.current) {
-                stopRef.current();
-            } else {
-                startRef.current();
-            }
-        };
-
-        update();
-        document.addEventListener('visibilitychange', update);
-
-        return () => {
-            document.removeEventListener('visibilitychange', update);
-            stopRef.current();
-        };
-    }, [active, live]);
-
-    const pause = useCallback(() => setLive(false), []);
-    const resume = useCallback(() => setLive(true), []);
+    const { live, pause, resume } = useLivePoll({
+        url: index.url(),
+        only: ACTIVITY_POLL_PROPS,
+        enabled: active,
+        idleInterval: 15000,
+    });
 
     return { live, pause, resume };
 }

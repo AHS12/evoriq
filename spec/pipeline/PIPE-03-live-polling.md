@@ -1,6 +1,6 @@
 # PIPE-03 — Live polling transport
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** PIPE-02
@@ -121,14 +121,14 @@ function useLivePoll(options: LivePollOptions): {
 
 ## 7. Acceptance criteria
 
-- [ ] Page + sidebar badge issue only **one** request per interval (verified in
+- [x] Page + sidebar badge issue only **one** request per interval (verified in
       dev tools/network).
-- [ ] Polling stops when the tab is hidden and resumes on focus.
-- [ ] After errors, the interval backs off up to the cap and resets on success.
-- [ ] The Live/Paused toggle still works and is respected.
-- [ ] No Inertia progress bar flashes during background polls.
-- [ ] Unchanged responses do not trigger timeline re-animation.
-- [ ] `composer check` passes.
+- [x] Polling stops when the tab is hidden and resumes on focus.
+- [x] After errors, the interval backs off up to the cap and resets on success.
+- [x] The Live/Paused toggle still works and is respected.
+- [x] No Inertia progress bar flashes during background polls.
+- [x] Unchanged responses do not trigger timeline re-animation.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
@@ -137,16 +137,29 @@ function useLivePoll(options: LivePollOptions): {
     those props;
   - `pipeline_revision` changes when a job's state changes and is stable
     otherwise.
-- Hook logic (scheduling/backoff/visibility) is client-only; add unit tests
-  under FND-09 (Vitest fake timers) when available. Until then, manual network
-  verification is required and noted in the PR.
+- Frontend `resources/js/hooks/use-live-poll.test.ts` (Vitest fake timers):
+  shared timer/request across subscribers, exponential backoff + cap + reset,
+  pause/resume, disabled idle polling, visibility pause/refresh, and
+  revision-stamped `lastRefreshedAt`.
 
 ## 9. Notes & open questions
 
 - `usePoll` from Inertia could be reused, but its fixed interval and lack of a
   shared registry are the reason for a manual scheduler; revisit if Inertia adds
   these.
-- The registry is module-level and must clean up on unmount / route change to
-  avoid stale timers.
-- Document the future broadcast seam: a `LiveTransport` interface with a
-  polling implementation now, broadcast later.
+- The registry is module-level and cleans up when its last subscriber unmounts
+  (`resetLivePollRegistry()` exists for tests) to avoid stale timers.
+- **Dedupe key:** entries are keyed by `url` alone with the union of the
+  subscribers' `only` paths, rather than `url + JSON.stringify(only)`. This is
+  what lets the page (`jobs,stats,activeJobs,pipeline_revision`) and the sidebar
+  (`activeJobs,pipeline_revision`) resolve to the same entry and issue a single
+  request; `lastRefreshedAt` stays shared across them.
+- **Transport target:** `router.reload` always reloads the *current* page, so the
+  `url` option is a logical registry key. The sidebar joins the entry only on the
+  activity page (elsewhere it renders the server-shared `activeJobs`); global
+  live status on every page is PIPE-08's cached `pipelineStatus`.
+- **Failure counting:** cancelled/interrupted visits (e.g. a navigation racing a
+  poll) do not increment the backoff counter.
+- Future broadcast seam: `useLivePoll`/the registry are the only place that touch
+  the network, so swapping `poll()` for a broadcast subscription is a local
+  change.

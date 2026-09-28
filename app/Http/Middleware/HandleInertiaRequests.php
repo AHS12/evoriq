@@ -74,6 +74,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'notifications' => fn (): array => $this->notificationSummary($request),
             'activeJobs' => fn (): int => $this->activeJobCount($request),
+            'pipeline_revision' => fn (): string => $this->pipelineRevision($request),
         ];
     }
 
@@ -82,20 +83,52 @@ class HandleInertiaRequests extends Middleware
      */
     private function activeJobCount(Request $request): int
     {
+        $scope = $this->dataProcessingScope($request);
+
+        if ($scope === null) {
+            return 0;
+        }
+
+        return app(DataProcessingJobService::class)->activeCountFor($scope['userId'], $scope['viewAll']);
+    }
+
+    /**
+     * A derived revision of the visible job rows, polled by `useLivePoll` so the
+     * client can skip re-animating when nothing changed.
+     */
+    private function pipelineRevision(Request $request): string
+    {
+        $scope = $this->dataProcessingScope($request);
+
+        if ($scope === null) {
+            return '';
+        }
+
+        return app(DataProcessingJobService::class)->pipelineRevisionFor($scope['userId'], $scope['viewAll']);
+    }
+
+    /**
+     * The user id + visibility scope for data-processing props, or null when the
+     * user may not see jobs at all.
+     *
+     * @return array{userId: int, viewAll: bool}|null
+     */
+    private function dataProcessingScope(Request $request): ?array
+    {
         $user = $request->user();
 
         if (! $user instanceof User) {
-            return 0;
+            return null;
         }
 
         $permissions = $user->getAllPermissions()->pluck('name');
         $viewAll = $permissions->contains('data-processing.view.all');
 
         if (! $viewAll && ! $permissions->contains('data-processing.view')) {
-            return 0;
+            return null;
         }
 
-        return app(DataProcessingJobService::class)->activeCountFor((int) $user->id, $viewAll);
+        return ['userId' => (int) $user->id, 'viewAll' => $viewAll];
     }
 
     /**

@@ -501,6 +501,14 @@ class DataProcessingJobService
     }
 
     /**
+     * A derived revision the frontend uses to skip work when nothing changed.
+     */
+    public function pipelineRevisionFor(?int $userId, bool $viewAll): string
+    {
+        return $this->repository->pipelineRevision($viewAll ? null : $userId);
+    }
+
+    /**
      * Create an in-app notification for a finished job (owner only).
      */
     public function notifyFinished(DataProcessingJob $job): void

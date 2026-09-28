@@ -63,7 +63,7 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 | --------- | ------------------------------------------------------------- | --- | ------ | --------------- | ----- |
 | `PIPE-01` | [Pipeline event stream](pipeline/PIPE-01-event-stream.md)     | L | Done | —               | Append-only `pipeline_events` + recorder; retrofit `DataProcessingJob`. |
 | `PIPE-02` | [Run aggregation & progress contract](pipeline/PIPE-02-run-aggregation.md) | L | Done | PIPE-01 | Stage/ETA/throughput/failure taxonomy; `PipelineRunResource`. |
-| `PIPE-03` | [Live polling transport](pipeline/PIPE-03-live-polling.md)   | M | Draft | PIPE-02 | `useLivePoll`: visibility-aware, adaptive, backoff, shared registry. |
+| `PIPE-03` | [Live polling transport](pipeline/PIPE-03-live-polling.md)   | M | Done | PIPE-02 | `useLivePoll`: visibility-aware, adaptive, backoff, shared registry. |
 | `PIPE-04` | [Timeline UI primitive](pipeline/PIPE-04-timeline-primitive.md) | M | Draft | FND-01 (+ FND-06) | Reusable vertical timeline (rail, markers, time gutter, groups, a11y). |
 | `PIPE-05` | [Run timeline UI](pipeline/PIPE-05-run-timeline-ui.md)        | L | Draft | PIPE-03, PIPE-04 | Flagship run view: progress hero, stage lanes, streaming event timeline. |
 | `PIPE-06` | [Run detail & event inspector](pipeline/PIPE-06-run-detail-inspector.md) | M | Draft | PIPE-05 | Tabs: overview/timeline/errors/artifacts/params/raw; error grouping. |

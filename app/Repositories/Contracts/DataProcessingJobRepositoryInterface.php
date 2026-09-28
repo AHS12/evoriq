@@ -53,6 +53,13 @@ interface DataProcessingJobRepositoryInterface
     public function activeCount(?int $userId = null): int;
 
     /**
+     * A cheap derived revision of the job rows: it changes when a job is
+     * created, deleted or updated, and is stable otherwise. A null user id
+     * covers every user's jobs (`data-processing.view.all`).
+     */
+    public function pipelineRevision(?int $userId = null): string;
+
+    /**
      * Processing jobs that started before the cutoff (likely stalled).
      *
      * @return Collection<int, DataProcessingJob>
