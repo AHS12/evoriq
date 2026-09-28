@@ -35,6 +35,9 @@ trait TracksDataProcessingJob
         $recorder->error($job, $message);
 
         if ($this->job !== null && $this->attempts() < $this->tries) {
+            app(DataProcessingJobService::class)
+                ->scheduleRetry($job, now()->addSeconds($this->retryDelaySeconds()));
+
             $recorder->retryScheduled($job, $message, $this->attempts() + 1);
 
             return;
@@ -49,5 +52,16 @@ trait TracksDataProcessingJob
         } catch (Throwable) {
             // Never let a notification failure mask the failure handling.
         }
+    }
+
+    /**
+     * The delay (seconds) before the next automatic attempt. Uses the channel
+     * base backoff scaled by the attempt number.
+     */
+    protected function retryDelaySeconds(): int
+    {
+        $base = max(1, (int) config('pipeline.retry_base_seconds', 60));
+
+        return $base * max(1, $this->attempts());
     }
 }

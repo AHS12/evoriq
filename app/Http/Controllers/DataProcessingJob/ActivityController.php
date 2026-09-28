@@ -12,7 +12,7 @@ use App\Exports\ImportTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DataProcessingJob\StoreImportRequest;
 use App\Http\Requests\Export\StoreExportRequest;
-use App\Http\Resources\Export\DataProcessingJobResource;
+use App\Http\Resources\Pipeline\PipelineRunResource;
 use App\Models\DataProcessingJob;
 use App\Models\User;
 use App\Services\DataProcessingJob\DataProcessingJobService;
@@ -49,8 +49,8 @@ class ActivityController extends Controller
         }
 
         return Inertia::render('data-processing/index', [
-            'jobs' => DataProcessingJobResource::collection(
-                $this->service->paginate($filters)->withQueryString(),
+            'jobs' => PipelineRunResource::collection(
+                $this->service->paginateRuns($filters)->withQueryString(),
             ),
             'stats' => $this->service->statsFor((int) $user->getKey(), $viewAll),
             'activeJobs' => $this->service->activeCountFor((int) $user->getKey(), $viewAll),

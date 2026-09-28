@@ -18,11 +18,65 @@ export type JobProgress = {
     processed: number | null;
     percentage: number;
     indeterminate: boolean;
+    elapsed_seconds: number;
+    eta_seconds: number | null;
+    throughput_per_min: number | null;
 };
 
 export type JobCounts = {
     created: number | null;
+    updated: number;
     failed: number | null;
+    skipped: number;
+};
+
+export type JobStage = {
+    key: string;
+    label: string;
+    status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+    started_at: string | null;
+    ended_at: string | null;
+    duration_ms: number | null;
+    processed: number | null;
+    total: number | null;
+};
+
+export type JobAttempts = {
+    current: number;
+    label: string;
+    next_retry_at: string | null;
+};
+
+export type JobFailure = {
+    reason: string;
+    label: string;
+    hint: string;
+    action: string | null;
+    message: string | null;
+};
+
+export type JobTiming = {
+    dispatched_at: string | null;
+    started_at: string | null;
+    completed_at: string | null;
+    duration_ms: number | null;
+    last_heartbeat_at: string | null;
+    stale: boolean;
+};
+
+export type JobTimelineEvent = {
+    id: number;
+    sequence: number;
+    type: string;
+    type_label: string;
+    level: string;
+    stage: string | null;
+    message: string | null;
+    context: Record<string, unknown> | null;
+    progress: Record<string, unknown> | null;
+    attempt: number;
+    duration_ms: number | null;
+    occurred_at: string | null;
 };
 
 export type JobArtifact = {
@@ -47,11 +101,17 @@ export type DataProcessingJob = {
     id: number;
     job_id: string;
     name: string;
+    run_type: string;
     type: JobType;
     type_label: string;
     type_icon: string;
     status: JobStatus;
     status_label: string;
+    entity: {
+        value: string | null;
+        label: string | null;
+        icon: string | null;
+    };
     entity_type: string | null;
     entity_label: string | null;
     entity_icon: string | null;
@@ -61,6 +121,12 @@ export type DataProcessingJob = {
     stage: string | null;
     progress: JobProgress;
     counts: JobCounts;
+    stages: JobStage[];
+    attempts: JobAttempts;
+    failure: JobFailure | null;
+    timing: JobTiming;
+    abilities: JobAbilities & { resume: boolean };
+    timeline: JobTimelineEvent[];
     file_name: string | null;
     file_size: number | null;
     input_file_name: string | null;

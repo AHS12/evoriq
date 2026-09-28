@@ -8,7 +8,7 @@ use App\Enums\ApiErrorCode;
 use App\Enums\DataProcessingJobType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Export\StoreExportRequest;
-use App\Http\Resources\Export\DataProcessingJobResource;
+use App\Http\Resources\Pipeline\PipelineRunResource;
 use App\Models\DataProcessingJob;
 use App\Models\User;
 use App\Services\DataProcessingJob\DataProcessingJobService;
@@ -38,9 +38,9 @@ class ExportController extends Controller
             $filters = $filters->scopedToUser((int) $request->user()->getKey());
         }
 
-        $jobs = $this->service->paginate($filters);
+        $jobs = $this->service->paginateRuns($filters);
 
-        return $this->respond(DataProcessingJobResource::collection($jobs));
+        return $this->respond(PipelineRunResource::collection($jobs));
     }
 
     /**
@@ -54,7 +54,7 @@ class ExportController extends Controller
 
         $job = $this->service->createExport($dto);
 
-        return $this->respond(DataProcessingJobResource::make($job), Response::HTTP_CREATED);
+        return $this->respond(PipelineRunResource::make($this->service->pipelineRun($job)), Response::HTTP_CREATED);
     }
 
     /**
@@ -64,7 +64,7 @@ class ExportController extends Controller
     {
         Gate::authorize('view', $dataProcessingJob);
 
-        return $this->respond(DataProcessingJobResource::make($dataProcessingJob));
+        return $this->respond(PipelineRunResource::make($this->service->pipelineRun($dataProcessingJob)));
     }
 
     /**

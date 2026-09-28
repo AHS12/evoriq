@@ -35,6 +35,22 @@ final class ApiException extends Exception
     }
 
     /**
+     * The machine-readable error code (see {@see ApiErrorCode}).
+     */
+    public function errorCode(): string
+    {
+        return $this->errorCode;
+    }
+
+    /**
+     * The HTTP status the exception maps to.
+     */
+    public function statusCode(): int
+    {
+        return $this->responseCode;
+    }
+
+    /**
      * Create a business logic validation error (422).
      *
      * @param  array<string, mixed>  $additionalData

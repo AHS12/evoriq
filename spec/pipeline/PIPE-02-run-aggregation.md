@@ -1,6 +1,6 @@
 # PIPE-02 — Run aggregation & progress contract
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** L
 - **Depends on:** PIPE-01
@@ -146,32 +146,62 @@ Contract shape (JSON):
 
 ## 7. Acceptance criteria
 
-- [ ] Active runs expose stage list, ETA, throughput and heartbeat.
-- [ ] Completed/failed runs expose duration, counts and (for failures)
+- [x] Active runs expose stage list, ETA, throughput and heartbeat.
+- [x] Completed/failed runs expose duration, counts and (for failures)
       `failure.reason` + `failure.hint`.
-- [ ] A stale run (heartbeat older than the threshold) is reported `stale`.
-- [ ] `attempt` increments per pick-up and is exposed.
-- [ ] The existing `/activity` page renders without regression after switching
+- [x] A stale run (heartbeat older than the threshold) is reported `stale`.
+- [x] `attempt` increments per pick-up and is exposed.
+- [x] The existing `/activity` page renders without regression after switching
       resources.
-- [ ] `composer check` passes.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
-- **Unit** `tests/Unit/PipelineRunAggregatorTest.php`:
-  - stages derived from a fixture event sequence (running/completed/failed);
-  - ETA null with too few samples, numeric otherwise; throughput math;
-  - staleness boundary; failure reason mapping for each resolver branch.
-- **Feature** `tests/Feature/Pipeline/PipelineRunResourceTest.php`:
-  - `/activity` returns the contract fields for a processing and a failed job;
-  - failed job exposes the mapped `failure.reason`.
-- Update `tests/Feature/Export/DataProcessingJobFeatureTest.php` for the shape.
+- **Unit** `tests/Unit/PipelineRunAggregatorTest.php` — stage derivation, ETA
+  (null with too few samples, numeric from stage throughput), throughput math,
+  staleness, failed-run classification, bounded timeline, skipped counts and
+  timing.
+- **Unit** `tests/Unit/FailureReasonResolverTest.php` — every resolver branch
+  (exceptions and stored messages).
+- Extended `tests/Unit/DataProcessingJobServiceUnitTest.php` with the attempt
+  increment/heartbeat and classified-`failure_reason` transitions.
+- **Feature** `tests/Feature/Pipeline/PipelineRunResourceTest.php` — `/activity`
+  exposes the contract for a processing job and the mapped failure for a failed
+  job; `/exports/{job}` embeds the bounded timeline.
+- **Frontend** `resources/js/components/data-processing/job-utils.test.ts` —
+  `computeEta` prefers the server `eta_seconds` and keeps the local fallback.
+- The `DataProcessingJobFeatureTest` shape assertions still pass unchanged
+  (the resource is a superset).
 
 ## 9. Notes & open questions
 
-- Decide whether `next_retry_at` is authoritative from the queue backoff or
-  computed from `attempt × base` — for the heavy channel (`tries: 1`) retries are
-  mostly manual, so this matters less; keep the field and set it where known.
-- `timeline` inside the run resource must stay bounded; full history is
-  paginated (PIPE-06).
-- Confirm `pipeline.stale_after` equals `exports.stale_after` to avoid two
-  definitions.
+- **Files:** `app/Enums/PipelineFailureReason.php`,
+  `app/DTOs/Pipeline/Pipeline{Progress,Stage,Timing,Run}DTO.php`,
+  `app/Services/Pipeline/{PipelineRunAggregator,FailureReasonResolver}.php`,
+  `app/Http/Resources/Pipeline/{PipelineRunResource,PipelineEventResource}.php`,
+  `database/migrations/2026_09_28_010000_add_pipeline_state_to_data_processing_jobs.php`.
+- **Superset resource:** `PipelineRunResource` emits the aggregated contract
+  **and** the legacy fields the Data Processing Center already uses, so
+  `/activity` renders unchanged; `DataProcessingJobResource` now extends it
+  (deprecated) and controllers return `PipelineRunResource` directly.
+- **Aggregator shape:** the resource maps a `PipelineRunDTO` (the aggregator
+  folds the row + `pipeline_events`). List endpoints aggregate with
+  `withTimeline: false` (empty `timeline`); single-run endpoints embed the
+  bounded timeline (`pipeline.timeline_limit`, default 50).
+- **ETA:** estimated from the current (last running) stage's progress points;
+  `null` below `pipeline.eta_min_samples` or with an unknown total.
+- **Staleness:** `pipeline.stale_after` defaults to `EXPORT_STALE_AFTER` so it
+  matches the reaper; the reaper's `staleProcessingBefore()` now prefers
+  `last_heartbeat_at` and falls back to `started_at`.
+- **Failure order:** `FailureReasonResolver` checks `worker_lost` before
+  `timeout`, so the reaper's "worker was lost or it timed out" message classifies
+  as `worker_lost`.
+- **Pagination type:** `DataProcessingJobRepositoryInterface::paginate()` now
+  returns the concrete `Illuminate\Pagination\LengthAwarePaginator` so the
+  service can use `->through()` to map jobs to run DTOs.
+- **`updated` count** is always `0` — there is no per-row "updated vs created"
+  tracking yet (imports only report created/skipped/failed).
+- **`next_retry_at`** is derived from the channel base backoff × attempt; the
+  heavy channel runs with `tries: 1`, so retries are mostly manual.
+- Frontend `computeEta` keeps a local fallback until every surface consumes the
+  server ETA (PIPE-05 removes it entirely).

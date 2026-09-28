@@ -84,6 +84,7 @@ class ProcessImport implements ShouldQueue
         $service->markProcessing($job, totalItems: $total > 0 ? $total : null, stage: 'Reading file');
 
         $recorder->stageStarted($job, 'Reading file');
+        $service->touchHeartbeat($job);
 
         try {
             $entity = $job->entity_type;
@@ -106,6 +107,7 @@ class ProcessImport implements ShouldQueue
 
                 if ($stage !== null && $stage !== $lastStage) {
                     $recorder->stageStarted($job, $stage);
+                    $service->touchHeartbeat($job);
                     $lastStage = $stage;
                 }
 

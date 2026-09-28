@@ -33,6 +33,37 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Run liveness, ETA & timeline
+    |--------------------------------------------------------------------------
+    |
+    | `stale_after` is the number of seconds without a heartbeat before a
+    | running job is reported stale — keep it equal to `exports.stale_after`
+    | (the reaper's threshold). `eta_min_samples` is the minimum number of
+    | progress points in the current stage before an ETA is estimated.
+    | `timeline_limit` bounds the events embedded in a run resource.
+    |
+    */
+
+    'stale_after' => (int) env('PIPELINE_STALE_AFTER', (int) env('EXPORT_STALE_AFTER', 1920)),
+
+    'eta_min_samples' => (int) env('PIPELINE_ETA_MIN_SAMPLES', 2),
+
+    'timeline_limit' => (int) env('PIPELINE_TIMELINE_LIMIT', 50),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retry backoff
+    |--------------------------------------------------------------------------
+    |
+    | Base delay (seconds) used to compute `next_retry_at` when a retry is
+    | scheduled (multiplied by the attempt number).
+    |
+    */
+
+    'retry_base_seconds' => (int) env('PIPELINE_RETRY_BASE_SECONDS', 60),
+
+    /*
+    |--------------------------------------------------------------------------
     | Redaction
     |--------------------------------------------------------------------------
     |

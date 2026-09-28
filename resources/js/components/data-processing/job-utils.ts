@@ -53,7 +53,8 @@ export function resultSummary(job: DataProcessingJob, t: Translate): string {
 }
 
 /**
- * A rough time remaining estimate for a running job, when determinate.
+ * A time remaining estimate for a running job. Prefers the server-computed
+ * `eta_seconds` (PIPE-02) and falls back to a local estimate when it is absent.
  */
 export function computeEta(
     job: DataProcessingJob,
@@ -63,6 +64,23 @@ export function computeEta(
         return null;
     }
 
+    const remaining = job.progress.eta_seconds ?? estimateEtaSeconds(job);
+
+    if (remaining === null) {
+        return null;
+    }
+
+    if (remaining < 60) {
+        return t('~:count left', { count: `${Math.round(remaining)}s` });
+    }
+
+    return t('~:count left', { count: `${Math.round(remaining / 60)}m` });
+}
+
+/**
+ * Local fallback: seconds remaining extrapolated from the average rate so far.
+ */
+function estimateEtaSeconds(job: DataProcessingJob): number | null {
     const { processed, total } = job.progress;
 
     if (!processed || !total || processed <= 0 || !job.started_at) {
@@ -75,13 +93,7 @@ export function computeEta(
         return null;
     }
 
-    const remaining = Math.max(0, (elapsed / processed) * (total - processed));
-
-    if (remaining < 60) {
-        return t('~:count left', { count: `${Math.round(remaining)}s` });
-    }
-
-    return t('~:count left', { count: `${Math.round(remaining / 60)}m` });
+    return Math.max(0, (elapsed / processed) * (total - processed));
 }
 
 export type JobGroup = {

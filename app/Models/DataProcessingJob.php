@@ -7,6 +7,7 @@ use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\DataProcessingJobType;
 use App\Enums\ExportFormat;
+use App\Enums\PipelineFailureReason;
 use App\Enums\PipelineRunType;
 use App\Models\Concerns\BelongsToOrganization;
 use Database\Factories\DataProcessingJobFactory;
@@ -43,7 +44,11 @@ use Illuminate\Support\Carbon;
  * @property int|null $error_count
  * @property array<int, mixed>|null $errors
  * @property string|null $error_message
+ * @property PipelineFailureReason|null $failure_reason
+ * @property int $attempt
  * @property Carbon|null $started_at
+ * @property Carbon|null $last_heartbeat_at
+ * @property Carbon|null $next_retry_at
  * @property Carbon|null $completed_at
  * @property Carbon|null $cancel_requested_at
  * @property int|null $organization_id
@@ -59,6 +64,7 @@ use Illuminate\Support\Carbon;
     'input_disk', 'input_path', 'input_size', 'input_mime_type',
     'file_name', 'file_disk', 'file_path', 'original_file_name', 'file_size', 'mime_type',
     'total_items', 'processed_items', 'success_count', 'error_count', 'errors', 'error_message',
+    'failure_reason', 'attempt', 'last_heartbeat_at', 'next_retry_at',
     'started_at', 'completed_at', 'cancel_requested_at', 'user_id', 'organization_id', 'created_by', 'updated_by',
 ])]
 class DataProcessingJob extends Model implements PipelineRunnable
@@ -83,13 +89,17 @@ class DataProcessingJob extends Model implements PipelineRunnable
             'format' => ExportFormat::class,
             'filters' => 'array',
             'errors' => 'array',
+            'failure_reason' => PipelineFailureReason::class,
             'file_size' => 'integer',
             'input_size' => 'integer',
             'total_items' => 'integer',
             'processed_items' => 'integer',
             'success_count' => 'integer',
             'error_count' => 'integer',
+            'attempt' => 'integer',
             'started_at' => 'datetime',
+            'last_heartbeat_at' => 'datetime',
+            'next_retry_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancel_requested_at' => 'datetime',
         ];
@@ -258,6 +268,48 @@ class DataProcessingJob extends Model implements PipelineRunnable
         }
 
         return (int) min(100, (($this->processed_items ?? 0) / $this->total_items) * 100);
+    }
+
+    /**
+     * Whether the run is processing but has not emitted a heartbeat recently.
+     */
+    public function isStale(): bool
+    {
+        if ($this->status !== DataProcessingJobStatus::PROCESSING) {
+            return false;
+        }
+
+        $reference = $this->last_heartbeat_at ?? $this->started_at;
+
+        if ($reference === null) {
+            return false;
+        }
+
+        $threshold = max(0, (int) config('pipeline.stale_after', 1920));
+
+        return $reference->lt(now()->subSeconds($threshold));
+    }
+
+    /**
+     * Seconds since the last heartbeat (or start), or null when never started.
+     */
+    public function heartbeatAge(): ?int
+    {
+        $reference = $this->last_heartbeat_at ?? $this->started_at;
+
+        if ($reference === null) {
+            return null;
+        }
+
+        return max(0, (int) $reference->diffInSeconds(now()));
+    }
+
+    /**
+     * A human label for the current attempt, e.g. "Attempt 2".
+     */
+    public function attemptsLabel(): string
+    {
+        return __('Attempt :number', ['number' => max(1, $this->attempt)]);
     }
 
     /**

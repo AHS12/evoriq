@@ -10,6 +10,7 @@ use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 class PipelineEventRepository implements PipelineEventRepositoryInterface
 {
@@ -47,6 +48,19 @@ class PipelineEventRepository implements PipelineEventRepositoryInterface
     public function forRun(PipelineRunType $type, string|int $runId, int $perPage = 50, array $filters = []): LengthAwarePaginator
     {
         return $this->buildRunQuery($type, $runId, $filters)->paginate($perPage);
+    }
+
+    public function allForRun(PipelineRunType $type, string|int $runId, int $limit = 0): Collection
+    {
+        $query = PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->orderBy('sequence');
+
+        if ($limit > 0) {
+            $query->limit($limit);
+        }
+
+        return $query->get();
     }
 
     public function latestForRuns(array $runKeys): array

@@ -8,8 +8,8 @@ use App\Helpers\EloquentFilterHelper;
 use App\Models\DataProcessingJob;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -113,8 +113,14 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
     {
         return DataProcessingJob::query()
             ->where('status', DataProcessingJobStatus::PROCESSING)
-            ->whereNotNull('started_at')
-            ->where('started_at', '<', $cutoff)
+            ->where(function (Builder $query) use ($cutoff): void {
+                $query->where('last_heartbeat_at', '<', $cutoff)
+                    ->orWhere(function (Builder $query) use ($cutoff): void {
+                        $query->whereNull('last_heartbeat_at')
+                            ->whereNotNull('started_at')
+                            ->where('started_at', '<', $cutoff);
+                    });
+            })
             ->get();
     }
 

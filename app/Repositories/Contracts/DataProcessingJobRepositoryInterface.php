@@ -5,8 +5,8 @@ namespace App\Repositories\Contracts;
 use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
 use App\Models\DataProcessingJob;
 use Carbon\CarbonInterface;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 

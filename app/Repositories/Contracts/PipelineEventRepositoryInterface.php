@@ -6,6 +6,7 @@ use App\Enums\PipelineRunType;
 use App\Models\PipelineEvent;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 
 interface PipelineEventRepositoryInterface
 {
@@ -31,6 +32,13 @@ interface PipelineEventRepositoryInterface
      * The most recent PROGRESS event for a run (drives coalescing).
      */
     public function latestProgressForRun(PipelineRunType $type, string|int $runId): ?PipelineEvent;
+
+    /**
+     * A run's events, oldest first. Bounded when `$limit > 0`.
+     *
+     * @return Collection<int, PipelineEvent>
+     */
+    public function allForRun(PipelineRunType $type, string|int $runId, int $limit = 0): Collection;
 
     /**
      * A run's events, oldest first, for the timeline views.

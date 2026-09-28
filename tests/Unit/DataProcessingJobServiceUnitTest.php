@@ -7,15 +7,18 @@ use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\ExportFormat;
 use App\Enums\NotificationType;
+use App\Enums\PipelineFailureReason;
 use App\Jobs\ProcessExport;
 use App\Models\DataProcessingJob;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
+use App\Services\Pipeline\FailureReasonResolver;
 use App\Services\Pipeline\PipelineEventRecorder;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use App\Services\Pipeline\PipelineRunAggregator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
 use Tests\TestCase;
@@ -32,7 +35,17 @@ beforeEach(function () {
         'dispatched', 'started', 'progress', 'artifactReady',
         'completed', 'failed', 'cancelled', 'retryScheduled',
     )->byDefault();
-    $this->service = new DataProcessingJobService($this->repository, $this->notifications, $this->audit, $this->pipeline);
+    $this->runs = Mockery::mock(PipelineRunAggregator::class);
+    $this->failures = Mockery::mock(FailureReasonResolver::class);
+    $this->failures->shouldReceive('fromMessage')->andReturn(PipelineFailureReason::UNKNOWN)->byDefault();
+    $this->service = new DataProcessingJobService(
+        $this->repository,
+        $this->notifications,
+        $this->audit,
+        $this->pipeline,
+        $this->runs,
+        $this->failures,
+    );
 });
 
 afterEach(function () {
@@ -279,4 +292,32 @@ test('retry records a retry scheduled event', function () {
     $this->pipeline->shouldReceive('retryScheduled')->once();
 
     $this->service->retry($job);
+});
+
+test('markProcessing increments the attempt and refreshes the heartbeat', function () {
+    $job = DataProcessingJob::factory()->active()->create([
+        'status' => DataProcessingJobStatus::PENDING,
+        'attempt' => 1,
+    ]);
+
+    $this->repository->shouldReceive('update')
+        ->once()
+        ->withArgs(fn (DataProcessingJob $model, array $data): bool => $data['attempt'] === 2
+            && array_key_exists('last_heartbeat_at', $data)
+            && $data['next_retry_at'] === null)
+        ->andReturn($job);
+
+    $this->service->markProcessing($job, 10, 'Reading file');
+});
+
+test('markFailed stores a classified failure reason', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')
+        ->once()
+        ->withArgs(fn (DataProcessingJob $model, array $data): bool => $data['status'] === DataProcessingJobStatus::FAILED
+            && $data['failure_reason'] === PipelineFailureReason::RATE_LIMITED->value)
+        ->andReturn($job);
+
+    $this->service->markFailed($job, 'Too many requests', PipelineFailureReason::RATE_LIMITED);
 });

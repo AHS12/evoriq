@@ -87,6 +87,7 @@ class ProcessExport implements ShouldQueue
         $prepareStart = microtime(true);
 
         $recorder->stageStarted($job, 'prepare');
+        $service->touchHeartbeat($job);
 
         $exporter = $entity->makeExporter($job->filters ?? []);
         $total = $exporter->total();
@@ -104,6 +105,7 @@ class ProcessExport implements ShouldQueue
         $generateStart = microtime(true);
 
         $recorder->stageStarted($job, 'generate');
+        $service->touchHeartbeat($job);
 
         Excel::store($exporter, $filePath, $fileDisk);
 
