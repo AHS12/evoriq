@@ -92,6 +92,40 @@ success. On failure, revert the row and surface an error toast with an explicit
 retry action — do not leave the list in an ambiguous state or block the page
 with a global spinner.
 
+## Loading / empty / error states (FND-06)
+
+Every async region renders **exactly one** of four states. Never mix them and
+never leave a failed region blank.
+
+| Condition      | Primitive                         | When                                  |
+| -------------- | --------------------------------- | ------------------------------------- |
+| Loading        | `Skeleton` / `*Skeleton`          | shape is known and wait > a blink     |
+| Empty (block)  | `EmptyState`                      | first load, or filtered to nothing    |
+| Empty (inline) | `EmptyState variant="compact"`    | inside a card, lane or sheet          |
+| Error (block)  | `ErrorState`                      | a region failed to load; offer retry  |
+| Error / notice | `InlineAlert`                     | contextual message in a working UI    |
+
+- **`ErrorState`** (`components/feedback/error-state.tsx`) takes
+  `title`/`description` (already translated by the caller), `onRetry`
+  (rendered as an `outlined` `Button` with the `loading` prop via `retrying`),
+  an optional `action`, and `details` — the raw error string, disclosed behind
+  a native `<details>` so stack traces never dominate the view. Use
+  `compact` in cards.
+- **`InlineAlert`** (`components/feedback/inline-alert.tsx`) is the
+  contextual sibling: tones `info`/`success`/`warning`/`error` map to semantic
+  tokens and to `role="status"` (info/success) or `role="alert"`
+  (warning/error). It supports `title`, children, an `action` and a labelled
+  `onDismiss` button. Reach for it for polling paused, cached-data and backoff
+  notices — not for region failures.
+- `--warning` / `--info` (`--color-warning`, `--color-info`, plus
+  `-foreground`) are real semantic tokens: defined on `:root`, `.dark` and the
+  high-contrast blocks; palette themes inherit the base values.
+- Reserve `role="alert"` for real failures; do **not** re-announce it on every
+  poll. For refreshing status text use the FND-01 `LiveRegion`.
+- Skeletons remain `aria-hidden`; pair every state with icon **and** text.
+- Fixed labels used by the primitives — `Dismiss`, `Show details`,
+  `Hide details`, `Retry` — live in all five `lang/app/*.json`.
+
 ## Charts (FND-04)
 
 Charts are built on **Recharts v3** through the shadcn primitive

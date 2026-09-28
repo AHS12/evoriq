@@ -49,7 +49,7 @@ most-reused UI pieces first.
 | `FND-03` | [Date-range & period picker](foundations/FND-03-date-range-picker.md) | M | Done | FND-02 | Preset periods + custom range + comparison period; URL/Inertia-synced. |
 | `FND-04` | [Charting foundation](foundations/FND-04-charting-foundation.md) | L | Done | FND-02 | Pick + wrap a chart lib; themable series, axis, tooltip, legend, empty/loading. |
 | `FND-05` | Data-viz primitives (MetricCard v2, delta, sparkline) | M | stub | FND-01..04 | Trend-aware metric cards, delta chips, inline sparklines. |
-| `FND-06` | Loading / empty / error state system                  | S | stub | FND-01 | Shared `<Skeleton>`, `<EmptyState>`, `<ErrorState>`, `<InlineAlert>` patterns. **Scheduled just-in-time before PIPE-04.** |
+| `FND-06` | [Loading / empty / error state system](foundations/FND-06-loading-empty-error.md) | S | Done | FND-01 | Shared `<Skeleton>`, `<EmptyState>`, `<ErrorState>`, `<InlineAlert>` patterns. **Scheduled just-in-time before PIPE-04.** |
 | `FND-07` | Table & list v2 (density, sticky, saved views)        | M | stub | FND-01 | Density toggle, sticky headers, column persistence, saved filter views. |
 | `FND-08` | Command palette & navigation polish                   | M | stub | — | ⌘K palette over routes/actions; recent items. |
 | `FND-09` | [Frontend test runner (`vp test` + Vitest)](foundations/FND-09-frontend-test-runner.md) | M | Done | — | Vitest + Testing Library wired into `composer check`; RTL helpers. |

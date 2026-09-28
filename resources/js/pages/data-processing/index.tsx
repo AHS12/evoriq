@@ -10,6 +10,7 @@ import { JobDetailSheet } from '@/components/data-processing/job-detail-sheet';
 import { JobFilters } from '@/components/data-processing/job-filters';
 import { JobList } from '@/components/data-processing/job-list';
 import { JobStatCards } from '@/components/data-processing/job-stat-cards';
+import { InlineAlert } from '@/components/feedback/inline-alert';
 import { ListSkeleton } from '@/components/feedback/skeleton-list';
 import { Button } from '@/components/ui/button';
 import { useCan } from '@/hooks/use-can';
@@ -146,12 +147,19 @@ export default function DataProcessingIndex({
                 />
 
                 {!live && activeJobs > 0 && (
-                    <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
-                        <span>{t('Live updates are paused.')}</span>
-                        <Button variant="ghost" size="sm" onClick={resume}>
-                            {t('Resume')}
-                        </Button>
-                    </div>
+                    <InlineAlert
+                        tone="info"
+                        title={t('Live updates are paused.')}
+                        action={
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={resume}
+                            >
+                                {t('Resume')}
+                            </Button>
+                        }
+                    />
                 )}
 
                 <div

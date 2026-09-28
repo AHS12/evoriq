@@ -7,6 +7,8 @@ type Props = {
     title: string;
     description?: string;
     action?: ReactNode;
+    /** `compact` suits in-card, in-lane or in-sheet hosts (FND-06). */
+    variant?: 'default' | 'compact';
     className?: string;
 };
 
@@ -15,24 +17,45 @@ export function EmptyState({
     title,
     description,
     action,
+    variant = 'default',
     className,
 }: Props) {
+    const compact = variant === 'compact';
+
     return (
         <div
+            data-slot="empty-state"
+            data-variant={variant}
             className={cn(
-                'flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed p-10 text-center',
+                'flex flex-col items-center justify-center rounded-lg border border-dashed text-center',
+                compact ? 'gap-2 p-6' : 'gap-3 p-10',
                 className,
             )}
         >
             {Icon && (
-                <div className="flex size-10 items-center justify-center rounded-full bg-muted">
-                    <Icon className="size-5 text-muted-foreground" />
+                <div
+                    className={cn(
+                        'flex items-center justify-center rounded-full bg-muted',
+                        compact ? 'size-8' : 'size-10',
+                    )}
+                >
+                    <Icon
+                        className={cn(
+                            'text-muted-foreground',
+                            compact ? 'size-4' : 'size-5',
+                        )}
+                    />
                 </div>
             )}
             <div className="space-y-1">
                 <p className="font-medium">{title}</p>
                 {description && (
-                    <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+                    <p
+                        className={cn(
+                            'mx-auto max-w-sm text-muted-foreground',
+                            compact ? 'text-xs' : 'text-sm',
+                        )}
+                    >
                         {description}
                     </p>
                 )}
