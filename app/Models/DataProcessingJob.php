@@ -212,6 +212,21 @@ class DataProcessingJob extends Model implements PipelineRunnable
         return $query->where('type', DataProcessingJobType::REPORT);
     }
 
+    /**
+     * Resolve a route binding by primary key (`/activity/7`) or by the job's
+     * `job_id` UUID (`/activity/321b256a-…`), so either identifier works.
+     */
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        return $this->newQuery()
+            ->when(
+                is_numeric($value),
+                fn (Builder $query): Builder => $query->where('id', (int) $value),
+                fn (Builder $query): Builder => $query->where('job_id', (string) $value),
+            )
+            ->first();
+    }
+
     public function isImport(): bool
     {
         return $this->type === DataProcessingJobType::IMPORT;
@@ -332,6 +347,8 @@ class DataProcessingJob extends Model implements PipelineRunnable
         }
 
         $cleanupDays = (int) config('exports.cleanup_days', 7);
+        $expiresAt = $this->completed_at?->copy()->addDays($cleanupDays);
+        $expired = $expiresAt !== null && $expiresAt->isPast();
 
         return [[
             'key' => 'primary',
@@ -339,8 +356,8 @@ class DataProcessingJob extends Model implements PipelineRunnable
             'file_name' => $this->file_name,
             'size' => $this->file_size,
             'mime_type' => $this->mime_type,
-            'downloadable' => $this->isDownloadable(),
-            'expires_at' => $this->completed_at?->copy()->addDays($cleanupDays)->toIso8601String(),
+            'downloadable' => $this->isDownloadable() && ! $expired,
+            'expires_at' => $expiresAt?->toIso8601String(),
         ]];
     }
 

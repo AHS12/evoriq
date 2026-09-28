@@ -20,6 +20,7 @@ use App\Exports\ImportReportExport;
 use App\Imports\ImportResult;
 use App\Jobs\DataProcessingJobDispatcher;
 use App\Models\DataProcessingJob;
+use App\Models\PipelineEvent;
 use App\Models\User;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Services\Audit\AuditLogService;
@@ -92,6 +93,18 @@ class DataProcessingJobService
     public function eventWindow(DataProcessingJob $job, ?int $after = null, ?int $before = null): PipelineEventWindowDTO
     {
         return $this->runs->eventWindow($job, $after, $before);
+    }
+
+    /**
+     * A paginated view of a run's events for the inspector's event table
+     * (PIPE-06).
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, PipelineEvent>
+     */
+    public function paginateEvents(DataProcessingJob $job, int $perPage = 25, array $filters = []): LengthAwarePaginator
+    {
+        return $this->runs->paginateEvents($job, $perPage, $filters);
     }
 
     /**

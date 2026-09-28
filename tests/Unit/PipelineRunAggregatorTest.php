@@ -6,6 +6,7 @@ use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use App\Services\Pipeline\FailureReasonResolver;
+use App\Services\Pipeline\PipelineIssueAggregator;
 use App\Services\Pipeline\PipelineRunAggregator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -30,7 +31,7 @@ function pipelineEvent(array $attributes): PipelineEvent
 
 beforeEach(function () {
     $this->repository = Mockery::mock(PipelineEventRepositoryInterface::class);
-    $this->aggregator = new PipelineRunAggregator($this->repository, new FailureReasonResolver);
+    $this->aggregator = new PipelineRunAggregator($this->repository, new FailureReasonResolver, new PipelineIssueAggregator);
 });
 
 afterEach(function () {

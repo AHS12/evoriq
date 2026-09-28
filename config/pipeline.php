@@ -65,6 +65,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Event context size
+    |--------------------------------------------------------------------------
+    |
+    | Maximum JSON size (bytes) of an event's `context` before the API sends a
+    | truncated string preview instead (PIPE-06). Keeps polled timelines small.
+    |
+    */
+
+    'context_limit' => (int) env('PIPELINE_CONTEXT_LIMIT', 20000),
+
+    /*
+    |--------------------------------------------------------------------------
     | Retry backoff
     |--------------------------------------------------------------------------
     |

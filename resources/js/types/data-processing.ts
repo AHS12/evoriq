@@ -72,11 +72,32 @@ export type JobTimelineEvent = {
     level: string;
     stage: string | null;
     message: string | null;
-    context: Record<string, unknown> | null;
+    /** A truncated JSON string is sent when the payload is oversized. */
+    context: Record<string, unknown> | unknown[] | string | null;
+    context_truncated: boolean;
     progress: Record<string, unknown> | null;
     attempt: number;
     duration_ms: number | null;
     occurred_at: string | null;
+};
+
+export type IssueGroupSample = {
+    row: number;
+    message: string;
+};
+
+export type IssueGroup = {
+    type: string;
+    message: string;
+    count: number;
+    sample_rows: IssueGroupSample[];
+    first_seen: string | null;
+    last_seen: string | null;
+};
+
+export type JobAdvanced = {
+    correlation_id: string | null;
+    raw: Record<string, unknown>;
 };
 
 export type EventsMeta = {
@@ -95,6 +116,7 @@ export type JobArtifact = {
     mime_type: string | null;
     downloadable: boolean;
     expires_at: string | null;
+    download_url?: string | null;
 };
 
 export type JobAbilities = {
@@ -135,6 +157,8 @@ export type DataProcessingJob = {
     timing: JobTiming;
     abilities: JobAbilities & { resume: boolean };
     timeline: JobTimelineEvent[];
+    issues: IssueGroup[];
+    advanced: JobAdvanced | null;
     file_name: string | null;
     file_size: number | null;
     input_file_name: string | null;

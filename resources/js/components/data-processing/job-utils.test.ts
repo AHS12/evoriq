@@ -58,6 +58,8 @@ function makeJob(
             delete: true,
         },
         timeline: [],
+        issues: [],
+        advanced: null,
         file_name: null,
         file_size: null,
         input_file_name: null,

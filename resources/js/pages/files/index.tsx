@@ -41,7 +41,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { index as activityIndex } from '@/routes/activity';
+import { show as activityShow } from '@/routes/activity';
 import { destroy, index, store } from '@/routes/files';
 import type { FileEntry, Paginated } from '@/types';
 import { cn } from '@/lib/utils';
@@ -361,12 +361,8 @@ export default function FilesIndex({
                                                                 )}
                                                             >
                                                                 <a
-                                                                    href={activityIndex.url(
-                                                                        {
-                                                                            query: {
-                                                                                job_id: entry.job_id,
-                                                                            },
-                                                                        },
+                                                                    href={activityShow.url(
+                                                                        entry.job_id,
                                                                     )}
                                                                 >
                                                                     <ArrowUpRight className="size-4" />
@@ -494,12 +490,8 @@ export default function FilesIndex({
                                                                     )}
                                                                 >
                                                                     <a
-                                                                        href={activityIndex.url(
-                                                                            {
-                                                                                query: {
-                                                                                    job_id: entry.job_id,
-                                                                                },
-                                                                            },
+                                                                        href={activityShow.url(
+                                                                            entry.job_id,
                                                                         )}
                                                                     >
                                                                         <ArrowUpRight className="size-4" />

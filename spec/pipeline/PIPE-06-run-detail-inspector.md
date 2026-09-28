@@ -1,6 +1,6 @@
 # PIPE-06 — Run detail & event inspector
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** PIPE-05
@@ -141,28 +141,46 @@ grouped issues, artifacts, parameters and a raw event/context viewer.
 
 ## 7. Acceptance criteria
 
-- [ ] The sheet and run page share one tabbed inspector component.
-- [ ] Issue groups aggregate duplicates with counts and sample rows.
-- [ ] Failed rows can be downloaded when an import report exists.
-- [ ] Artifacts show size, expiry, download and (where possible) preview.
-- [ ] Advanced tab and raw context are only available to authorized users.
-- [ ] Event table paginates and expands context.
-- [ ] `composer check` passes.
+- [x] The sheet and run page share one tabbed inspector component.
+- [x] Issue groups aggregate duplicates with counts and sample rows.
+- [x] Failed rows can be downloaded when an import report exists.
+- [x] Artifacts show size, expiry, download and (where possible) preview.
+- [x] Advanced tab and raw context are only available to authorized users.
+- [x] Event table paginates and expands context.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
 - **Feature** `tests/Feature/Pipeline/RunInspectorTest.php`:
   - issues summary for a failed import matches the seeded errors (grouping +
     counts);
-  - `activity.events` paginates and is forbidden without permission;
-  - advanced fields absent for a normal viewer and present for a manager;
+  - `activity.events` paginates newest-first and is forbidden without permission;
+  - advanced fields absent for an ordinary owner and present for a manager;
   - expired artifact is reported as non-downloadable.
-- **Unit:** `PipelineIssueAggregatorTest` for grouping/capping/sample selection.
+- **Unit** `tests/Unit/PipelineIssueAggregatorTest.php`: grouping by
+  `type + message`, sample-row cap, group cap, event fallback, first/last seen.
 
 ## 9. Notes & open questions
 
-- Decide whether grouping uses `errors` JSON (already stored) or event context;
-  recommendation: `errors` for imports, events for sync runs, unified by the
-  aggregator.
-- Syntax highlighting for JSON: keep dependency-free (CSS classes) or a tiny
-  library; decide during implementation (bundle budget).
+- **Issues source:** stored `errors` JSON is the primary source (grouped by
+  `type + message`); when a run has none (e.g. sync runs) the aggregator falls
+  back to error/warning events. First/last seen come from matching events.
+- **Truncation flag:** the resource emits `context_truncated` (not
+  `truncated`) so it cannot collide with a `context.truncated` key; over
+  `pipeline.context_limit` the context is sent as a truncated JSON string.
+- **Advanced gating:** the backend withholds `advanced` unless the viewer has
+  `data-processing.manage` **or** `developer.view` (an ordinary owner does not
+  get it); the frontend treats `run.advanced === null` as the gate and hides the
+  tab. Correlation ids are read from an event's `context.correlation_id` when a
+  producer recorded one (the recorder does not yet inject the audit correlation
+  id — noted for PIPE-10).
+- **Event table:** uses the sanctioned JSON endpoint `activity.events`
+  (`fetch`, `Accept: application/json`) so it can page beyond the live window;
+  rows expand a dependency-free `<pre>` JSON viewer (no syntax highlighting — the
+  bundle budget call was to stay library-free).
+- **Artifacts:** `artifactList()` now marks an artifact non-downloadable once it
+  is past its retention window; the tab reuses `FilePreviewDialog` for
+  previewable mime types.
+- **Parameters "Duplicate with these parameters"** is deferred to PIPE-07.
+- Run-page tabs are URL-addressable via `?tab=` using
+  `history.replaceState` (no extra Inertia visit).

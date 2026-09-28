@@ -16,6 +16,7 @@ final readonly class PipelineRunDTO
     /**
      * @param  array<int, PipelineStageDTO>  $stages
      * @param  Collection<int, PipelineEvent>  $timeline
+     * @param  array<int, PipelineIssueGroupDTO>  $issues
      */
     public function __construct(
         public DataProcessingJob $job,
@@ -25,5 +26,7 @@ final readonly class PipelineRunDTO
         public Collection $timeline,
         public ?PipelineFailureReason $failureReason,
         public int $skipped,
+        public array $issues = [],
+        public ?string $correlationId = null,
     ) {}
 }

@@ -8,6 +8,7 @@ Route::middleware(['auth', 'verified'])->prefix('activity')->name('activity.')->
     Route::post('export', [ActivityController::class, 'storeExport'])->name('storeExport');
     Route::post('import', [ActivityController::class, 'storeImport'])->name('storeImport');
     Route::get('import/template/{entity}', [ActivityController::class, 'template'])->name('template');
+    Route::get('{dataProcessingJob}/events', [ActivityController::class, 'events'])->name('events');
     Route::get('{dataProcessingJob}', [ActivityController::class, 'show'])->name('show');
 
     Route::post('{dataProcessingJob}/cancel', [ActivityController::class, 'cancel'])->name('cancel');

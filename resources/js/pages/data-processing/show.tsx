@@ -3,15 +3,18 @@ import { ArrowLeft, Pause, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { isActiveStatus } from '@/components/data-processing/job-utils';
 import { mergeEvents } from '@/components/data-processing/run-event-utils';
+import {
+    RunInspector,
+    type InspectorTab,
+} from '@/components/data-processing/run-inspector';
 import { RunActionBar } from '@/components/data-processing/run-action-bar';
 import { RunEventStream } from '@/components/data-processing/run-event-stream';
 import { RunHero } from '@/components/data-processing/run-hero';
 import { RunTerminalSummary } from '@/components/data-processing/run-terminal-summary';
-import { StageLanes } from '@/components/data-processing/stage-lanes';
 import { Button } from '@/components/ui/button';
-import { useCan } from '@/hooks/use-can';
 import { useLivePoll } from '@/hooks/use-live-poll';
 import { useTranslation } from '@/hooks/use-translation';
+import { useUrlTab } from '@/hooks/use-url-tab';
 import {
     index as activityIndex,
     show as activityShow,
@@ -30,17 +33,30 @@ type Props = {
     options: JobOptions;
 };
 
+const INSPECTOR_TABS: readonly InspectorTab[] = [
+    'timeline',
+    'overview',
+    'issues',
+    'artifacts',
+    'parameters',
+    'advanced',
+];
+
 export default function RunShow({
     run,
     events: incomingEvents,
     eventsMeta,
 }: Props) {
     const { t } = useTranslation();
-    const can = useCan();
 
     const [events, setEvents] = useState<JobTimelineEvent[]>(incomingEvents);
     const [hasMoreOlder, setHasMoreOlder] = useState(eventsMeta.has_more_older);
     const [loadingOlder, setLoadingOlder] = useState(false);
+    const [tab, setTab] = useUrlTab<InspectorTab>(
+        'tab',
+        'timeline',
+        INSPECTOR_TABS,
+    );
 
     const active = isActiveStatus(run.status);
 
@@ -79,8 +95,11 @@ export default function RunShow({
         });
     };
 
-    const canManage =
-        can('data-processing.manage') || can('data-processing.view.all');
+    const hideTab =
+        (tab === 'advanced' && run.advanced === null) ||
+        (tab === 'issues' && run.issues.length === 0) ||
+        (tab === 'artifacts' && run.artifacts.length === 0);
+    const safeTab: InspectorTab = hideTab ? 'timeline' : tab;
 
     return (
         <>
@@ -114,15 +133,27 @@ export default function RunShow({
                 </div>
 
                 <RunHero run={run} />
-                <StageLanes run={run} events={events} />
-                <RunTerminalSummary run={run} canManage={canManage} />
-                <RunEventStream
+                <RunTerminalSummary
+                    run={run}
+                    canManage={run.advanced !== null}
+                />
+
+                <RunInspector
                     run={run}
                     events={events}
-                    hasMoreOlder={hasMoreOlder}
-                    loadingOlder={loadingOlder}
-                    onLoadOlder={loadOlder}
+                    value={safeTab}
+                    onValueChange={setTab}
+                    timeline={
+                        <RunEventStream
+                            run={run}
+                            events={events}
+                            hasMoreOlder={hasMoreOlder}
+                            loadingOlder={loadingOlder}
+                            onLoadOlder={loadOlder}
+                        />
+                    }
                 />
+
                 <RunActionBar run={run} />
             </div>
         </>

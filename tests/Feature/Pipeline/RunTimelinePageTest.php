@@ -58,6 +58,25 @@ test('renders the run timeline for the owner with a tail window', function () {
             ->has('options'));
 });
 
+test('resolves a run by its job_id uuid as well as its numeric id', function () {
+    $job = DataProcessingJob::factory()->active()->create([
+        'user_id' => $this->user->id,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('activity.show', ['dataProcessingJob' => $job->job_id]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('data-processing/show')
+            ->where('run.id', $job->id)
+            ->where('run.job_id', $job->job_id));
+
+    $this->actingAs($this->user)
+        ->get(route('activity.show', $job))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('run.id', $job->id));
+});
+
 test('forbids users who cannot view the run', function () {
     $job = DataProcessingJob::factory()->create();
     $other = User::factory()->create();

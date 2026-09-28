@@ -14,6 +14,7 @@ use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -29,6 +30,7 @@ class PipelineRunAggregator
     public function __construct(
         protected PipelineEventRepositoryInterface $events,
         protected FailureReasonResolver $failures,
+        protected PipelineIssueAggregator $issues,
     ) {}
 
     public function aggregate(DataProcessingJob $job, bool $withTimeline = false): PipelineRunDTO
@@ -44,7 +46,45 @@ class PipelineRunAggregator
             timeline: $withTimeline ? $this->timeline($events) : $events->take(0)->values(),
             failureReason: $this->resolveFailureReason($job),
             skipped: $this->countSkipped($job),
+            issues: $this->issues->summarize($job, $events),
+            correlationId: $this->correlationId($events),
         );
+    }
+
+    /**
+     * A paginated view of a run's events for the inspector's event table
+     * (PIPE-06). Supports the repository's `level`, `type`, `stage`, `search`
+     * and `order_direction` filters.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, PipelineEvent>
+     */
+    public function paginateEvents(DataProcessingJob $job, int $perPage = 25, array $filters = []): LengthAwarePaginator
+    {
+        return $this->events->forRun(
+            $job->pipelineRunType(),
+            $job->pipelineRunId(),
+            $perPage,
+            $filters,
+        );
+    }
+
+    /**
+     * The run's correlation id, if any event recorded one in its context.
+     *
+     * @param  Collection<int, PipelineEvent>  $events
+     */
+    private function correlationId(Collection $events): ?string
+    {
+        foreach ($events as $event) {
+            $context = $event->context;
+
+            if (is_array($context) && isset($context['correlation_id']) && is_string($context['correlation_id'])) {
+                return $context['correlation_id'];
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -87,7 +87,7 @@ export function TimelineTime({ value, className }: TimeProps) {
                 <button
                     type="button"
                     className={cn(
-                        'shrink-0 rounded pt-0.5 text-right text-xs whitespace-nowrap text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
+                        'flex h-6 shrink-0 items-center justify-end self-start rounded text-right text-xs whitespace-nowrap text-muted-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50',
                         className,
                     )}
                 >
@@ -120,7 +120,9 @@ export function TimelineContent({
     children,
 }: ContentProps) {
     const item = useTimelineItem();
-    const hasDetail = Children.count(children) > 0;
+    // `Children.toArray` drops null/undefined/booleans, so `{cond ? <X/> : null}`
+    // does not count as detail (which previously rendered an empty `{}` block).
+    const hasDetail = Children.toArray(children).length > 0;
     const collapsible = Boolean(item?.expandable && hasDetail);
 
     const heading = (
@@ -146,7 +148,7 @@ export function TimelineContent({
                         : 'grid-rows-[0fr] opacity-0',
                 )}
             >
-                <div className="overflow-hidden">
+                <div className="min-h-0 overflow-hidden">
                     <div className="pt-2 text-xs text-muted-foreground">
                         {children}
                     </div>
@@ -242,7 +244,10 @@ export function TimelineItem({
                 className={cn('group/item relative flex gap-3', className)}
             >
                 {time !== null && time !== undefined && (
-                    <TimelineTime value={time} />
+                    <TimelineTime
+                        value={time}
+                        className={compact ? 'h-5' : 'h-6'}
+                    />
                 )}
 
                 <div
@@ -258,13 +263,13 @@ export function TimelineItem({
                             running
                                 ? 'bg-primary/40 motion-safe:animate-pulse'
                                 : 'bg-border',
-                            compact ? 'top-6' : 'top-7',
+                            compact ? 'top-5' : 'top-6',
                         )}
                     />
                     <TimelineMarker
                         tone={tone}
                         running={running}
-                        className={cn('mt-0.5', compact ? 'size-5' : 'size-6')}
+                        className={cn(compact ? 'size-5' : 'size-6')}
                     >
                         {marker}
                     </TimelineMarker>
@@ -273,7 +278,7 @@ export function TimelineItem({
                 <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
                     <div
                         className={cn(
-                            'min-w-0 flex-1',
+                            'min-w-0 flex-1 pt-0.5',
                             compact ? 'pb-3' : 'pb-5',
                         )}
                     >

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Pipeline;
 
+use App\DTOs\Pipeline\PipelineIssueGroupDTO;
 use App\DTOs\Pipeline\PipelineRunDTO;
 use App\DTOs\Pipeline\PipelineStageDTO;
 use App\Http\Resources\Export\DataProcessingJobResource;
@@ -34,6 +35,8 @@ class PipelineRunResource extends JsonResource
         $failure = $this->failureReason;
 
         $canManage = $user !== null && Gate::forUser($user)->allows('manage', $job);
+        $canInspect = $user !== null
+            && ($user->can('data-processing.manage') || $user->can('developer.view'));
 
         $abilities = [
             'cancel' => $user !== null && $job->isActive() && ! $job->cancellationRequested() && $canManage,
@@ -98,6 +101,19 @@ class PipelineRunResource extends JsonResource
             ],
             'abilities' => $abilities,
             'timeline' => PipelineEventResource::collection($this->timeline),
+            'issues' => array_map(
+                static fn (PipelineIssueGroupDTO $group): array => $group->toArray(),
+                $this->issues,
+            ),
+            'advanced' => $canInspect ? [
+                'correlation_id' => $this->correlationId,
+                'raw' => $job->only([
+                    'job_id', 'type', 'status', 'entity_type', 'format', 'filters',
+                    'stage', 'attempt', 'total_items', 'processed_items',
+                    'success_count', 'error_count', 'error_message',
+                    'started_at', 'completed_at', 'created_at',
+                ]),
+            ] : null,
 
             // --- Legacy compatibility (Data Processing Center) ---
             'job_id' => $job->job_id,
@@ -121,7 +137,15 @@ class PipelineRunResource extends JsonResource
             'error_message' => $job->error_message,
             'errors' => $job->errors ?? [],
             'progress_percentage' => $job->progressPercentage(),
-            'artifacts' => $job->artifactList(),
+            'artifacts' => array_map(
+                static fn (array $artifact): array => [
+                    ...$artifact,
+                    'download_url' => ($artifact['downloadable'] ?? false)
+                        ? route('exports.download', $job)
+                        : null,
+                ],
+                $job->artifactList(),
+            ),
             'download_url' => $job->isDownloadable() ? route('exports.download', $job) : null,
             'downloadable' => $job->isDownloadable(),
             'owner' => $job->relationLoaded('user') ? $job->user?->name : null,

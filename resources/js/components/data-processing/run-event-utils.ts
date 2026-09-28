@@ -132,6 +132,31 @@ export function isStageEvent(event: JobTimelineEvent): boolean {
 }
 
 /**
+ * Whether an event carries renderable context worth an expandable detail.
+ * The recorder defaults context to `[]`, so empty arrays/objects (and `{}` /`[]`
+ * string previews) count as "no context" and render no detail block.
+ */
+export function hasContext(event: JobTimelineEvent): boolean {
+    const context = event.context;
+
+    if (context === null || context === undefined) {
+        return false;
+    }
+
+    if (typeof context === 'string') {
+        const trimmed = context.trim();
+
+        return trimmed !== '' && trimmed !== '{}' && trimmed !== '[]';
+    }
+
+    if (Array.isArray(context)) {
+        return context.length > 0;
+    }
+
+    return Object.keys(context).length > 0;
+}
+
+/**
  * Collapse consecutive PROGRESS events into a single rolling row so the stream
  * stays readable without losing the latest signal.
  */

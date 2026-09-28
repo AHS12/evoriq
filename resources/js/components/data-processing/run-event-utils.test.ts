@@ -4,6 +4,7 @@ import {
     eventTitle,
     eventTone,
     filterEvents,
+    hasContext,
     latestAnnouncement,
     mergeEvents,
     TIMELINE_DOM_CAP,
@@ -26,6 +27,7 @@ function makeEvent(
         stage: null,
         message: null,
         context: null,
+        context_truncated: false,
         progress: null,
         attempt: 1,
         duration_ms: null,
@@ -75,6 +77,21 @@ describe('filterEvents', () => {
     it('searches message and stage', () => {
         expect(filterEvents(events, 'all', 'duplicate')).toHaveLength(1);
         expect(filterEvents(events, 'all', 'write')).toHaveLength(1);
+    });
+});
+
+describe('hasContext', () => {
+    it('treats null and empty payloads as no context', () => {
+        expect(hasContext(makeEvent({ context: null }))).toBe(false);
+        expect(hasContext(makeEvent({ context: [] }))).toBe(false);
+        expect(hasContext(makeEvent({ context: {} }))).toBe(false);
+        expect(hasContext(makeEvent({ context: '[]' }))).toBe(false);
+    });
+
+    it('detects meaningful context', () => {
+        expect(hasContext(makeEvent({ context: { rows: 5 } }))).toBe(true);
+        expect(hasContext(makeEvent({ context: ['x'] }))).toBe(true);
+        expect(hasContext(makeEvent({ context: '{"a":1}' }))).toBe(true);
     });
 });
 

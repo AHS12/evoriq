@@ -7,7 +7,6 @@ import {
     useState,
 } from 'react';
 import { ArrowDown, Pause, Play, Search } from 'lucide-react';
-import { CopyButton } from '@/components/app/copy-button';
 import { EmptyState } from '@/components/app/empty-state';
 import {
     collapseProgress,
@@ -16,8 +15,10 @@ import {
     eventTitle,
     eventTone,
     filterEvents,
+    hasContext,
     latestAnnouncement,
 } from '@/components/data-processing/run-event-utils';
+import { RunJsonViewer } from '@/components/data-processing/run-json-viewer';
 import { isActiveStatus } from '@/components/data-processing/job-utils';
 import { LiveRegion } from '@/components/feedback/live-region';
 import { Timeline } from '@/components/timeline/timeline';
@@ -52,18 +53,11 @@ const FILTER_LABEL: Record<RunEventFilter, string> = {
 };
 
 function EventContext({ event }: { event: JobTimelineEvent }) {
-    const json = useMemo(
-        () => JSON.stringify(event.context ?? {}, null, 2),
-        [event.context],
-    );
-
     return (
-        <div className="space-y-2">
-            <pre className="max-h-48 overflow-auto rounded-md bg-muted p-2 text-xs whitespace-pre-wrap">
-                {json}
-            </pre>
-            <CopyButton value={json} />
-        </div>
+        <RunJsonViewer
+            value={event.context}
+            truncated={event.context_truncated}
+        />
     );
 }
 
@@ -128,6 +122,19 @@ export function RunEventStream({
         prevOldest.current = oldest;
         lastHeight.current = element.scrollHeight;
     }, [events, follow]);
+
+    // Land on the newest event on first paint (auto-follow), after layout
+    // settles (fonts/rows), so the stream does not open part-way down.
+    useEffect(() => {
+        if (!follow) {
+            return;
+        }
+
+        const frame = requestAnimationFrame(() => scrollToBottom());
+
+        return () => cancelAnimationFrame(frame);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const onKeyDown = (keyboardEvent: KeyboardEvent): void => {
@@ -273,6 +280,7 @@ export function RunEventStream({
                     <Timeline aria-label={t('Run events')}>
                         {visible.map((event) => {
                             const Icon = eventIcon(event);
+                            const showContext = hasContext(event);
 
                             return (
                                 <TimelineItem
@@ -281,7 +289,7 @@ export function RunEventStream({
                                     marker={<Icon className="size-3.5" />}
                                     time={event.occurred_at}
                                     durationMs={event.duration_ms}
-                                    expandable={event.context !== null}
+                                    expandable={showContext}
                                 >
                                     <TimelineContent
                                         title={eventTitle(event, t)}
@@ -289,7 +297,9 @@ export function RunEventStream({
                                             eventDescription(event) ?? undefined
                                         }
                                     >
-                                        <EventContext event={event} />
+                                        {showContext ? (
+                                            <EventContext event={event} />
+                                        ) : null}
                                     </TimelineContent>
                                 </TimelineItem>
                             );

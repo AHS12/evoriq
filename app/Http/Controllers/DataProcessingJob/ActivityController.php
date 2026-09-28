@@ -20,6 +20,7 @@ use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Support\DataProcessingOptions;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -78,24 +79,47 @@ class ActivityController extends Controller
      * `?after_sequence=N` returns newer events (append) and `?before_sequence=N`
      * returns the previous page (prepend).
      */
-    public function show(Request $request, DataProcessingJob $dataProcessingJob): Response
+    public function show(Request $request, string $dataProcessingJob): Response
     {
-        Gate::authorize('view', $dataProcessingJob);
+        $job = $this->resolveRun($dataProcessingJob);
+
+        Gate::authorize('view', $job);
 
         $window = $this->service->eventWindow(
-            $dataProcessingJob,
+            $job,
             $this->nullableInt($request->query('after_sequence')),
             $this->nullableInt($request->query('before_sequence')),
         );
 
         return Inertia::render('data-processing/show', [
             'run' => PipelineRunResource::make(
-                $this->service->pipelineRun($dataProcessingJob, false),
+                $this->service->pipelineRun($job, false),
             )->resolve($request),
             'events' => PipelineEventResource::collection($window->events)->toArray($request),
             'eventsMeta' => $window->meta(),
             'options' => DataProcessingOptions::make(),
         ]);
+    }
+
+    /**
+     * A paginated event listing for the run inspector's event table (PIPE-06).
+     */
+    public function events(Request $request, DataProcessingJob $dataProcessingJob): AnonymousResourceCollection
+    {
+        Gate::authorize('view', $dataProcessingJob);
+
+        $events = $this->service->paginateEvents(
+            $dataProcessingJob,
+            (int) $request->query('per_page', 25),
+            [
+                'order_direction' => 'desc',
+                'level' => $request->query('level'),
+                'type' => $request->query('type'),
+                'search' => $request->query('search'),
+            ],
+        );
+
+        return PipelineEventResource::collection($events);
     }
 
     /**
@@ -236,6 +260,20 @@ class ActivityController extends Controller
     private function formatFor(string $extension): ExportFormat
     {
         return strtolower($extension) === 'xlsx' ? ExportFormat::XLSX : ExportFormat::CSV;
+    }
+
+    /**
+     * Resolve a run by its numeric id or its `job_id` UUID.
+     */
+    private function resolveRun(string $key): DataProcessingJob
+    {
+        $job = (new DataProcessingJob)->resolveRouteBinding($key);
+
+        if (! $job instanceof DataProcessingJob) {
+            abort(404);
+        }
+
+        return $job;
     }
 
     private function nullableInt(mixed $value): ?int
