@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
-import { appLocale } from '@/lib/locale';
+import { formatDateTime } from '@/lib/format';
 import { run, update } from '@/routes/admin/settings/backup';
 import type { BackupRun, BackupStatus, Paginated, SettingGroup } from '@/types';
 
@@ -53,17 +53,11 @@ export default function BackupSettings({ group, runs, status }: Props) {
     };
 
     const nextRun = status.next_run_at
-        ? new Date(status.next_run_at).toLocaleString(appLocale(), {
-              dateStyle: 'short',
-              timeStyle: 'short',
-          })
+        ? formatDateTime(status.next_run_at)
         : t('Not scheduled');
 
     const lastBackup = status.last_backup?.created_at
-        ? new Date(status.last_backup.created_at).toLocaleString(appLocale(), {
-              dateStyle: 'short',
-              timeStyle: 'short',
-          })
+        ? formatDateTime(status.last_backup.created_at)
         : t('No backup yet');
 
     const health = status.health

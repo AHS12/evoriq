@@ -91,3 +91,36 @@ visible with an inline pending state (spinner/disabled), and reconcile on
 success. On failure, revert the row and surface an error toast with an explicit
 retry action — do not leave the list in an ambiguous state or block the page
 with a global spinner.
+
+## Charts (FND-04)
+
+Charts are built on **Recharts v3** through the shadcn primitive
+`components/ui/chart.tsx`. Use the typed wrappers in `components/charts/` rather
+than composing Recharts directly, so colours, axes, tooltips, loading and empty
+states stay consistent.
+
+| Component | Use for |
+| --------- | ------- |
+| `ChartCard` | titled frame for any chart panel |
+| `LineChart` / `AreaChart` | trends over time |
+| `BarChart` | categorical comparisons (supports `stackId` stacking) |
+| `DonutChart` | part-to-whole breakdowns (`nameKey` + `valueKey`) |
+
+Conventions:
+
+- **Series colours** come from `--chart-1…5` via `seriesColor()` /
+  `buildChartConfig()` — they already adapt to dark, khaki, dracula and
+  high-contrast palettes. Only pass `color` to override intentionally.
+- **Format values with `lib/format.ts`** through `valueFormatter` (tooltip) and
+  `xTickFormatter` / `yTickFormatter` (axes): dates via `formatDate`,
+  durations via `formatHours`, counts via `formatNumber`.
+- **States are automatic**: pass `isLoading` for `ChartSkeleton`, and the
+  wrapper renders `EmptyState` when `data` is empty. Never render a bare axis
+  with no data.
+- **Values are raw** from page props (numbers, ISO dates); never send
+  pre-formatted strings.
+- **Reduced motion**: wrappers disable Recharts animation via
+  `useReducedMotion()`; `ChartContainer` also gets a `role="img"` +
+  `aria-label`.
+- Keep `components/ui/chart.tsx` pristine (re-publishable); behaviour lives in
+  `components/charts/*`.

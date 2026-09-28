@@ -8,22 +8,14 @@ import {
     File as FileIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { formatBytes } from '@/lib/format';
 
 export function formatSize(bytes: number | null): string {
-    if (bytes === null || bytes === 0) {
+    if (bytes === null) {
         return '—';
     }
 
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let value = bytes;
-    let unit = 0;
-
-    while (value >= 1024 && unit < units.length - 1) {
-        value /= 1024;
-        unit++;
-    }
-
-    return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
+    return formatBytes(bytes);
 }
 
 export function isImage(mime: string | null): boolean {

@@ -45,7 +45,7 @@ import { index as activityIndex } from '@/routes/activity';
 import { destroy, index, store } from '@/routes/files';
 import type { FileEntry, Paginated } from '@/types';
 import { cn } from '@/lib/utils';
-import { appLocale } from '@/lib/locale';
+import { formatDate } from '@/lib/format';
 import { useDataTableFilters } from '@/hooks/use-data-table-filters';
 import { useTranslation } from '@/hooks/use-translation';
 
@@ -62,18 +62,6 @@ type Props = {
     }[];
     canViewGenerated: boolean;
 };
-
-function formatDate(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString(appLocale(), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-}
 
 function SourceBadge({ entry }: { entry: FileEntry }) {
     const { t } = useTranslation();

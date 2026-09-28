@@ -19,7 +19,10 @@ import {
 } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
-import { appLocale } from '@/lib/locale';
+import {
+    formatBytes as formatSize,
+    formatDateTime as formatTimestamp,
+} from '@/lib/format';
 import { download } from '@/routes/admin/settings/backup';
 import type { BackupRun, BackupRunStatus, Paginated } from '@/types';
 
@@ -36,34 +39,6 @@ const statusVariants: Record<
     completed: 'default',
     failed: 'destructive',
 };
-
-function formatTimestamp(value: string | null): string {
-    if (!value) {
-        return '';
-    }
-
-    return new Date(value).toLocaleString(appLocale(), {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    });
-}
-
-function formatSize(bytes: number | null): string {
-    if (bytes === null) {
-        return '';
-    }
-
-    const units = ['B', 'KB', 'MB', 'GB'];
-    let size = bytes;
-    let unit = 0;
-
-    while (size >= 1024 && unit < units.length - 1) {
-        size /= 1024;
-        unit++;
-    }
-
-    return `${size.toFixed(size >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`;
-}
 
 export function BackupRuns({ runs }: Props) {
     const { t } = useTranslation();

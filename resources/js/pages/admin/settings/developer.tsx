@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
-import { appLocale } from '@/lib/locale';
+import { formatDateTime } from '@/lib/format';
 import type {
     BackupDevStatus,
     DeveloperTool,
@@ -150,12 +150,7 @@ export default function DeveloperSettings({
                                     label={t('Next backup run')}
                                     value={
                                         backup.next_run_at
-                                            ? new Date(
-                                                  backup.next_run_at,
-                                              ).toLocaleString(appLocale(), {
-                                                  dateStyle: 'short',
-                                                  timeStyle: 'short',
-                                              })
+                                            ? formatDateTime(backup.next_run_at)
                                             : t('Not scheduled')
                                     }
                                 />
@@ -163,12 +158,9 @@ export default function DeveloperSettings({
                                     label={t('Last backup')}
                                     value={
                                         backup.last_backup_at
-                                            ? new Date(
+                                            ? formatDateTime(
                                                   backup.last_backup_at,
-                                              ).toLocaleString(appLocale(), {
-                                                  dateStyle: 'short',
-                                                  timeStyle: 'short',
-                                              })
+                                              )
                                             : t('No backup yet')
                                     }
                                 />

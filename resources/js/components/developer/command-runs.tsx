@@ -19,7 +19,7 @@ import {
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import { cn } from '@/lib/utils';
-import { appLocale } from '@/lib/locale';
+import { formatDateTime as formatTimestamp } from '@/lib/format';
 import type { CommandRun, CommandRunStatus, MaintenanceAction } from '@/types';
 
 type Props = {
@@ -36,17 +36,6 @@ const statusVariants: Record<
     completed: 'default',
     failed: 'destructive',
 };
-
-function formatTimestamp(value: string | null): string {
-    if (!value) {
-        return '';
-    }
-
-    return new Date(value).toLocaleString(appLocale(), {
-        dateStyle: 'short',
-        timeStyle: 'short',
-    });
-}
 
 export function CommandRuns({ runs, actions }: Props) {
     const { t } = useTranslation();

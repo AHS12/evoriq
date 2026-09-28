@@ -21,7 +21,7 @@ import {
 import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/roles';
 import type { Paginated, Permission, Role } from '@/types';
-import { appLocale } from '@/lib/locale';
+import { formatDate } from '@/lib/format';
 
 type Filters = {
     search?: string | null;
@@ -36,18 +36,6 @@ type Props = {
     filters: Filters;
     permissions: Permission[];
 };
-
-function formatDate(value?: string): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString(appLocale(), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-}
 
 export default function RolesIndex({ roles, filters, permissions }: Props) {
     const can = useCan();

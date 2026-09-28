@@ -15,25 +15,13 @@ import { UserStatusBadge } from '@/components/user/user-status-badge';
 import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
 import type { User } from '@/types';
-import { appLocale } from '@/lib/locale';
+import { formatDate } from '@/lib/format';
 
 type Props = {
     user: User | null;
     onOpenChange: (open: boolean) => void;
     onEdit?: (user: User) => void;
 };
-
-function formatDate(value: string | null | undefined): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString(appLocale(), {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
-}
 
 function DetailRow({
     label,
@@ -101,7 +89,10 @@ export function UserDetailsSheet({ user, onOpenChange, onEdit }: Props) {
                                     {user.email_verified_at ? (
                                         <>
                                             <MailCheck className="size-4 text-success" />
-                                            {formatDate(user.email_verified_at)}
+                                            {formatDate(
+                                                user.email_verified_at,
+                                                { month: 'long' },
+                                            )}
                                         </>
                                     ) : (
                                         <span className="text-muted-foreground">
@@ -141,11 +132,15 @@ export function UserDetailsSheet({ user, onOpenChange, onEdit }: Props) {
                                 </p>
                                 <DetailRow label={t('Created')}>
                                     <CalendarDays className="size-4 text-muted-foreground" />
-                                    {formatDate(user.created_at)}
+                                    {formatDate(user.created_at, {
+                                        month: 'long',
+                                    })}
                                 </DetailRow>
                                 <DetailRow label={t('Last updated')}>
                                     <CalendarDays className="size-4 text-muted-foreground" />
-                                    {formatDate(user.updated_at)}
+                                    {formatDate(user.updated_at, {
+                                        month: 'long',
+                                    })}
                                 </DetailRow>
                             </div>
                         </div>

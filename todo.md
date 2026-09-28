@@ -10,4 +10,5 @@
 
 - [x] Data Processing Center: import/export jobs, Activity UI with live polling, artifact download, in-app notifications, sidebar badge, module permissions (`data-processing.*`, `user.export`/`user.import`).
 - [x] audit log
-- [ ] language laravel lang
+- [x] language laravel lang
+- [ ] files to job id not opening specific job passed to url

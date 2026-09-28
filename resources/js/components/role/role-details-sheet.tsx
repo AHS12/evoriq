@@ -13,7 +13,7 @@ import {
 import { SystemRoleBadge } from '@/components/role/system-role-badge';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Permission, Role } from '@/types';
-import { appLocale } from '@/lib/locale';
+import { formatDate } from '@/lib/format';
 
 type Props = {
     role: Role | null;
@@ -21,18 +21,6 @@ type Props = {
     onOpenChange: (open: boolean) => void;
     onEdit?: (role: Role) => void;
 };
-
-function formatDate(value: string | undefined): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString(appLocale(), {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
-}
 
 export function RoleDetailsSheet({
     role,
@@ -139,7 +127,9 @@ export function RoleDetailsSheet({
                                     {t('Created')}
                                 </span>
                                 <span className="text-sm font-medium">
-                                    {formatDate(role.created_at)}
+                                    {formatDate(role.created_at, {
+                                        month: 'long',
+                                    })}
                                 </span>
                             </div>
 

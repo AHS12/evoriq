@@ -9,6 +9,7 @@ import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar
 import { DataTablePerPage } from '@/components/app/data-table/data-table-per-page';
 import { PageHeader } from '@/components/app/page-header';
 import { Combobox } from '@/components/app/combobox';
+import { DateRangePicker } from '@/components/date-range/date-range-picker';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -31,9 +32,10 @@ import {
     useDataTableFilters,
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
+import { useDateRange } from '@/hooks/use-date-range';
 import { index as auditLogsIndex, prune } from '@/routes/audit-logs';
 import type { AuditLog, AuditLogIndexProps } from '@/types';
-import { appLocale } from '@/lib/locale';
+import { formatDateTime } from '@/lib/format';
 import { useTranslation } from '@/hooks/use-translation';
 
 type SelectOption = { value: string; label: string };
@@ -58,21 +60,6 @@ const eventVariant: Record<
     deleted: 'destructive',
     restored: 'default',
 };
-
-function formatDateTime(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleString(appLocale(), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-    });
-}
 
 function stringifyValue(value: unknown): string {
     if (value === null || value === undefined) {
@@ -117,6 +104,11 @@ export default function AuditLogsIndex({
         filters as TableFilters,
     );
 
+    const { range, comparison, toParams } = useDateRange(
+        filters as TableFilters,
+        { params: { start: 'date_from', end: 'date_to' } },
+    );
+
     const columns: ColumnDef<AuditLog>[] = [
         {
             accessorKey: 'created_at',
@@ -124,7 +116,7 @@ export default function AuditLogsIndex({
             header: () => t('When'),
             cell: ({ row }) => (
                 <span className="text-sm whitespace-nowrap text-muted-foreground">
-                    {formatDateTime(row.original.created_at)}
+                    {formatDateTime(row.original.created_at, { seconds: true })}
                 </span>
             ),
         },
@@ -335,6 +327,18 @@ export default function AuditLogsIndex({
                         searchPlaceholder={t('Search events…')}
                     />
 
+                    <DateRangePicker
+                        value={range}
+                        comparison={comparison}
+                        onApply={(next, compare) =>
+                            apply(
+                                { ...toParams(next, compare), cursor: null },
+                                true,
+                            )
+                        }
+                        className="w-full sm:w-64"
+                    />
+
                     <DataTablePerPage
                         value={logs.meta.per_page}
                         disabled={isLoading}
@@ -384,7 +388,9 @@ export default function AuditLogsIndex({
                     <SheetHeader>
                         <SheetTitle>{selected?.description}</SheetTitle>
                         <SheetDescription>
-                            {formatDateTime(selected?.created_at ?? null)}
+                            {formatDateTime(selected?.created_at ?? null, {
+                                seconds: true,
+                            })}
                         </SheetDescription>
                     </SheetHeader>
 

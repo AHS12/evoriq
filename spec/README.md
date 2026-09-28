@@ -33,7 +33,8 @@ spec/
 ├── foundations/                  # cross-cutting UI/craft primitives
 │   ├── FND-01-motion-and-feedback.md
 │   ├── FND-02-formatting-utilities.md
-│   └── FND-03-date-range-picker.md
+│   ├── FND-03-date-range-picker.md
+│   └── FND-04-charting-foundation.md
 ├── pipeline/                     # the "Pipeline Experience" epic (flagship)
 │   ├── PIPE-01-event-stream.md
 │   ├── PIPE-02-run-aggregation.md

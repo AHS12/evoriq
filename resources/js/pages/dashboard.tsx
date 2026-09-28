@@ -11,6 +11,7 @@ import type { LucideIcon } from 'lucide-react';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
+import { AnalyticsPreview } from '@/components/dashboard/analytics-preview';
 import { SetupChecklist } from '@/components/dashboard/setup-checklist';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,6 +66,8 @@ export default function Dashboard({ stats, setup, hasAnalytics }: Props) {
                         />
                     ))}
                 </div>
+
+                <AnalyticsPreview />
 
                 <div className="grid gap-4 lg:grid-cols-3">
                     <SetupChecklist steps={setup} />

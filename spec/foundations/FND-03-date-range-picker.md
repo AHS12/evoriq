@@ -1,6 +1,6 @@
 # FND-03 — Date-range & period picker
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** foundations
 - **Estimate:** M
 - **Depends on:** FND-02
@@ -108,25 +108,39 @@ beyond publishing).
 
 ## 7. Acceptance criteria
 
-- [ ] Presets listed in TDR §31 are all available and resolve correctly.
-- [ ] Custom range via calendar works with mouse and keyboard.
-- [ ] Comparison produces a correct previous-period and same-period-last-year
+- [x] Presets listed in TDR §31 are all available and resolve correctly.
+- [x] Custom range via calendar works with mouse and keyboard.
+- [x] Comparison produces a correct previous-period and same-period-last-year
       range.
-- [ ] Range value is serialized to/from the URL and survives reload/back.
-- [ ] A compact summary is used in at least one toolbar.
-- [ ] No hard-coded English in the component.
+- [x] Range value is serialized to/from the URL and survives reload/back.
+- [x] A compact summary is used in at least one toolbar.
+- [x] No hard-coded English in the component.
 
 ## 8. Tests
 
 - `lib/date-range.ts` is pure → unit tests (when FND-09 lands) for preset
   resolution, month/quarter/year boundaries, leap years, and both comparison
   strategies.
-- Feature test: one page using the picker renders and persists range params.
+- Feature test: `tests/Feature/AuditLog/AuditLogControllerTest.php` —
+  `date range filters narrow the listing and persist in the page props`
+  (audit-logs is the first consumer, mapping to its `date_from`/`date_to`).
 
 ## 9. Notes & open questions
 
+- **Implemented files:** `components/ui/calendar.tsx` (shadcn publish on
+  `react-day-picker` v9 + `date-fns`), `components/date-range/date-range-picker.tsx`,
+  `date-range-summary.tsx`, `period-presets.ts`, `hooks/use-date-range.ts`,
+  `lib/date-range.ts`.
+- **First consumer:** the audit-logs toolbar. The hook remaps params to
+  `date_from`/`date_to`; `period`/`compare` ride along in the URL and the preset
+  is re-derived from the dates when the server does not echo `period`.
+- **All time:** resolves to an open range (no `start`/`end` params) until a
+  consuming page exposes server-provided `min`/`max`; pass them to
+  `resolvePreset`/`useDateRange` when available.
+- **Ranges are date-only** (local midnight, inclusive). Serialization is local
+  `YYYY-MM-DD` (never UTC) so picked days never shift.
+- **Comparison** is produced by `resolveComparison`; the picker shows a live
+  label and, for `custom`, a second calendar.
 - Confirm the workspace time zone is available to the frontend as a shared prop
   (add in CONN/ENT specs); until then fall back to the app time zone setting.
 - Decide fiscal-quarter support (defer).
-- "All time" needs a server-provided min/max date; expose it in the consuming
-  page's props (PIPE-09 / REP-01).

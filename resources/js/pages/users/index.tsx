@@ -34,7 +34,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/users';
 import type { JobOptions, Paginated, User, UserStatus } from '@/types';
-import { appLocale } from '@/lib/locale';
+import { formatDate } from '@/lib/format';
 
 type Filters = {
     search?: string | null;
@@ -53,18 +53,6 @@ type Props = {
     statuses: { value: UserStatus; label: string }[];
     processingOptions: JobOptions;
 };
-
-function formatDate(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString(appLocale(), {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-    });
-}
 
 export default function UsersIndex({
     users,

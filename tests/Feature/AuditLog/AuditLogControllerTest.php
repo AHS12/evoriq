@@ -189,3 +189,37 @@ test('cursor pagination walks the full trail without duplicates', function () {
     expect(count($seen))->toBe($expected)
         ->and(count($seen))->toBe(count(array_unique($seen)));
 });
+
+test('date range filters narrow the listing and persist in the page props', function () {
+    $viewer = makeUserWithPermissions(['audit.view.all']);
+
+    AuditActivity::query()->create([
+        'log_name' => 'domain',
+        'description' => 'in range',
+        'created_at' => now()->subDays(10)->startOfDay(),
+        'updated_at' => now()->subDays(10)->startOfDay(),
+    ]);
+
+    AuditActivity::query()->create([
+        'log_name' => 'domain',
+        'description' => 'out of range',
+        'created_at' => now()->subDays(40)->startOfDay(),
+        'updated_at' => now()->subDays(40)->startOfDay(),
+    ]);
+
+    $dateFrom = now()->subDays(12)->toDateString();
+    $dateTo = now()->subDays(8)->toDateString();
+
+    $this->actingAs($viewer);
+
+    $this->get(route('audit-logs.index', [
+        'date_from' => $dateFrom,
+        'date_to' => $dateTo,
+    ]))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('logs.data', 1)
+            ->where('logs.data.0.description', 'in range')
+            ->where('filters.date_from', $dateFrom)
+            ->where('filters.date_to', $dateTo));
+});

@@ -29,9 +29,9 @@ most-reused UI pieces first.
 | ID       | Spec                                                       | Est | Status | Depends | Scope |
 | -------- | ---------------------------------------------------------- | --- | ------ | ------- | ----- |
 | `FND-01` | [Motion & feedback system](foundations/FND-01-motion-and-feedback.md) | M | Done | — | Motion tokens, reduced-motion, transitions, skeletons, optimistic + toast conventions. |
-| `FND-02` | [Formatting utilities](foundations/FND-02-formatting-utilities.md) | S | Draft | — | `lib/format.ts`: duration/hours/percent/currency/bytes/compact-number/relative-time, locale-aware. |
-| `FND-03` | [Date-range & period picker](foundations/FND-03-date-range-picker.md) | M | Draft | FND-02 | Preset periods + custom range + comparison period; URL/Inertia-synced. |
-| `FND-04` | Charting foundation                                   | L | stub | FND-02 | Pick + wrap a chart lib; themable series, axis, tooltip, legend, empty/loading. |
+| `FND-02` | [Formatting utilities](foundations/FND-02-formatting-utilities.md) | S | Done | — | `lib/format.ts`: duration/hours/percent/currency/bytes/compact-number/relative-time, locale-aware. |
+| `FND-03` | [Date-range & period picker](foundations/FND-03-date-range-picker.md) | M | Done | FND-02 | Preset periods + custom range + comparison period; URL/Inertia-synced. |
+| `FND-04` | [Charting foundation](foundations/FND-04-charting-foundation.md) | L | Done | FND-02 | Pick + wrap a chart lib; themable series, axis, tooltip, legend, empty/loading. |
 | `FND-05` | Data-viz primitives (MetricCard v2, delta, sparkline) | M | stub | FND-01..04 | Trend-aware metric cards, delta chips, inline sparklines. |
 | `FND-06` | Loading / empty / error state system                  | S | stub | FND-01 | Shared `<Skeleton>`, `<EmptyState>`, `<ErrorState>`, `<InlineAlert>` patterns. |
 | `FND-07` | Table & list v2 (density, sticky, saved views)        | M | stub | FND-01 | Density toggle, sticky headers, column persistence, saved filter views. |

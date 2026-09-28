@@ -1,6 +1,6 @@
 # FND-02 — Formatting utilities
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** foundations
 - **Estimate:** S
 - **Depends on:** —
@@ -79,13 +79,14 @@ None.
 
 ## 7. Acceptance criteria
 
-- [ ] `lib/format.ts` exports the functions above with documented signatures.
-- [ ] `job-utils.ts` no longer declares its own `formatNumber`/`formatBytes`/
-      `relativeTime` (imports from `lib/format.ts`).
-- [ ] Every formatter returns the placeholder for null/invalid input.
-- [ ] No component formats durations/numbers inline with `Intl` anymore where a
-      helper exists.
-- [ ] Switching locale updates all formatted output (manual check).
+- [x] `lib/format.ts` exports the functions above with documented signatures.
+- [x] `job-utils.ts` no longer declares its own `formatNumber`/`formatBytes`/
+      `relativeTime` (re-exports from `lib/format.ts`).
+- [x] Every formatter returns the placeholder for null/invalid input.
+- [x] No component formats durations/numbers inline with `Intl` anymore where a
+      helper exists (date/time helpers and byte sizes migrated).
+- [x] Switching locale updates all formatted output (formatters read
+      `appLocale()` on every call; locale switch reloads the page).
 
 ## 8. Tests
 
@@ -97,6 +98,16 @@ None.
 
 ## 9. Notes & open questions
 
+- **Names:** `relativeTime` became `formatRelativeTime`; `job-utils.ts`
+  re-exports it under the old name so pipeline call sites keep working.
+- **Migrated call sites:** users, roles, files, audit logs pages; role/user
+  detail sheets; backup/command run lists; backup & developer settings — all
+  now use `formatDate` / `formatDateTime`; byte sizes use `formatBytes`
+  (`file-utils.formatSize` and the backup list now delegate to it).
+- **Behaviour tweaks:** `formatBytes(0)` now renders `0 B` (was `—`), and
+  `formatDuration` renders `0m` for sub-minute values, per the duration rule.
+- **Left as-is:** `job-utils.dayLabel` keeps its `appLocale()` weekday/day
+  formatting because it is a `t`-aware grouping helper deliberately kept there.
 - Decide whether duration output should always carry a unit (`1h 5m`) or compact
   (`1:05`) in table cells — keep both (`formatDuration` vs `formatClock`).
 - Consider a single `format(type, value)` façade later if call sites get noisy.
