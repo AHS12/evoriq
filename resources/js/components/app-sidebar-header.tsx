@@ -30,7 +30,7 @@ export function AppSidebarHeader({
                     size="sm"
                     onClick={() => setOpen(true)}
                     aria-label={t('Open command palette')}
-                    className="hidden gap-2 text-muted-foreground sm:inline-flex"
+                    className="hidden h-9 shrink-0 gap-2 text-muted-foreground sm:inline-flex"
                 >
                     <Search className="size-4" />
                     <span className="text-xs font-normal">
