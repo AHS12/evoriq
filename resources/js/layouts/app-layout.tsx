@@ -1,3 +1,4 @@
+import { CommandPaletteProvider } from '@/components/command-palette/command-palette-provider';
 import { JobQueuedDialog } from '@/components/data-processing/job-queued-dialog';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import type { BreadcrumbItem } from '@/types';
@@ -10,9 +11,11 @@ export default function AppLayout({
     children: React.ReactNode;
 }) {
     return (
-        <AppLayoutTemplate breadcrumbs={breadcrumbs}>
-            {children}
-            <JobQueuedDialog />
-        </AppLayoutTemplate>
+        <CommandPaletteProvider>
+            <AppLayoutTemplate breadcrumbs={breadcrumbs}>
+                {children}
+                <JobQueuedDialog />
+            </AppLayoutTemplate>
+        </CommandPaletteProvider>
     );
 }

@@ -8,6 +8,7 @@ import { DataTableColumnHeader } from '@/components/app/data-table/data-table-co
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
 import { DataTablePerPage } from '@/components/app/data-table/data-table-per-page';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
+import { DataTableViewControls } from '@/components/app/data-table/data-table-view-controls';
 import { PageHeader } from '@/components/app/page-header';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { ImportDialog } from '@/components/data-processing/import-dialog';
@@ -31,6 +32,7 @@ import {
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
 import { useInitials } from '@/hooks/use-initials';
+import { useTablePreferences } from '@/hooks/use-table-preferences';
 import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/users';
 import type { JobOptions, Paginated, User, UserStatus } from '@/types';
@@ -85,10 +87,29 @@ export default function UsersIndex({
         setFormOpen(true);
     };
 
-    const { apply, isLoading } = useDataTableFilters(
+    const { apply, replace, isLoading } = useDataTableFilters(
         index.url(),
         filters as TableFilters,
     );
+
+    const tablePreferences = useTablePreferences('users');
+
+    const savedViewFilters = {
+        search: search || undefined,
+        role: role === 'all' ? undefined : role,
+        status: status === 'all' ? undefined : status,
+        order_by: filters.order_by ?? undefined,
+        order_direction: filters.order_direction ?? undefined,
+    };
+
+    const applySavedView = (
+        next: Record<string, string | number | boolean | null | undefined>,
+    ) => {
+        setSearch(typeof next.search === 'string' ? next.search : '');
+        setRole(typeof next.role === 'string' ? next.role : 'all');
+        setStatus(typeof next.status === 'string' ? next.status : 'all');
+        replace(next);
+    };
 
     const sorting: SortingState = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order_direction !== 'asc' }]
@@ -111,6 +132,7 @@ export default function UsersIndex({
         {
             accessorKey: 'name',
             enableSorting: true,
+            meta: { label: t('User') },
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title={t('User')} />
             ),
@@ -135,6 +157,7 @@ export default function UsersIndex({
         {
             accessorKey: 'roles',
             enableSorting: false,
+            meta: { label: t('Roles') },
             header: () => t('Roles'),
             cell: ({ row }) =>
                 row.original.roles && row.original.roles.length > 0 ? (
@@ -152,6 +175,7 @@ export default function UsersIndex({
         {
             accessorKey: 'status',
             enableSorting: true,
+            meta: { label: t('Status') },
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title={t('Status')} />
             ),
@@ -165,6 +189,7 @@ export default function UsersIndex({
         {
             accessorKey: 'created_at',
             enableSorting: true,
+            meta: { label: t('Created') },
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title={t('Created')} />
             ),
@@ -177,6 +202,7 @@ export default function UsersIndex({
         {
             id: 'actions',
             enableSorting: false,
+            enableHiding: false,
             header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
                 <div
@@ -318,6 +344,14 @@ export default function UsersIndex({
                         </SelectContent>
                     </Select>
 
+                    <DataTableViewControls
+                        preferences={tablePreferences}
+                        columns={columns}
+                        filters={savedViewFilters}
+                        onApplyView={applySavedView}
+                        disabled={isLoading}
+                    />
+
                     <DataTablePerPage
                         value={users.meta.per_page}
                         disabled={isLoading}
@@ -335,6 +369,12 @@ export default function UsersIndex({
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
                         onRowClick={setDetailsUser}
+                        density={tablePreferences.density}
+                        columnVisibility={tablePreferences.columnVisibility}
+                        onColumnVisibilityChange={
+                            tablePreferences.setColumnVisibility
+                        }
+                        stickyHeader={tablePreferences.stickyHeader}
                         emptyState={{
                             icon: Users,
                             title: t('No users found'),

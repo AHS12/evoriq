@@ -45,3 +45,8 @@ if (!('ResizeObserver' in globalThis)) {
         value: ResizeObserverStub,
     });
 }
+
+// cmdk scrolls the highlighted item into view; jsdom does not implement it.
+if (typeof Element !== 'undefined') {
+    Element.prototype.scrollIntoView = vi.fn();
+}

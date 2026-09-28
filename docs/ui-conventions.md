@@ -158,3 +158,11 @@ Conventions:
   `aria-label`.
 - Keep `components/ui/chart.tsx` pristine (re-publishable); behaviour lives in
   `components/charts/*`.
+
+## Accessibility
+
+The keyboard/focus/contrast pass and its findings live in
+[`accessibility.md`](accessibility.md) (FND-10). In short: the first tab stop is
+**Skip to content** (targets `<main id="main-content">`), every icon-only
+control needs an accessible name, and high-contrast mode overrides the chart,
+ring, destructive and success tokens in addition to the base surfaces.

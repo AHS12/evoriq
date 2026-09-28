@@ -7,6 +7,7 @@ import { DataTable } from '@/components/app/data-table/data-table';
 import { DataTableCursorPagination } from '@/components/app/data-table/data-table-cursor-pagination';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
 import { DataTablePerPage } from '@/components/app/data-table/data-table-per-page';
+import { DataTableViewControls } from '@/components/app/data-table/data-table-view-controls';
 import { PageHeader } from '@/components/app/page-header';
 import { Combobox } from '@/components/app/combobox';
 import { DateRangePicker } from '@/components/date-range/date-range-picker';
@@ -33,6 +34,7 @@ import {
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
 import { useDateRange } from '@/hooks/use-date-range';
+import { useTablePreferences } from '@/hooks/use-table-preferences';
 import { index as auditLogsIndex, prune } from '@/routes/audit-logs';
 import type { AuditLog, AuditLogIndexProps } from '@/types';
 import { formatDateTime } from '@/lib/format';
@@ -99,20 +101,40 @@ export default function AuditLogsIndex({
         date_to: filters.date_to || undefined,
     };
 
-    const { apply, isLoading } = useDataTableFilters(
+    const { apply, replace, isLoading } = useDataTableFilters(
         auditLogsIndex.url(),
         filters as TableFilters,
     );
+
+    const tablePreferences = useTablePreferences('audit-logs');
 
     const { range, comparison, toParams } = useDateRange(
         filters as TableFilters,
         { params: { start: 'date_from', end: 'date_to' } },
     );
 
+    const savedViewFilters = {
+        search: search || undefined,
+        channel: channel === 'all' ? undefined : channel,
+        event: event === 'all' ? undefined : event,
+        date_from: filters.date_from || undefined,
+        date_to: filters.date_to || undefined,
+    };
+
+    const applySavedView = (
+        next: Record<string, string | number | boolean | null | undefined>,
+    ) => {
+        setSearch(typeof next.search === 'string' ? next.search : '');
+        setChannel(typeof next.channel === 'string' ? next.channel : 'all');
+        setEvent(typeof next.event === 'string' ? next.event : 'all');
+        replace(next);
+    };
+
     const columns: ColumnDef<AuditLog>[] = [
         {
             accessorKey: 'created_at',
             enableSorting: false,
+            meta: { label: t('When') },
             header: () => t('When'),
             cell: ({ row }) => (
                 <span className="text-sm whitespace-nowrap text-muted-foreground">
@@ -123,6 +145,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'causer',
             enableSorting: false,
+            meta: { label: t('User') },
             header: () => t('User'),
             cell: ({ row }) =>
                 row.original.causer ? (
@@ -152,6 +175,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'channel',
             enableSorting: false,
+            meta: { label: t('Channel') },
             header: () => t('Channel'),
             cell: ({ row }) =>
                 row.original.channel ? (
@@ -169,6 +193,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'event',
             enableSorting: false,
+            meta: { label: t('Event') },
             header: () => t('Event'),
             cell: ({ row }) =>
                 row.original.event ? (
@@ -184,6 +209,7 @@ export default function AuditLogsIndex({
         {
             accessorKey: 'description',
             enableSorting: false,
+            meta: { label: t('Description') },
             header: () => t('Description'),
             cell: ({ row }) => (
                 <span className="line-clamp-1 text-sm">
@@ -194,6 +220,7 @@ export default function AuditLogsIndex({
         {
             id: 'subject',
             enableSorting: false,
+            meta: { label: t('Subject') },
             header: () => t('Subject'),
             cell: ({ row }) =>
                 row.original.subject ? (
@@ -339,6 +366,14 @@ export default function AuditLogsIndex({
                         className="w-full sm:w-64"
                     />
 
+                    <DataTableViewControls
+                        preferences={tablePreferences}
+                        columns={columns}
+                        filters={savedViewFilters}
+                        onApplyView={applySavedView}
+                        disabled={isLoading}
+                    />
+
                     <DataTablePerPage
                         value={logs.meta.per_page}
                         disabled={isLoading}
@@ -354,6 +389,12 @@ export default function AuditLogsIndex({
                         data={logs.data}
                         isLoading={isLoading}
                         onRowClick={(entry) => setSelected(entry)}
+                        density={tablePreferences.density}
+                        columnVisibility={tablePreferences.columnVisibility}
+                        onColumnVisibilityChange={
+                            tablePreferences.setColumnVisibility
+                        }
+                        stickyHeader={tablePreferences.stickyHeader}
                         emptyState={{
                             icon: History,
                             title: t('No audit entries found'),

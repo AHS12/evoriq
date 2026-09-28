@@ -7,6 +7,7 @@ import { DataTable } from '@/components/app/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/app/data-table/data-table-column-header';
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
 import { DataTableToolbar } from '@/components/app/data-table/data-table-toolbar';
+import { DataTableViewControls } from '@/components/app/data-table/data-table-view-controls';
 import { PageHeader } from '@/components/app/page-header';
 import { RoleFormDialog } from '@/components/role/role-form-dialog';
 import { RoleDetailsSheet } from '@/components/role/role-details-sheet';
@@ -18,6 +19,7 @@ import {
     useDataTableFilters,
     type TableFilters,
 } from '@/hooks/use-data-table-filters';
+import { useTablePreferences } from '@/hooks/use-table-preferences';
 import { useTranslation } from '@/hooks/use-translation';
 import { destroy, index } from '@/routes/roles';
 import type { Paginated, Permission, Role } from '@/types';
@@ -57,10 +59,25 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         setFormOpen(true);
     };
 
-    const { apply, isLoading } = useDataTableFilters(
+    const { apply, replace, isLoading } = useDataTableFilters(
         index.url(),
         filters as TableFilters,
     );
+
+    const tablePreferences = useTablePreferences('roles');
+
+    const savedViewFilters = {
+        search: search || undefined,
+        order_by: filters.order_by ?? undefined,
+        order_direction: filters.order_direction ?? undefined,
+    };
+
+    const applySavedView = (
+        next: Record<string, string | number | boolean | null | undefined>,
+    ) => {
+        setSearch(typeof next.search === 'string' ? next.search : '');
+        replace(next);
+    };
 
     const sorting: SortingState = filters.order_by
         ? [{ id: filters.order_by, desc: filters.order_direction === 'desc' }]
@@ -83,6 +100,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         {
             accessorKey: 'name',
             enableSorting: true,
+            meta: { label: t('Role') },
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title={t('Role')} />
             ),
@@ -96,6 +114,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         {
             accessorKey: 'permissions_count',
             enableSorting: true,
+            meta: { label: t('Permissions') },
             header: ({ column }) => (
                 <DataTableColumnHeader
                     column={column}
@@ -111,6 +130,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         {
             accessorKey: 'users_count',
             enableSorting: true,
+            meta: { label: t('Users') },
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title={t('Users')} />
             ),
@@ -123,6 +143,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         {
             accessorKey: 'created_at',
             enableSorting: true,
+            meta: { label: t('Created') },
             header: ({ column }) => (
                 <DataTableColumnHeader column={column} title={t('Created')} />
             ),
@@ -135,6 +156,7 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
         {
             id: 'actions',
             enableSorting: false,
+            enableHiding: false,
             header: () => <span className="sr-only">{t('Actions')}</span>,
             cell: ({ row }) => (
                 <div
@@ -196,7 +218,15 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                         apply({ search: value, page: 1 });
                     }}
                     searchPlaceholder={t('Search roles…')}
-                />
+                >
+                    <DataTableViewControls
+                        preferences={tablePreferences}
+                        columns={columns}
+                        filters={savedViewFilters}
+                        onApplyView={applySavedView}
+                        disabled={isLoading}
+                    />
+                </DataTableToolbar>
 
                 <div className="space-y-4">
                     <DataTable
@@ -206,6 +236,12 @@ export default function RolesIndex({ roles, filters, permissions }: Props) {
                         sorting={sorting}
                         onSortingChange={handleSortingChange}
                         onRowClick={setDetailsRole}
+                        density={tablePreferences.density}
+                        columnVisibility={tablePreferences.columnVisibility}
+                        onColumnVisibilityChange={
+                            tablePreferences.setColumnVisibility
+                        }
+                        stickyHeader={tablePreferences.stickyHeader}
                         emptyState={{
                             icon: ShieldCheck,
                             title: t('No roles found'),

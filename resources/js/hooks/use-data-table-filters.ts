@@ -102,5 +102,17 @@ export function useDataTableFilters(
         [current, visit, options.debounce],
     );
 
-    return { apply, isLoading };
+    /** Replace the query entirely (saved views) instead of merging. */
+    const replace = useCallback(
+        (filters: TableFilters) => {
+            if (timer.current) {
+                clearTimeout(timer.current);
+            }
+
+            visit(filters);
+        },
+        [visit],
+    );
+
+    return { apply, replace, isLoading };
 }

@@ -34,7 +34,12 @@ spec/
 │   ├── FND-01-motion-and-feedback.md
 │   ├── FND-02-formatting-utilities.md
 │   ├── FND-03-date-range-picker.md
-│   └── FND-04-charting-foundation.md
+│   ├── FND-04-charting-foundation.md
+│   ├── FND-06-loading-empty-error.md
+│   ├── FND-07-table-list-v2.md
+│   ├── FND-08-command-palette.md
+│   ├── FND-09-frontend-test-runner.md
+│   └── FND-10-accessibility-audit.md
 ├── pipeline/                     # the "Pipeline Experience" epic (flagship)
 │   ├── PIPE-01-event-stream.md
 │   ├── PIPE-02-run-aggregation.md

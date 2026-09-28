@@ -22,9 +22,8 @@ critical path.
 | ---- | ---- | --- |
 | Immediately before `PIPE-04` | `FND-06` — Loading / empty / error state system | The timeline primitive and every run view reuse these state primitives, so build them before the rail. |
 
-`FND-05`, `FND-07`, `FND-08` and `FND-10` are **not** on the Phase 1 path; start
-them when their consuming phases begin (`FND-05`/`FND-07` with DASH/REP, and the
-`FND-10` accessibility audit after `FND-01..06`).
+`FND-05` is the only remaining Phase 0 stub; start it when its consuming phases
+begin (DASH/REP). `FND-07`, `FND-08` and `FND-10` are now **Done**.
 
 ---
 
@@ -50,10 +49,10 @@ most-reused UI pieces first.
 | `FND-04` | [Charting foundation](foundations/FND-04-charting-foundation.md) | L | Done | FND-02 | Pick + wrap a chart lib; themable series, axis, tooltip, legend, empty/loading. |
 | `FND-05` | Data-viz primitives (MetricCard v2, delta, sparkline) | M | stub | FND-01..04 | Trend-aware metric cards, delta chips, inline sparklines. |
 | `FND-06` | [Loading / empty / error state system](foundations/FND-06-loading-empty-error.md) | S | Done | FND-01 | Shared `<Skeleton>`, `<EmptyState>`, `<ErrorState>`, `<InlineAlert>` patterns. **Scheduled just-in-time before PIPE-04.** |
-| `FND-07` | Table & list v2 (density, sticky, saved views)        | M | stub | FND-01 | Density toggle, sticky headers, column persistence, saved filter views. |
-| `FND-08` | Command palette & navigation polish                   | M | stub | — | ⌘K palette over routes/actions; recent items. |
+| `FND-07` | [Table & list v2 (density, sticky, saved views)](foundations/FND-07-table-list-v2.md) | M | Done | FND-01 | Density toggle, sticky headers, column persistence, saved filter views. |
+| `FND-08` | [Command palette & navigation polish](foundations/FND-08-command-palette.md) | M | Done | — | ⌘K palette over routes/actions; recent items. |
 | `FND-09` | [Frontend test runner (`vp test` + Vitest)](foundations/FND-09-frontend-test-runner.md) | M | Done | — | Vitest + Testing Library wired into `composer check`; RTL helpers. |
-| `FND-10` | Accessibility & high-contrast audit                   | M | stub | FND-01..06 | Keyboard/focus/contrast pass across all surfaces. |
+| `FND-10` | [Accessibility & high-contrast audit](foundations/FND-10-accessibility-audit.md) | M | Done | FND-01..06 | Keyboard/focus/contrast pass across all surfaces. |
 
 ## Phase 1 — The Pipeline Experience (flagship)
 
