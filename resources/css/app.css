@@ -107,6 +107,17 @@
     transition-timing-function: var(--ease-standard);
 }
 
+/* Keep scrollable panels (command palette, preset list) scrollable without
+   showing an OS scrollbar. */
+@utility scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
 :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
@@ -434,6 +445,22 @@ html[data-contrast='high'].dark {
     body {
         @apply bg-background text-foreground;
     }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Calendar (react-day-picker)
+|--------------------------------------------------------------------------
+|
+| In a multi-month grid a day can be "today" twice: once in its own month and
+| once as an outside day in the neighbouring month. Fill only the in-month day
+| so a two-month calendar never looks like two dates are selected.
+|
+*/
+
+.rdp-outside.rdp-today {
+    background-color: transparent;
+    color: var(--muted-foreground);
 }
 
 /*

@@ -133,7 +133,7 @@ export function CommandPalette() {
             description={t('Search commands…')}
         >
             <CommandInput placeholder={t('Search commands…')} />
-            <CommandList>
+            <CommandList className="scrollbar-hidden">
                 <CommandEmpty>{t('No matching commands')}</CommandEmpty>
 
                 {recentCommands.length > 0 && (

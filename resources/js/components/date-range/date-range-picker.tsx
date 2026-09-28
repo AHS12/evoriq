@@ -1,4 +1,4 @@
-import { CalendarIcon, ChevronDownIcon } from 'lucide-react';
+import { CalendarIcon, ChevronDownIcon, X } from 'lucide-react';
 import { useState } from 'react';
 import {
     COMPARISON_OPTIONS,
@@ -101,6 +101,31 @@ export function DateRangePicker({
         setDraft(buildDateRange(preset, { min, max }));
     };
 
+    const selectAllTime = (): void => {
+        setDraft(buildDateRange('all-time', { min, max }));
+    };
+
+    const resetRange = (): void => {
+        setDraft({
+            preset: 'custom',
+            start: null,
+            end: null,
+            granularity: 'month',
+        });
+    };
+
+    const isAllTime = value.preset === 'all-time';
+    const clearable = !disabled && !isAllTime;
+
+    const clearToAllTime = (): void => {
+        setOpen(false);
+        onApply(buildDateRange('all-time', { min, max }), {
+            mode: 'none',
+            start: null,
+            end: null,
+        });
+    };
+
     const resolvedComparison = resolveComparison(
         compareMode,
         { start: draft.start, end: draft.end },
@@ -128,32 +153,49 @@ export function DateRangePicker({
 
     return (
         <Popover open={open} onOpenChange={handleOpenChange}>
-            <PopoverTrigger asChild>
-                <Button
-                    type="button"
-                    variant="outline"
-                    disabled={disabled}
-                    aria-haspopup="dialog"
-                    aria-label={t('Date range: :range', {
-                        range: primaryLabel,
-                    })}
-                    className={cn(
-                        'justify-between gap-2 font-normal',
-                        className,
-                    )}
-                >
-                    <CalendarIcon className="size-4 text-muted-foreground" />
-                    <DateRangeSummary range={value} comparison={comparison} />
-                    <ChevronDownIcon className="size-4 text-muted-foreground" />
-                </Button>
-            </PopoverTrigger>
+            <div className={cn('relative inline-flex', className)}>
+                <PopoverTrigger asChild>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        disabled={disabled}
+                        aria-haspopup="dialog"
+                        aria-label={t('Date range: :range', {
+                            range: primaryLabel,
+                        })}
+                        className={cn(
+                            'w-full justify-between gap-2 font-normal',
+                            clearable && 'pr-12',
+                        )}
+                    >
+                        <CalendarIcon className="size-4 shrink-0 text-muted-foreground" />
+                        <DateRangeSummary
+                            range={value}
+                            comparison={comparison}
+                            className="flex-1 text-left"
+                        />
+                        <ChevronDownIcon className="size-4 shrink-0 text-muted-foreground" />
+                    </Button>
+                </PopoverTrigger>
+                {clearable && (
+                    <button
+                        type="button"
+                        onClick={clearToAllTime}
+                        aria-label={t('Reset to all time')}
+                        title={t('Reset to all time')}
+                        className="absolute top-1/2 right-8 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                        <X className="size-3.5" />
+                    </button>
+                )}
+            </div>
 
             <PopoverContent
                 align={align}
                 className="w-auto max-w-[calc(100vw-2rem)] p-0"
             >
                 <div className="flex flex-col md:flex-row">
-                    <div className="max-h-80 w-full overflow-y-auto p-2 md:w-48">
+                    <div className="scrollbar-hidden max-h-80 w-full overflow-y-auto p-2 md:w-48">
                         {PERIOD_PRESET_GROUPS.map((group) => (
                             <div key={group.group} className="mb-2">
                                 <p className="px-2 py-1 text-xs font-medium text-muted-foreground">
@@ -184,29 +226,32 @@ export function DateRangePicker({
                     </div>
 
                     <div className="border-t md:border-t-0 md:border-l">
-                        <Calendar
-                            mode="range"
-                            numberOfMonths={1}
-                            selected={{
-                                from: draft.start ?? undefined,
-                                to: draft.end ?? undefined,
-                            }}
-                            defaultMonth={
-                                draft.start ?? value.start ?? undefined
-                            }
-                            disabled={disabledDays}
-                            onSelect={(selected) =>
-                                setDraft({
-                                    preset: 'custom',
-                                    start: selected?.from ?? null,
-                                    end: selected?.to ?? null,
-                                    granularity: granularityForRange(
-                                        selected?.from ?? null,
-                                        selected?.to ?? null,
-                                    ),
-                                })
-                            }
-                        />
+                        <div className="scrollbar-hidden overflow-x-auto">
+                            <Calendar
+                                mode="range"
+                                numberOfMonths={2}
+                                showOutsideDays={false}
+                                selected={{
+                                    from: draft.start ?? undefined,
+                                    to: draft.end ?? undefined,
+                                }}
+                                defaultMonth={
+                                    draft.start ?? value.start ?? undefined
+                                }
+                                disabled={disabledDays}
+                                onSelect={(selected) =>
+                                    setDraft({
+                                        preset: 'custom',
+                                        start: selected?.from ?? null,
+                                        end: selected?.to ?? null,
+                                        granularity: granularityForRange(
+                                            selected?.from ?? null,
+                                            selected?.to ?? null,
+                                        ),
+                                    })
+                                }
+                            />
+                        </div>
 
                         <div className="space-y-3 border-t p-3">
                             <div className="flex items-center gap-2">
@@ -252,6 +297,7 @@ export function DateRangePicker({
                                     <Calendar
                                         mode="range"
                                         numberOfMonths={1}
+                                        showOutsideDays={false}
                                         selected={{
                                             from:
                                                 customCompare.start ??
@@ -268,23 +314,45 @@ export function DateRangePicker({
                                 </div>
                             )}
 
-                            <div className="flex justify-end gap-2">
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setOpen(false)}
-                                >
-                                    {t('Cancel')}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    onClick={apply}
-                                    disabled={!canApply}
-                                >
-                                    {t('Apply')}
-                                </Button>
+                            <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={resetRange}
+                                        data-test="date-range-reset"
+                                    >
+                                        {t('Reset')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={selectAllTime}
+                                        data-test="date-range-all-time"
+                                    >
+                                        {t('All time')}
+                                    </Button>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setOpen(false)}
+                                    >
+                                        {t('Cancel')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={apply}
+                                        disabled={!canApply}
+                                    >
+                                        {t('Apply')}
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
