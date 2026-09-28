@@ -89,12 +89,10 @@ export function DataTable<TData, TValue>({
 
     return (
         <div
+            aria-busy={isLoading}
             className={cn(
-                'rounded-xl border transition-opacity duration-fast ease-standard',
+                'rounded-xl border',
                 stickyHeader ? 'max-h-[70vh] overflow-auto' : 'overflow-hidden',
-                isLoading &&
-                    rows.length > 0 &&
-                    'pointer-events-none opacity-60',
                 className,
             )}
         >

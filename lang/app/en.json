@@ -816,5 +816,7 @@
     "Navigation": "Navigation",
     "Open command palette": "Open command palette",
     "Skip to content": "Skip to content",
-    "Reset to all time": "Reset to all time"
+    "Reset to all time": "Reset to all time",
+    "Pause live updates": "Pause live updates",
+    "Resume live updates": "Resume live updates"
 }

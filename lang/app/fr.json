@@ -816,5 +816,7 @@
     "Navigation": "Navigation",
     "Open command palette": "Ouvrir la palette de commandes",
     "Skip to content": "Aller au contenu principal",
-    "Reset to all time": "Réinitialiser sur tout l'historique"
+    "Reset to all time": "Réinitialiser sur tout l'historique",
+    "Pause live updates": "Mettre en pause les mises à jour en direct",
+    "Resume live updates": "Reprendre les mises à jour en direct"
 }

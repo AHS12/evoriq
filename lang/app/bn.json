@@ -816,5 +816,7 @@
     "Navigation": "নেভিগেশন",
     "Open command palette": "কমান্ড প্যালেট খুলুন",
     "Skip to content": "মূল কন্টেন্টে যান",
-    "Reset to all time": "সব সময়ে রিসেট করুন"
+    "Reset to all time": "সব সময়ে রিসেট করুন",
+    "Pause live updates": "লাইভ আপডেট পজ করুন",
+    "Resume live updates": "লাইভ আপডেট চালু করুন"
 }

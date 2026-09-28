@@ -1,6 +1,7 @@
 import { Link, router } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
 import { useState } from 'react';
+import { LiveDot } from '@/components/feedback/live-dot';
 import { NotificationEmpty } from '@/components/notification/notification-empty';
 import { NotificationList } from '@/components/notification/notification-list';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ import { index as notificationsIndex, readAll } from '@/routes/notifications';
 export function NotificationBell() {
     const { unread_count, recent } = useNotifications();
     const { t } = useTranslation();
-    useNotificationPoll();
+    const { live, pause, resume } = useNotificationPoll();
     const [open, setOpen] = useState(false);
 
     const markAllRead = (): void => {
@@ -47,13 +48,38 @@ export function NotificationBell() {
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="end" className="w-96 p-0">
-                <div className="flex items-center justify-between px-4 py-3">
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
                     <p className="text-sm font-medium">{t('Notifications')}</p>
-                    {unread_count > 0 && (
-                        <Button variant="ghost" size="sm" onClick={markAllRead}>
-                            {t('Mark all read')}
+                    <div className="flex items-center gap-0.5">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={live ? pause : resume}
+                            aria-label={
+                                live
+                                    ? t('Pause live updates')
+                                    : t('Resume live updates')
+                            }
+                            title={
+                                live
+                                    ? t('Pause live updates')
+                                    : t('Resume live updates')
+                            }
+                            className="gap-1.5 text-muted-foreground"
+                        >
+                            <LiveDot active={live} />
+                            {live ? t('Live') : t('Paused')}
                         </Button>
-                    )}
+                        {unread_count > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={markAllRead}
+                            >
+                                {t('Mark all read')}
+                            </Button>
+                        )}
+                    </div>
                 </div>
                 <Separator />
                 <div className="max-h-[70vh] overflow-y-auto">

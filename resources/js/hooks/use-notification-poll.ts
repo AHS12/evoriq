@@ -1,5 +1,5 @@
 import { usePoll } from '@inertiajs/react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNotifications } from '@/hooks/use-notifications';
 import { toast } from '@/lib/toast';
 import type { NotificationItem, NotificationPreferences } from '@/types';
@@ -8,6 +8,43 @@ import type { NotificationItem, NotificationPreferences } from '@/types';
  * How often the shared `notifications` prop (and the feed) is refreshed.
  */
 const POLL_INTERVAL = 15000;
+
+/**
+ * Whether the notification poll is running. Persisted so a user who pauses
+ * live updates keeps them paused across reloads.
+ */
+const LIVE_STORAGE_KEY = 'evoriq.notifications.live';
+
+export type NotificationPoll = {
+    /** Whether the background poll is running. */
+    live: boolean;
+    pause: () => void;
+    resume: () => void;
+};
+
+function readLivePreference(): boolean {
+    if (typeof window === 'undefined') {
+        return true;
+    }
+
+    try {
+        return window.localStorage.getItem(LIVE_STORAGE_KEY) !== 'paused';
+    } catch {
+        return true;
+    }
+}
+
+function writeLivePreference(live: boolean): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(LIVE_STORAGE_KEY, live ? 'live' : 'paused');
+    } catch {
+        // Ignore storage failures (private mode, quota).
+    }
+}
 
 function playChime(): void {
     type AudioCtor = typeof AudioContext;
@@ -80,23 +117,31 @@ function announce(
  * only triggers a partial reload.
  *
  * Polling continues while the tab is hidden so new notifications can still be
- * announced as desktop notifications. When a new notification id appears, a
- * toast (and optional sound / desktop notification) is shown.
+ * announced as desktop notifications. The caller can pause/resume it (persisted
+ * across reloads), which is surfaced as the live indicator on the bell.
  */
-export function useNotificationPoll(): void {
+export function useNotificationPoll(): NotificationPoll {
     const { recent, preferences } = useNotifications();
-    const lastIdRef = useRef<number | null>(null);
-    const initialisedRef = useRef(false);
-
-    // keepAlive disables Inertia's hidden-tab throttle so new notifications
-    // are still detected in the background and can fire desktop notifications.
-    usePoll(
+    const [live, setLive] = useState(readLivePreference);
+    const { start, stop } = usePoll(
         POLL_INTERVAL,
         { only: ['notifications', 'feed', 'activeJobs'] },
         {
             keepAlive: true,
         },
     );
+    const lastIdRef = useRef<number | null>(null);
+    const initialisedRef = useRef(false);
+
+    useEffect(() => {
+        if (live) {
+            start();
+        } else {
+            stop();
+        }
+        // `start`/`stop` are stable; only the intent changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [live]);
 
     useEffect(() => {
         const latest = recent[0]?.id ?? null;
@@ -120,4 +165,16 @@ export function useNotificationPoll(): void {
             .reverse()
             .forEach((item) => announce(item, preferences));
     }, [recent, preferences]);
+
+    const pause = useCallback(() => {
+        writeLivePreference(false);
+        setLive(false);
+    }, []);
+
+    const resume = useCallback(() => {
+        writeLivePreference(true);
+        setLive(true);
+    }, []);
+
+    return { live, pause, resume };
 }

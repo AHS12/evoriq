@@ -816,5 +816,7 @@
     "Navigation": "Navigation",
     "Open command palette": "Befehlspalette öffnen",
     "Skip to content": "Zum Hauptinhalt springen",
-    "Reset to all time": "Auf gesamten Zeitraum zurücksetzen"
+    "Reset to all time": "Auf gesamten Zeitraum zurücksetzen",
+    "Pause live updates": "Live-Aktualisierungen pausieren",
+    "Resume live updates": "Live-Aktualisierungen fortsetzen"
 }
