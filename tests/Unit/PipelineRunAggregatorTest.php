@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\PipelineFailureReason;
+use App\Enums\PipelineRunType;
 use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Repositories\Contracts\PipelineEventRepositoryInterface;
@@ -158,6 +159,83 @@ test('counts skipped rows from import issue types', function () {
     $this->repository->shouldReceive('allForRun')->once()->andReturn(new Collection);
 
     expect($this->aggregator->aggregate($job)->skipped)->toBe(2);
+});
+
+test('builds a tail window with older-page metadata', function () {
+    config(['pipeline.timeline_page_size' => 3]);
+
+    $job = DataProcessingJob::factory()->create();
+
+    $events = new Collection([
+        pipelineEvent(['sequence' => 8]),
+        pipelineEvent(['sequence' => 9]),
+        pipelineEvent(['sequence' => 10]),
+    ]);
+
+    $this->repository->shouldReceive('tailForRun')
+        ->once()
+        ->with(Mockery::type(PipelineRunType::class), Mockery::any(), 3)
+        ->andReturn($events);
+    $this->repository->shouldReceive('existsBefore')->once()->andReturn(true);
+
+    $window = $this->aggregator->eventWindow($job);
+
+    expect($window->oldestSequence)->toBe(8)
+        ->and($window->latestSequence)->toBe(10)
+        ->and($window->hasMoreOlder)->toBeTrue()
+        ->and($window->meta()['has_more_older'])->toBeTrue()
+        ->and($window->events)->toHaveCount(3);
+});
+
+test('builds an append window from after_sequence', function () {
+    $job = DataProcessingJob::factory()->create();
+
+    $events = new Collection([
+        pipelineEvent(['sequence' => 6]),
+        pipelineEvent(['sequence' => 7]),
+    ]);
+
+    $this->repository->shouldReceive('afterSequence')->once()->andReturn($events);
+
+    $window = $this->aggregator->eventWindow($job, after: 5);
+
+    expect($window->oldestSequence)->toBe(6)
+        ->and($window->latestSequence)->toBe(7)
+        ->and($window->hasMoreOlder)->toBeFalse();
+});
+
+test('builds a prepend window from before_sequence', function () {
+    $job = DataProcessingJob::factory()->create();
+
+    $events = new Collection([
+        pipelineEvent(['sequence' => 1]),
+        pipelineEvent(['sequence' => 2]),
+    ]);
+
+    $this->repository->shouldReceive('beforeSequence')->once()->andReturn($events);
+    $this->repository->shouldReceive('existsBefore')
+        ->once()
+        ->with(Mockery::type(PipelineRunType::class), Mockery::any(), 1)
+        ->andReturn(false);
+
+    $window = $this->aggregator->eventWindow($job, before: 3);
+
+    expect($window->oldestSequence)->toBe(1)
+        ->and($window->latestSequence)->toBe(2)
+        ->and($window->hasMoreOlder)->toBeFalse();
+});
+
+test('returns an empty window when a run has no events', function () {
+    $job = DataProcessingJob::factory()->create();
+
+    $this->repository->shouldReceive('tailForRun')->once()->andReturn(new Collection);
+
+    $window = $this->aggregator->eventWindow($job);
+
+    expect($window->events)->toHaveCount(0)
+        ->and($window->oldestSequence)->toBeNull()
+        ->and($window->latestSequence)->toBeNull()
+        ->and($window->hasMoreOlder)->toBeFalse();
 });
 
 test('exposes dispatched and duration timing', function () {

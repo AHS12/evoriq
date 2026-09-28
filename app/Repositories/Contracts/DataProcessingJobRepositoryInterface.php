@@ -60,6 +60,14 @@ interface DataProcessingJobRepositoryInterface
     public function pipelineRevision(?int $userId = null): string;
 
     /**
+     * The newest active (pending + processing) jobs for the "Active now"
+     * section. A null user id covers every user's jobs.
+     *
+     * @return Collection<int, DataProcessingJob>
+     */
+    public function activeJobs(?int $userId = null, int $limit = 5): Collection;
+
+    /**
      * Processing jobs that started before the cutoff (likely stalled).
      *
      * @return Collection<int, DataProcessingJob>

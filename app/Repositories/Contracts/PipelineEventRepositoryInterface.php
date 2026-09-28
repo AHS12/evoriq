@@ -60,6 +60,34 @@ interface PipelineEventRepositoryInterface
     public function latestForRuns(array $runKeys): array;
 
     /**
+     * The newest `$limit` events for a run, returned oldest-first (a tail
+     * window for the run timeline).
+     *
+     * @return Collection<int, PipelineEvent>
+     */
+    public function tailForRun(PipelineRunType $type, string|int $runId, int $limit): Collection;
+
+    /**
+     * Events newer than `$after`, oldest-first, bounded by `$limit` (append).
+     *
+     * @return Collection<int, PipelineEvent>
+     */
+    public function afterSequence(PipelineRunType $type, string|int $runId, int $after, int $limit): Collection;
+
+    /**
+     * Events older than `$before`, returned oldest-first, bounded by `$limit`
+     * (prepend).
+     *
+     * @return Collection<int, PipelineEvent>
+     */
+    public function beforeSequence(PipelineRunType $type, string|int $runId, int $before, int $limit): Collection;
+
+    /**
+     * Whether any event exists older than `$sequence`.
+     */
+    public function existsBefore(PipelineRunType $type, string|int $runId, int $sequence): bool;
+
+    /**
      * Delete events older than the cutoff. Returns the number deleted.
      */
     public function pruneBefore(CarbonInterface $cutoff): int;

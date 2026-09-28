@@ -7,6 +7,7 @@ use App\DTOs\DataProcessingJob\DataProcessingJobFilterDTO;
 use App\DTOs\DataProcessingJob\JobRequest;
 use App\DTOs\Notification\NotificationDTO;
 use App\DTOs\Notification\NotificationTargetDTO;
+use App\DTOs\Pipeline\PipelineEventWindowDTO;
 use App\DTOs\Pipeline\PipelineRunDTO;
 use App\Enums\AuditEvent;
 use App\Enums\DataEntity;
@@ -83,6 +84,26 @@ class DataProcessingJobService
     public function pipelineRun(DataProcessingJob $job, bool $withTimeline = true): PipelineRunDTO
     {
         return $this->runs->aggregate($job, $withTimeline);
+    }
+
+    /**
+     * A bounded window of a run's events for the timeline page (PIPE-05).
+     */
+    public function eventWindow(DataProcessingJob $job, ?int $after = null, ?int $before = null): PipelineEventWindowDTO
+    {
+        return $this->runs->eventWindow($job, $after, $before);
+    }
+
+    /**
+     * The newest active runs as aggregated contracts (the "Active now" section).
+     *
+     * @return Collection<int, PipelineRunDTO>
+     */
+    public function activeRunsFor(?int $userId, bool $viewAll, int $limit = 5): Collection
+    {
+        return $this->repository
+            ->activeJobs($viewAll ? null : $userId, $limit)
+            ->map(fn (DataProcessingJob $job): PipelineRunDTO => $this->runs->aggregate($job));
     }
 
     /**

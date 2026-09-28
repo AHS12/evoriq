@@ -12,6 +12,7 @@ use App\Exports\ImportTemplateExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\DataProcessingJob\StoreImportRequest;
 use App\Http\Requests\Export\StoreExportRequest;
+use App\Http\Resources\Pipeline\PipelineEventResource;
 use App\Http\Resources\Pipeline\PipelineRunResource;
 use App\Models\DataProcessingJob;
 use App\Models\User;
@@ -54,6 +55,9 @@ class ActivityController extends Controller
             ),
             'stats' => $this->service->statsFor((int) $user->getKey(), $viewAll),
             'activeJobs' => $this->service->activeCountFor((int) $user->getKey(), $viewAll),
+            'activeRuns' => PipelineRunResource::collection(
+                $this->service->activeRunsFor((int) $user->getKey(), $viewAll),
+            )->toArray($request),
             'filters' => [
                 'search' => $filters->search,
                 'type' => $filters->type?->value,
@@ -63,6 +67,33 @@ class ActivityController extends Controller
                 'order_direction' => $filters->orderDirection,
                 'per_page' => $filters->perPage,
             ],
+            'options' => DataProcessingOptions::make(),
+        ]);
+    }
+
+    /**
+     * Show a single run's live timeline (PIPE-05).
+     *
+     * Incremental loads reuse the same route via Inertia partial reloads:
+     * `?after_sequence=N` returns newer events (append) and `?before_sequence=N`
+     * returns the previous page (prepend).
+     */
+    public function show(Request $request, DataProcessingJob $dataProcessingJob): Response
+    {
+        Gate::authorize('view', $dataProcessingJob);
+
+        $window = $this->service->eventWindow(
+            $dataProcessingJob,
+            $this->nullableInt($request->query('after_sequence')),
+            $this->nullableInt($request->query('before_sequence')),
+        );
+
+        return Inertia::render('data-processing/show', [
+            'run' => PipelineRunResource::make(
+                $this->service->pipelineRun($dataProcessingJob, false),
+            )->resolve($request),
+            'events' => PipelineEventResource::collection($window->events)->toArray($request),
+            'eventsMeta' => $window->meta(),
             'options' => DataProcessingOptions::make(),
         ]);
     }
@@ -205,6 +236,11 @@ class ActivityController extends Controller
     private function formatFor(string $extension): ExportFormat
     {
         return strtolower($extension) === 'xlsx' ? ExportFormat::XLSX : ExportFormat::CSV;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        return is_numeric($value) ? (int) $value : null;
     }
 
     /**

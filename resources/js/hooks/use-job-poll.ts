@@ -9,6 +9,7 @@ export const ACTIVITY_POLL_PROPS = [
     'jobs',
     'stats',
     'activeJobs',
+    'activeRuns',
     'pipeline_revision',
 ];
 

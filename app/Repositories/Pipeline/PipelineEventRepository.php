@@ -83,6 +83,47 @@ class PipelineEventRepository implements PipelineEventRepositoryInterface
         return $latest;
     }
 
+    public function tailForRun(PipelineRunType $type, string|int $runId, int $limit): Collection
+    {
+        return PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->orderByDesc('sequence')
+            ->limit(max(1, $limit))
+            ->get()
+            ->sortBy('sequence')
+            ->values();
+    }
+
+    public function afterSequence(PipelineRunType $type, string|int $runId, int $after, int $limit): Collection
+    {
+        return PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->where('sequence', '>', $after)
+            ->orderBy('sequence')
+            ->limit(max(1, $limit))
+            ->get();
+    }
+
+    public function beforeSequence(PipelineRunType $type, string|int $runId, int $before, int $limit): Collection
+    {
+        return PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->where('sequence', '<', $before)
+            ->orderByDesc('sequence')
+            ->limit(max(1, $limit))
+            ->get()
+            ->sortBy('sequence')
+            ->values();
+    }
+
+    public function existsBefore(PipelineRunType $type, string|int $runId, int $sequence): bool
+    {
+        return PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->where('sequence', '<', $sequence)
+            ->exists();
+    }
+
     public function pruneBefore(CarbonInterface $cutoff): int
     {
         return PipelineEvent::query()

@@ -52,6 +52,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Timeline paging
+    |--------------------------------------------------------------------------
+    |
+    | Number of events returned per window on the run timeline (`/activity/{job}`):
+    | the initial tail, an append (`after_sequence`) or an older page
+    | (`before_sequence`).
+    |
+    */
+
+    'timeline_page_size' => (int) env('PIPELINE_TIMELINE_PAGE_SIZE', 100),
+
+    /*
+    |--------------------------------------------------------------------------
     | Retry backoff
     |--------------------------------------------------------------------------
     |

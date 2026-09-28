@@ -1,6 +1,6 @@
 # PIPE-05 — Run timeline UI
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** L
 - **Depends on:** PIPE-03, PIPE-04
@@ -184,15 +184,15 @@ None beyond PIPE-01/02.
 
 ## 7. Acceptance criteria
 
-- [ ] A running job can be opened at its own URL and watched live.
-- [ ] Progress, ETA, throughput, elapsed and stage update without full reloads.
-- [ ] New events append automatically; older events load on scroll-up.
-- [ ] Auto-follow works, can be paused, and shows "Jump to latest".
-- [ ] Retry events are visible as distinct timeline entries.
-- [ ] Completed/failed/cancelled runs show the correct terminal summary.
-- [ ] `aria-live` announces stage/error/completion, not every progress tick.
-- [ ] Works in all four themes + high contrast; respects reduced motion.
-- [ ] `composer check` passes.
+- [x] A running job can be opened at its own URL and watched live.
+- [x] Progress, ETA, throughput, elapsed and stage update without full reloads.
+- [x] New events append automatically; older events load on scroll-up.
+- [x] Auto-follow works, can be paused, and shows "Jump to latest".
+- [x] Retry events are visible as distinct timeline entries.
+- [x] Completed/failed/cancelled runs show the correct terminal summary.
+- [x] `aria-live` announces stage/error/completion, not every progress tick.
+- [x] Works in all four themes + high contrast; respects reduced motion.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
@@ -200,17 +200,38 @@ None beyond PIPE-01/02.
   - `activity.show` renders for an owner and is forbidden otherwise;
   - returns the tail events and `eventsMeta`;
   - `?after_sequence=N` returns only newer events;
-  - `?before_sequence=N` returns older events;
-  - terminal state exposes the right summary/abilities.
-- **Unit:** extend the aggregator tests for the `eventsMeta` window math.
-- Frontend interaction (follow, append, filters) has no runner yet; covered by
-  manual checklist until FND-09.
+  - `?before_sequence=N` returns older events and `has_more_older`;
+  - partial reload returns only `events`/`eventsMeta`;
+  - terminal state exposes the mapped failure/abilities;
+  - retry events render distinctly.
+- **Feature** `tests/Feature/Export/ActivityControllerTest.php`: `/activity`
+  carries `activeRuns` for the "Active now" section.
+- **Unit** `tests/Unit/PipelineRunAggregatorTest.php`: `eventWindow` tail /
+  append / prepend / empty-window math.
+- **Frontend** `resources/js/components/data-processing/run-event-utils.test.ts`:
+  progress collapsing, filtering/search, merge dedupe + DOM cap, tone mapping,
+  and the announceable-event selector.
+- Manual checklist (noted in the PR): auto-follow pin/unpin, "load older"
+  scroll compensation, reduced-motion, and tone contrast across themes.
 
 ## 9. Notes & open questions
 
-- Decide whether progress events should be omitted from the visible stream by
-  default (they can be noisy even coalesced). Recommendation: show a single
-  rolling "Progress" row rather than many entries — implement by collapsing
-  consecutive `PROGRESS` events client-side.
-- Confirm the DOM cap (500) is enough; revisit virtualization if not.
-- The mini-header should not cause layout shift; measure its height once.
+- **Frontend append strategy:** the run page polls the newest window
+  (`only: ['run','events','eventsMeta','pipeline_revision']`) and merges each
+  response into a client set keyed by `sequence` (`mergeEvents`), rather than
+  polling with `after_sequence`. This avoids mutating the polled URL and closes
+  the append gap risk because the tail window (100) dwarfs the per-poll deltas;
+  `after_sequence`/`before_sequence` remain available on the route for
+  SYNC/other consumers. Older history loads with a one-off
+  `?before_sequence=<oldest>` partial reload.
+- **Scroll:** prepends are compensated by a `useLayoutEffect` that adjusts
+  `scrollTop` by the height delta, so loading history does not jump the
+  viewport; the DOM window is capped at 500 events.
+- **Progress noise:** consecutive `PROGRESS` events collapse to a single rolling
+  row client-side (`collapseProgress`).
+- **Announcements:** only stage/warning/error/terminal events reach the polite
+  `LiveRegion`; raw progress never does.
+- The sticky mini-header is a lightweight in-page bar; no height measurement was
+  needed because the page scrolls natively rather than the header overlaying a
+  scroll container.
+- Retry/resume/cancel confirmations and backoff affordances remain PIPE-07.

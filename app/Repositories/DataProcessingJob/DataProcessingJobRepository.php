@@ -109,6 +109,16 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
             ->count();
     }
 
+    public function activeJobs(?int $userId = null, int $limit = 5): Collection
+    {
+        return DataProcessingJob::query()
+            ->when($userId !== null, fn (Builder $query): Builder => $query->where('user_id', $userId))
+            ->active()
+            ->orderBy('created_at')
+            ->limit(max(1, $limit))
+            ->get();
+    }
+
     public function pipelineRevision(?int $userId = null): string
     {
         $query = DataProcessingJob::query()

@@ -40,6 +40,18 @@ test('renders the job center', function () {
             ->has('options'));
 });
 
+test('includes active runs for the "Active now" section', function () {
+    DataProcessingJob::factory()->active()->create(['user_id' => $this->user->id]);
+    DataProcessingJob::factory()->completed()->create(['user_id' => $this->user->id]);
+
+    $this->actingAs($this->user)
+        ->get(route('activity.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('activeRuns', 1)
+            ->where('activeRuns.0.status', 'processing'));
+});
+
 test('queues an export and flashes the confirmation', function () {
     $this->actingAs($this->user)
         ->post(route('activity.storeExport'), ExportMockData::request())

@@ -8,6 +8,11 @@ import {
     formatNumber,
     relativeTime,
 } from '@/components/data-processing/job-utils';
+import { Timeline } from '@/components/timeline/timeline';
+import {
+    TimelineContent,
+    TimelineItem,
+} from '@/components/timeline/timeline-item';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -92,36 +97,60 @@ export function JobDetailSheet({ job, open, onOpenChange }: Props) {
                                 <h3 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                     {t('Timeline')}
                                 </h3>
-                                <div className="space-y-1">
-                                    <MetaRow
-                                        label={t('Created')}
-                                        value={relativeTime(job.created_at)}
-                                    />
+                                <Timeline
+                                    density="compact"
+                                    aria-label={t('Timeline')}
+                                >
+                                    {job.created_at && (
+                                        <TimelineItem
+                                            tone="neutral"
+                                            time={job.created_at}
+                                        >
+                                            <TimelineContent
+                                                title={t('Created')}
+                                            />
+                                        </TimelineItem>
+                                    )}
                                     {job.started_at && (
-                                        <MetaRow
-                                            label={t('Started')}
-                                            value={relativeTime(job.started_at)}
-                                        />
+                                        <TimelineItem
+                                            tone="info"
+                                            time={job.started_at}
+                                            running={
+                                                job.status === 'processing'
+                                            }
+                                            durationMs={
+                                                job.status === 'processing'
+                                                    ? job.progress
+                                                          .elapsed_seconds *
+                                                      1000
+                                                    : null
+                                            }
+                                        >
+                                            <TimelineContent
+                                                title={t('Started')}
+                                            />
+                                        </TimelineItem>
                                     )}
                                     {job.completed_at && (
-                                        <MetaRow
-                                            label={
+                                        <TimelineItem
+                                            tone={
                                                 job.status === 'failed'
-                                                    ? t('Failed')
-                                                    : t('Finished')
+                                                    ? 'error'
+                                                    : 'success'
                                             }
-                                            value={relativeTime(
-                                                job.completed_at,
-                                            )}
-                                        />
+                                            time={job.completed_at}
+                                            durationMs={job.timing.duration_ms}
+                                        >
+                                            <TimelineContent
+                                                title={
+                                                    job.status === 'failed'
+                                                        ? t('Failed')
+                                                        : t('Finished')
+                                                }
+                                            />
+                                        </TimelineItem>
                                     )}
-                                    {job.duration && (
-                                        <MetaRow
-                                            label={t('Duration')}
-                                            value={job.duration}
-                                        />
-                                    )}
-                                </div>
+                                </Timeline>
                             </section>
 
                             <Separator />

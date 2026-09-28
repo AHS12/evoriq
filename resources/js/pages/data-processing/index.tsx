@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
+import { ActiveRuns } from '@/components/data-processing/active-runs';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { ImportDialog } from '@/components/data-processing/import-dialog';
 import { JobDetailSheet } from '@/components/data-processing/job-detail-sheet';
@@ -33,6 +34,7 @@ type Props = {
     jobs: Paginated<DataProcessingJob>;
     stats: JobStats;
     activeJobs: number;
+    activeRuns: DataProcessingJob[];
     filters: JobFiltersType;
     options: JobOptions;
 };
@@ -41,6 +43,7 @@ export default function DataProcessingIndex({
     jobs,
     stats,
     activeJobs,
+    activeRuns,
     filters,
     options,
 }: Props) {
@@ -63,7 +66,7 @@ export default function DataProcessingIndex({
             type: type === 'all' ? undefined : type,
             status: status === 'all' ? undefined : status,
         },
-        { only: ['jobs', 'stats', 'activeJobs'] },
+        { only: ['jobs', 'stats', 'activeJobs', 'activeRuns'] },
     );
 
     const { live, pause, resume } = useJobPoll(activeJobs > 0);
@@ -120,6 +123,8 @@ export default function DataProcessingIndex({
                     selected={status}
                     onSelect={selectStatus}
                 />
+
+                <ActiveRuns runs={activeRuns} />
 
                 <JobFilters
                     search={search}

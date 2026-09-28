@@ -3,6 +3,7 @@ import {
     Ban,
     Copy,
     Download,
+    ExternalLink,
     Eye,
     MoreHorizontal,
     RotateCcw,
@@ -18,7 +19,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cancel, destroy, duplicate, retry } from '@/routes/activity';
+import { cancel, destroy, duplicate, retry, show } from '@/routes/activity';
 import { download } from '@/routes/exports';
 import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
@@ -62,6 +63,13 @@ export function JobActions({ job, onView }: Props) {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                        onSelect={() => router.visit(show.url(job.id))}
+                    >
+                        <ExternalLink className="size-4" />
+                        {t('Open run')}
+                    </DropdownMenuItem>
+
                     <DropdownMenuItem onSelect={() => onView(job)}>
                         <Eye className="size-4" />
                         {t('View details')}

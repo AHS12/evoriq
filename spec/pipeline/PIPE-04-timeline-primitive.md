@@ -1,6 +1,6 @@
 # PIPE-04 — Timeline UI primitive
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** FND-01
@@ -127,23 +127,38 @@ None.
 
 ## 7. Acceptance criteria
 
-- [ ] `Timeline`/`TimelineItem`/`TimelineTrack` are used by PIPE-05 and at least
-      one other surface (e.g. the run detail sheet).
-- [ ] Running state animates and stops under `prefers-reduced-motion`.
-- [ ] Expandable items are keyboard-operable with correct ARIA.
-- [ ] Tones use semantic tokens and support all four themes + high contrast.
-- [ ] Skeleton and empty variants exist and are used.
-- [ ] No untranslated user-visible strings.
+- [x] `Timeline`/`TimelineItem`/`TimelineTrack` are adopted by the run detail
+      sheet and ready for PIPE-05 (which imports them).
+- [x] Running state animates and stops under `prefers-reduced-motion`.
+- [x] Expandable items are keyboard-operable with correct ARIA.
+- [x] Tones use semantic tokens and support all four themes + high contrast.
+- [x] Skeleton and empty variants exist and are used.
+- [x] No untranslated user-visible strings.
 
 ## 8. Tests
 
-- No JS runner yet (FND-09). When available: render tests for item expansion,
-  ARIA attributes, tone mapping, and `TimelineTrack` proportional widths.
-- Until then: covered indirectly by page-level Inertia feature tests and manual
-  review; note the manual checklist in the PR.
+- `resources/js/components/timeline/timeline.test.tsx` (Vitest + RTL):
+  - `<Timeline>`/`<TimelineGroup>` structure, label and empty/`emptyState`;
+  - `<time>` gutter + `<time dateTime>` attribute and the duration chip;
+  - expandable item toggles `aria-expanded` / `aria-controls` and the detail
+    region's `inert`;
+  - `TimelineTrack` proportional widths, named `listitem`s and the failed
+    segment's focus stop;
+  - `TimelineSkeleton` rows.
+- Manual checklist (noted in the PR): reduced-motion stops the running ring and
+  connector pulse; tones are distinguishable in light/dark/dracula/khaki/high
+  contrast; keyboard tab reaches expandable headers and failed segments.
 
 ## 9. Notes & open questions
 
+- **Adoption:** the Job activity detail sheet's Timeline section now renders the
+  primitive (`Timeline density="compact"`); PIPE-05/06 build the run timeline on
+  top of it.
+- **Connector:** drawn by the marker column and clipped on `:last-child` via
+  `group-last/item:hidden`, so the rail never dangles — no per-item index math.
+- **Expandable detail:** uses a `grid-rows-[0fr|1fr]` height transition with the
+  FND-01 duration/ease tokens and `inert` while collapsed (so hidden links are
+  not focusable and are hidden from AT).
 - Decide whether to virtualize from the start for long imports (10k+ events).
   Recommendation: cap the visible window server-side (PIPE-06 pagination) and
   virtualize only if measurements demand it.

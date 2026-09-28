@@ -2,6 +2,7 @@
 
 namespace App\Services\Pipeline;
 
+use App\DTOs\Pipeline\PipelineEventWindowDTO;
 use App\DTOs\Pipeline\PipelineProgressDTO;
 use App\DTOs\Pipeline\PipelineRunDTO;
 use App\DTOs\Pipeline\PipelineStageDTO;
@@ -43,6 +44,46 @@ class PipelineRunAggregator
             timeline: $withTimeline ? $this->timeline($events) : $events->take(0)->values(),
             failureReason: $this->resolveFailureReason($job),
             skipped: $this->countSkipped($job),
+        );
+    }
+
+    /**
+     * A bounded window of the run's event stream for the timeline page (PIPE-05).
+     *
+     * - neither param → the newest `timeline_page_size` events (oldest-first);
+     * - `after` → only events newer than it (append);
+     * - `before` → the previous page of older events (prepend).
+     */
+    public function eventWindow(
+        DataProcessingJob $job,
+        ?int $after = null,
+        ?int $before = null,
+        ?int $limit = null,
+    ): PipelineEventWindowDTO {
+        $limit = $limit ?? max(1, (int) config('pipeline.timeline_page_size', 100));
+        $type = $job->pipelineRunType();
+        $runId = $job->pipelineRunId();
+
+        if ($after !== null) {
+            $events = $this->events->afterSequence($type, $runId, $after, $limit);
+            $hasMoreOlder = false;
+        } elseif ($before !== null) {
+            $events = $this->events->beforeSequence($type, $runId, $before, $limit);
+            $hasMoreOlder = $events->isNotEmpty()
+                && $this->events->existsBefore($type, $runId, (int) $events->first()->sequence);
+        } else {
+            $events = $this->events->tailForRun($type, $runId, $limit);
+            $hasMoreOlder = $events->isNotEmpty()
+                && $this->events->existsBefore($type, $runId, (int) $events->first()->sequence);
+        }
+
+        $events = $events->values();
+
+        return new PipelineEventWindowDTO(
+            events: $events,
+            oldestSequence: $events->isNotEmpty() ? (int) $events->first()->sequence : null,
+            latestSequence: $events->isNotEmpty() ? (int) $events->last()->sequence : null,
+            hasMoreOlder: $hasMoreOlder,
         );
     }
 

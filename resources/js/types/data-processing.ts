@@ -79,6 +79,14 @@ export type JobTimelineEvent = {
     occurred_at: string | null;
 };
 
+export type EventsMeta = {
+    oldest_sequence: number | null;
+    latest_sequence: number | null;
+    has_more_older: boolean;
+};
+
+export type RunEventFilter = 'all' | 'stages' | 'issues';
+
 export type JobArtifact = {
     key: string;
     label: string;
