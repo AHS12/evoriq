@@ -10,6 +10,22 @@ Status: `Draft` `Ready` `In Progress` `Blocked` `Done` `stub`.
 > Ordering inside a phase is the recommended build order. Cross-phase
 > dependencies are listed per spec.
 
+## Build order across phases
+
+The phase tables list the recommended order **within** each phase. One Phase 0
+foundation is pulled forward **just-in-time** against Phase 1 (marked `+` in the
+`Depends` column); `FND-09` (frontend test runner) is already **Done** and
+unblocks the pipeline logic tests. The rest of Phase 0 is not on the Phase 1
+critical path.
+
+| When | Spec | Why |
+| ---- | ---- | --- |
+| Immediately before `PIPE-04` | `FND-06` — Loading / empty / error state system | The timeline primitive and every run view reuse these state primitives, so build them before the rail. |
+
+`FND-05`, `FND-07`, `FND-08` and `FND-10` are **not** on the Phase 1 path; start
+them when their consuming phases begin (`FND-05`/`FND-07` with DASH/REP, and the
+`FND-10` accessibility audit after `FND-01..06`).
+
 ---
 
 ## Architecture (do first)
@@ -33,10 +49,10 @@ most-reused UI pieces first.
 | `FND-03` | [Date-range & period picker](foundations/FND-03-date-range-picker.md) | M | Done | FND-02 | Preset periods + custom range + comparison period; URL/Inertia-synced. |
 | `FND-04` | [Charting foundation](foundations/FND-04-charting-foundation.md) | L | Done | FND-02 | Pick + wrap a chart lib; themable series, axis, tooltip, legend, empty/loading. |
 | `FND-05` | Data-viz primitives (MetricCard v2, delta, sparkline) | M | stub | FND-01..04 | Trend-aware metric cards, delta chips, inline sparklines. |
-| `FND-06` | Loading / empty / error state system                  | S | stub | FND-01 | Shared `<Skeleton>`, `<EmptyState>`, `<ErrorState>`, `<InlineAlert>` patterns. |
+| `FND-06` | Loading / empty / error state system                  | S | stub | FND-01 | Shared `<Skeleton>`, `<EmptyState>`, `<ErrorState>`, `<InlineAlert>` patterns. **Scheduled just-in-time before PIPE-04.** |
 | `FND-07` | Table & list v2 (density, sticky, saved views)        | M | stub | FND-01 | Density toggle, sticky headers, column persistence, saved filter views. |
 | `FND-08` | Command palette & navigation polish                   | M | stub | — | ⌘K palette over routes/actions; recent items. |
-| `FND-09` | Frontend test runner (`vp test` + Vitest)            | M | stub | — | Vitest + Testing Library wired into `composer check`; RTL helpers. |
+| `FND-09` | [Frontend test runner (`vp test` + Vitest)](foundations/FND-09-frontend-test-runner.md) | M | Done | — | Vitest + Testing Library wired into `composer check`; RTL helpers. |
 | `FND-10` | Accessibility & high-contrast audit                   | M | stub | FND-01..06 | Keyboard/focus/contrast pass across all surfaces. |
 
 ## Phase 1 — The Pipeline Experience (flagship)
@@ -45,10 +61,10 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 
 | ID        | Spec                                                          | Est | Status | Depends         | Scope |
 | --------- | ------------------------------------------------------------- | --- | ------ | --------------- | ----- |
-| `PIPE-01` | [Pipeline event stream](pipeline/PIPE-01-event-stream.md)     | L | Draft | —               | Append-only `pipeline_events` + recorder; retrofit `DataProcessingJob`. |
+| `PIPE-01` | [Pipeline event stream](pipeline/PIPE-01-event-stream.md)     | L | Done | —               | Append-only `pipeline_events` + recorder; retrofit `DataProcessingJob`. |
 | `PIPE-02` | [Run aggregation & progress contract](pipeline/PIPE-02-run-aggregation.md) | L | Draft | PIPE-01 | Stage/ETA/throughput/failure taxonomy; `PipelineRunResource`. |
-| `PIPE-03` | [Live polling transport](pipeline/PIPE-03-live-polling.md)   | M | Draft | PIPE-02         | `useLivePoll`: visibility-aware, adaptive, backoff, shared registry. |
-| `PIPE-04` | [Timeline UI primitive](pipeline/PIPE-04-timeline-primitive.md) | M | Draft | FND-01          | Reusable vertical timeline (rail, markers, time gutter, groups, a11y). |
+| `PIPE-03` | [Live polling transport](pipeline/PIPE-03-live-polling.md)   | M | Draft | PIPE-02 | `useLivePoll`: visibility-aware, adaptive, backoff, shared registry. |
+| `PIPE-04` | [Timeline UI primitive](pipeline/PIPE-04-timeline-primitive.md) | M | Draft | FND-01 (+ FND-06) | Reusable vertical timeline (rail, markers, time gutter, groups, a11y). |
 | `PIPE-05` | [Run timeline UI](pipeline/PIPE-05-run-timeline-ui.md)        | L | Draft | PIPE-03, PIPE-04 | Flagship run view: progress hero, stage lanes, streaming event timeline. |
 | `PIPE-06` | [Run detail & event inspector](pipeline/PIPE-06-run-detail-inspector.md) | M | Draft | PIPE-05 | Tabs: overview/timeline/errors/artifacts/params/raw; error grouping. |
 | `PIPE-07` | [Retry, resume, cancel & backoff UX](pipeline/PIPE-07-retry-resume-cancel.md) | M | Draft | PIPE-05         | Cooperative cancel, retry run/stage, resume, backoff display, failed view. |

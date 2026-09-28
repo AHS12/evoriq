@@ -11,6 +11,7 @@ use App\Models\DataProcessingJob;
 use App\Models\User;
 use App\Registry\QueueRegistry;
 use App\Services\DataProcessingJob\DataProcessingJobService;
+use App\Services\Pipeline\PipelineEventRecorder;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\FailOnTimeout;
@@ -53,20 +54,21 @@ class ProcessImport implements ShouldQueue
      * users) are attributed to the job owner, since a queue has no
      * authenticated user.
      */
-    public function handle(DataProcessingJobService $service, ?CauserResolver $causerResolver = null): void
+    public function handle(DataProcessingJobService $service, ?PipelineEventRecorder $recorder = null, ?CauserResolver $causerResolver = null): void
     {
+        $recorder ??= app(PipelineEventRecorder::class);
         $causerResolver ??= app(CauserResolver::class);
 
         $owner = $this->dataProcessingJob->user_id !== null
             ? User::find($this->dataProcessingJob->user_id)
             : null;
 
-        $causerResolver->withCauser($owner, function () use ($service): void {
-            $this->process($service);
+        $causerResolver->withCauser($owner, function () use ($service, $recorder): void {
+            $this->process($service, $recorder);
         });
     }
 
-    private function process(DataProcessingJobService $service): void
+    private function process(DataProcessingJobService $service, PipelineEventRecorder $recorder): void
     {
         $job = $this->dataProcessingJob;
 
@@ -81,6 +83,8 @@ class ProcessImport implements ShouldQueue
 
         $service->markProcessing($job, totalItems: $total > 0 ? $total : null, stage: 'Reading file');
 
+        $recorder->stageStarted($job, 'Reading file');
+
         try {
             $entity = $job->entity_type;
 
@@ -88,7 +92,9 @@ class ProcessImport implements ShouldQueue
                 throw new RuntimeException('The import job is missing an entity type.');
             }
 
-            $importer = $entity->makeImporter($job, function (int $processed, ?string $stage) use ($service, $job): void {
+            $lastStage = null;
+
+            $importer = $entity->makeImporter($job, function (int $processed, ?string $stage) use ($service, $recorder, $job, &$lastStage): void {
                 $cancelled = DataProcessingJob::query()
                     ->whereKey($job->getKey())
                     ->whereNotNull('cancel_requested_at')
@@ -96,6 +102,11 @@ class ProcessImport implements ShouldQueue
 
                 if ($cancelled) {
                     throw new ImportCancelledException('Import cancelled.');
+                }
+
+                if ($stage !== null && $stage !== $lastStage) {
+                    $recorder->stageStarted($job, $stage);
+                    $lastStage = $stage;
                 }
 
                 $service->markProgress($job, $processed, $stage);

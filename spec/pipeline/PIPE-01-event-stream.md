@@ -1,6 +1,6 @@
 # PIPE-01 — Pipeline event stream
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** L
 - **Depends on:** —
@@ -159,35 +159,61 @@ existing pages keep working; the event data is available server-side.
 
 ## 7. Acceptance criteria
 
-- [ ] Dispatching an import/export writes a `dispatched` event.
-- [ ] A run's events have strictly increasing `sequence` with no duplicates
+- [x] Dispatching an import/export writes a `dispatched` event.
+- [x] A run's events have strictly increasing `sequence` with no duplicates
       under concurrent writes (allocation is race-safe).
-- [ ] Progress events are coalesced: a 10,000-chunk import does **not** produce
+- [x] Progress events are coalesced: a 10,000-chunk import does **not** produce
       10,000 events.
-- [ ] Redacted keys never appear in `context`.
-- [ ] Completed/failed/cancelled runs always end with exactly one terminal
+- [x] Redacted keys never appear in `context`.
+- [x] Completed/failed/cancelled runs always end with exactly one terminal
       event.
-- [ ] `composer check` passes.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
-- **Unit** `tests/Unit/PipelineEventRecorderTest.php`:
-  - records events with correct run type/id and monotonic sequence;
-  - coalescing skips rapid progress writes but writes on stage change/bucket;
-  - redaction strips configured keys (including nested);
-  - convenience methods map to the right `type`/`level`.
+- **Unit** `tests/Unit/PipelineEventRecorderTest.php`: sequence allocation +
+  payload, coalescing (same stage/bucket/time), bucket crossing, elapsed
+  interval, nested redaction and the convenience-method type/level mapping.
 - **Feature** `tests/Feature/Pipeline/PipelineEventStreamTest.php`:
-  - run a `ProcessExport`/`ProcessImport` with `Http`/`Excel` fakes (reuse
-    `tests/Mock/*`) and assert the event sequence for the run;
-  - failure path ends with `error` + `retryScheduled`/`failed`.
-- Extend `tests/Unit/DataProcessingJobServiceUnitTest.php` to assert recorder
-  calls (Mockery) for transitions.
+  - queuing via the controller writes `dispatched`;
+  - a real `ProcessExport` yields a gapless stream that ends in exactly one
+    `completed` event;
+  - a chunked `ProcessImport` collapses 52 callbacks into ~21 progress events;
+  - the failure path ends with `error` + a single terminal `failed`.
+- Extended `tests/Unit/DataProcessingJobServiceUnitTest.php` to assert the
+  recorder calls (Mockery) for each transition, including the "terminal job
+  records no second terminal event" guard.
 
 ## 9. Notes & open questions
 
-- Confirm the coalescing knobs (5% / 5s) are right for very large imports; may
-  need a `debug_events` flag for troubleshooting.
-- `run_id` as string loses referential integrity; the scheduled prune (PIPE-12)
-  must clean orphaned events by run type.
-- Consider `occurred_at` vs `created_at`: `occurred_at` is the logical time the
-  step finished; `created_at` is insert time. Both are kept.
+- **Files:** `app/Enums/Pipeline{RunType,EventLevel,EventType}.php`,
+  `app/Models/PipelineEvent.php`,
+  `app/DTOs/Pipeline/PipelineEventDTO.php`,
+  `app/Contracts/PipelineRunnable.php`,
+  `app/Repositories/{Contracts,}/Pipeline*/PipelineEventRepository*.php`,
+  `app/Services/Pipeline/PipelineEventRecorder.php`, `config/pipeline.php`,
+  `database/migrations/2026_09_28_000000_create_pipeline_events_table.php`,
+  `database/factories/PipelineEventFactory.php`.
+- **Deviation — organization ownership (ORG-01):** `pipeline_events` carries a
+  nullable `organization_id` (the table is named in ORG-01), and the natural key
+  is `(organization_id, run_type, run_id, sequence)`. The recorder stamps the
+  run's own organization when available so queued jobs (no `auth()`) write into
+  the organization the run was created in.
+- **Race-safe allocation:** the recorder reads `max(sequence)+1` inside a small
+  transaction and relies on the unique index; a
+  `UniqueConstraintViolationException` triggers a bounded retry (3 attempts).
+- **Extra repository methods:** `latestForRun()` and `latestProgressForRun()`
+  were added (coalescing + future run headers) alongside the spec's
+  `latestForRuns()`.
+- **Not-in-transaction rule honoured:** `createAndDispatch()` records
+  `dispatched` after the `DB::transaction(...)` commits and before queueing, so
+  the worker can never start before the event exists.
+- **Retry branch:** `TracksDataProcessingJob::failed()` records `error` and, only
+  when the job is queue-managed (`$this->job !== null`) with attempts remaining,
+  `retryScheduled`; otherwise the terminal `failed` event is written through
+  `markFailed()`.
+- `occurred_at` vs `created_at` are both kept (logical vs insert time).
+- Confirm the coalescing knobs (5% / 5s) are right for very large imports; a
+  `debug_events` flag may be needed for troubleshooting.
+- The scheduled prune (PIPE-12) must clean orphaned events by run type, since
+  `run_id` is a string with no FK.

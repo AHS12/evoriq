@@ -13,6 +13,7 @@ use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
+use App\Services\Pipeline\PipelineEventRecorder;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
@@ -26,7 +27,12 @@ beforeEach(function () {
     $this->notifications = Mockery::mock(NotificationService::class);
     $this->audit = Mockery::mock(AuditLogService::class);
     $this->audit->shouldReceive('record')->byDefault();
-    $this->service = new DataProcessingJobService($this->repository, $this->notifications, $this->audit);
+    $this->pipeline = Mockery::mock(PipelineEventRecorder::class);
+    $this->pipeline->shouldReceive(
+        'dispatched', 'started', 'progress', 'artifactReady',
+        'completed', 'failed', 'cancelled', 'retryScheduled',
+    )->byDefault();
+    $this->service = new DataProcessingJobService($this->repository, $this->notifications, $this->audit, $this->pipeline);
 });
 
 afterEach(function () {
@@ -190,4 +196,87 @@ test('statsFor delegates to the repository', function () {
         ->andReturn(['total' => 0]);
 
     expect($this->service->statsFor(5, true))->toBe(['total' => 0]);
+});
+
+test('createExport records a dispatched pipeline event', function () {
+    Queue::fake();
+
+    $this->repository->shouldReceive('create')->once()->andReturn(new DataProcessingJob([
+        'job_id' => 'job-9',
+        'type' => 'export',
+        'status' => 'pending',
+        'entity_type' => 'users',
+    ]));
+
+    $this->pipeline->shouldReceive('dispatched')->once();
+
+    $this->service->createExport(new DataProcessingJobDTO(entityType: DataEntity::USERS, format: ExportFormat::XLSX));
+});
+
+test('markProcessing records started only on the first transition', function () {
+    $pending = DataProcessingJob::factory()->active()->create([
+        'status' => DataProcessingJobStatus::PENDING,
+        'started_at' => null,
+    ]);
+
+    $this->repository->shouldReceive('update')->once()->andReturn($pending);
+    $this->pipeline->shouldReceive('started')->once();
+
+    $this->service->markProcessing($pending, 10, 'Generating file');
+
+    $processing = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($processing);
+
+    $this->service->markProcessing($processing, 10, 'Generating file');
+});
+
+test('markProgress records a progress event with the total', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+
+    $this->pipeline->shouldReceive('progress')
+        ->once()
+        ->with(Mockery::on(fn (DataProcessingJob $model): bool => $model->is($job)), 70, 100, 'Importing rows');
+
+    $this->service->markProgress($job, 70, 'Importing rows');
+});
+
+test('attachArtifact records an artifact ready event', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('artifactReady')->once();
+
+    $this->service->attachArtifact($job, 'users.xlsx', 'exports/users.xlsx', 'local', 10, 'text/csv');
+});
+
+test('markCompleted records a terminal completed event', function () {
+    $job = DataProcessingJob::factory()->active()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('completed')->once();
+
+    $this->service->markCompleted($job, 100, 100);
+});
+
+test('a terminal job does not record a second terminal event', function () {
+    $job = DataProcessingJob::factory()->completed()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('completed')->never();
+
+    $this->service->markCompleted($job, 1, 1);
+});
+
+test('retry records a retry scheduled event', function () {
+    Queue::fake();
+
+    $job = DataProcessingJob::factory()->failed()->create();
+
+    $this->repository->shouldReceive('update')->once()->andReturn($job);
+    $this->pipeline->shouldReceive('retryScheduled')->once();
+
+    $this->service->retry($job);
 });

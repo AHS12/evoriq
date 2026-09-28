@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Repositories\Contracts;
+
+use App\Enums\PipelineRunType;
+use App\Models\PipelineEvent;
+use Carbon\CarbonInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+
+interface PipelineEventRepositoryInterface
+{
+    /**
+     * Insert one event. The sequence must already be allocated.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function append(array $data): PipelineEvent;
+
+    /**
+     * The next sequence number for a run (max + 1). Callers must guard the
+     * insert against the unique constraint for race safety.
+     */
+    public function nextSequence(PipelineRunType $type, string|int $runId): int;
+
+    /**
+     * The most recent event of any type for a run.
+     */
+    public function latestForRun(PipelineRunType $type, string|int $runId): ?PipelineEvent;
+
+    /**
+     * The most recent PROGRESS event for a run (drives coalescing).
+     */
+    public function latestProgressForRun(PipelineRunType $type, string|int $runId): ?PipelineEvent;
+
+    /**
+     * A run's events, oldest first, for the timeline views.
+     *
+     * Supported filters: `level`, `type`, `stage`, `after_sequence`, `search`,
+     * `order_direction`.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return LengthAwarePaginator<int, PipelineEvent>
+     */
+    public function forRun(PipelineRunType $type, string|int $runId, int $perPage = 50, array $filters = []): LengthAwarePaginator;
+
+    /**
+     * The latest event for each of the given runs (global indicator).
+     *
+     * @param  array<int, array{run_type: PipelineRunType|string, run_id: string|int}>  $runKeys
+     * @return array<string, PipelineEvent> keyed by "{run_type}:{run_id}"
+     */
+    public function latestForRuns(array $runKeys): array;
+
+    /**
+     * Delete events older than the cutoff. Returns the number deleted.
+     */
+    public function pruneBefore(CarbonInterface $cutoff): int;
+}

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Contracts\PipelineRunnable;
 use App\Enums\DataEntity;
 use App\Enums\DataProcessingJobStatus;
 use App\Enums\DataProcessingJobType;
 use App\Enums\ExportFormat;
+use App\Enums\PipelineRunType;
 use App\Models\Concerns\BelongsToOrganization;
 use Database\Factories\DataProcessingJobFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -59,7 +61,7 @@ use Illuminate\Support\Carbon;
     'total_items', 'processed_items', 'success_count', 'error_count', 'errors', 'error_message',
     'started_at', 'completed_at', 'cancel_requested_at', 'user_id', 'organization_id', 'created_by', 'updated_by',
 ])]
-class DataProcessingJob extends Model
+class DataProcessingJob extends Model implements PipelineRunnable
 {
     /**
      * @use HasFactory<DataProcessingJobFactory>
@@ -332,5 +334,21 @@ class DataProcessingJob extends Model
         $remainingMinutes = $minutes % 60;
 
         return $remainingMinutes > 0 ? "{$hours}h {$remainingMinutes}m" : "{$hours}h";
+    }
+
+    /**
+     * The pipeline run kind this job writes events under.
+     */
+    public function pipelineRunType(): PipelineRunType
+    {
+        return PipelineRunType::DATA_PROCESSING;
+    }
+
+    /**
+     * The job's identifier within the pipeline event stream.
+     */
+    public function pipelineRunId(): string
+    {
+        return (string) $this->getKey();
     }
 }

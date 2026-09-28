@@ -87,12 +87,13 @@
             "@types:check",
             "@php artisan test"
         ],
-        "check": [
-            "Composer\\Config::disableProcessTimeout",
-            "npm run check",
-            "npm run types:check",
-            "@test"
-        ],
+    "check": [
+        "Composer\\Config::disableProcessTimeout",
+        "npm run check",
+        "npm run types:check",
+        "npm run test",
+        "@test"
+    ],
         "ci:check": [
             "@check"
         ],

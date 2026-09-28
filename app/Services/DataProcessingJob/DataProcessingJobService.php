@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\Notification\NotificationService;
+use App\Services\Pipeline\PipelineEventRecorder;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -37,6 +38,7 @@ class DataProcessingJobService
         protected DataProcessingJobRepositoryInterface $repository,
         protected NotificationService $notifications,
         protected AuditLogService $audit,
+        protected PipelineEventRecorder $pipeline,
     ) {}
 
     /**
@@ -96,6 +98,11 @@ class DataProcessingJobService
 
         $job = DB::transaction(fn (): DataProcessingJob => $this->repository->create($attributes));
 
+        $this->pipeline->dispatched($job, [
+            'type' => $job->type->value,
+            'entity_type' => $job->entity_type?->value,
+        ]);
+
         DataProcessingJobDispatcher::dispatch($job);
 
         return $job;
@@ -106,12 +113,14 @@ class DataProcessingJobService
      */
     public function markProcessing(DataProcessingJob $job, ?int $totalItems = null, ?string $stage = null): DataProcessingJob
     {
+        $firstStart = $job->status !== DataProcessingJobStatus::PROCESSING;
+
         $data = [
             'status' => DataProcessingJobStatus::PROCESSING,
             'stage' => $stage,
         ];
 
-        if ($job->status !== DataProcessingJobStatus::PROCESSING) {
+        if ($firstStart) {
             $data['started_at'] = now();
         }
 
@@ -120,7 +129,13 @@ class DataProcessingJobService
             $data['processed_items'] = 0;
         }
 
-        return $this->repository->update($job, $data);
+        $job = $this->repository->update($job, $data);
+
+        if ($firstStart) {
+            $this->pipeline->started($job, $stage);
+        }
+
+        return $job;
     }
 
     /**
@@ -134,7 +149,11 @@ class DataProcessingJobService
             $data['stage'] = $stage;
         }
 
-        return $this->repository->update($job, $data);
+        $job = $this->repository->update($job, $data);
+
+        $this->pipeline->progress($job, $processedItems, $job->total_items, $stage);
+
+        return $job;
     }
 
     /**
@@ -148,13 +167,21 @@ class DataProcessingJobService
         ?int $fileSize = null,
         ?string $mimeType = null,
     ): DataProcessingJob {
-        return $this->repository->update($job, [
+        $job = $this->repository->update($job, [
             'file_name' => $fileName,
             'file_path' => $filePath,
             'file_disk' => $fileDisk,
             'file_size' => $fileSize,
             'mime_type' => $mimeType,
         ]);
+
+        $this->pipeline->artifactReady($job, $fileName, [
+            'file_name' => $fileName,
+            'size' => $fileSize,
+            'mime_type' => $mimeType,
+        ]);
+
+        return $job;
     }
 
     /**
@@ -170,6 +197,8 @@ class DataProcessingJobService
         int $errorCount = 0,
         ?array $errors = null,
     ): DataProcessingJob {
+        $wasFinal = $job->status->isFinal();
+
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::COMPLETED,
             'stage' => null,
@@ -180,6 +209,13 @@ class DataProcessingJobService
             'errors' => $errors,
             'completed_at' => now(),
         ]);
+
+        if (! $wasFinal) {
+            $this->pipeline->completed($job, progress: [
+                'total' => $totalItems,
+                'processed' => $processedItems,
+            ]);
+        }
 
         if (! $job->isReport()) {
             $event = $job->isImport() ? AuditEvent::IMPORT_COMPLETED : AuditEvent::EXPORT_COMPLETED;
@@ -204,6 +240,8 @@ class DataProcessingJobService
      */
     public function markFailed(DataProcessingJob $job, string $errorMessage): DataProcessingJob
     {
+        $wasFinal = $job->status->isFinal();
+
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::FAILED,
             'stage' => null,
@@ -215,6 +253,10 @@ class DataProcessingJobService
             ]],
             'completed_at' => now(),
         ]);
+
+        if (! $wasFinal) {
+            $this->pipeline->failed($job, $errorMessage);
+        }
 
         if (! $job->isReport()) {
             $event = $job->isImport() ? AuditEvent::IMPORT_FAILED : AuditEvent::EXPORT_FAILED;
@@ -239,11 +281,17 @@ class DataProcessingJobService
      */
     public function markCancelled(DataProcessingJob $job): DataProcessingJob
     {
+        $wasFinal = $job->status->isFinal();
+
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::CANCELLED,
             'stage' => null,
             'completed_at' => now(),
         ]);
+
+        if (! $wasFinal) {
+            $this->pipeline->cancelled($job);
+        }
 
         $this->audit->record(
             AuditEvent::PROCESSING_CANCELLED,
@@ -309,6 +357,8 @@ class DataProcessingJobService
             'completed_at' => null,
             'cancel_requested_at' => null,
         ]);
+
+        $this->pipeline->retryScheduled($job);
 
         DataProcessingJobDispatcher::dispatch($job);
 

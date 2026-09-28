@@ -4,6 +4,7 @@ namespace App\Jobs\Concerns;
 
 use App\Models\DataProcessingJob;
 use App\Services\DataProcessingJob\DataProcessingJobService;
+use App\Services\Pipeline\PipelineEventRecorder;
 use Throwable;
 
 /**
@@ -16,6 +17,7 @@ use Throwable;
  * truly gives up.
  *
  * @property DataProcessingJob $dataProcessingJob
+ * @property int $tries
  */
 trait TracksDataProcessingJob
 {
@@ -27,9 +29,20 @@ trait TracksDataProcessingJob
             return;
         }
 
+        $recorder = app(PipelineEventRecorder::class);
+        $message = $e?->getMessage() ?? __('The job failed.');
+
+        $recorder->error($job, $message);
+
+        if ($this->job !== null && $this->attempts() < $this->tries) {
+            $recorder->retryScheduled($job, $message, $this->attempts() + 1);
+
+            return;
+        }
+
         $service = app(DataProcessingJobService::class);
 
-        $service->markFailed($job, $e?->getMessage() ?? __('The job failed.'));
+        $service->markFailed($job, $message);
 
         try {
             $service->notifyFinished($job);
