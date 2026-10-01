@@ -2,7 +2,12 @@ import {
     isActiveStatus,
     relativeTime,
 } from '@/components/data-processing/job-utils';
+import {
+    attemptLabel,
+    isRetryPending,
+} from '@/components/data-processing/job-recovery';
 import { JobStatusBadge } from '@/components/data-processing/job-status-badge';
+import { RetryCountdown } from '@/components/data-processing/retry-countdown';
 import { RunProgress } from '@/components/data-processing/run-progress';
 import { InlineAlert } from '@/components/feedback/inline-alert';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +40,7 @@ export function RunHero({ run }: Props) {
                         />
                         {run.attempts.current > 1 && (
                             <Badge variant="outline">
-                                {run.attempts.label}
+                                {attemptLabel(run, t)}
                             </Badge>
                         )}
                     </div>
@@ -52,7 +57,17 @@ export function RunHero({ run }: Props) {
 
             <RunProgress run={run} />
 
-            {active && !run.timing.stale && (
+            {isRetryPending(run) && (
+                <InlineAlert tone="warning" title={t('Retrying soon')}>
+                    <RetryCountdown
+                        at={run.attempts.next_retry_at}
+                        attempt={run.attempts.current}
+                        max={run.attempts.max}
+                    />
+                </InlineAlert>
+            )}
+
+            {active && !run.timing.stale && !isRetryPending(run) && (
                 <InlineAlert tone="info">
                     {t(
                         'You can leave this page — the job keeps running in the background.',

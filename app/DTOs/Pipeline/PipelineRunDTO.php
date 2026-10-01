@@ -28,5 +28,6 @@ final readonly class PipelineRunDTO
         public int $skipped,
         public array $issues = [],
         public ?string $correlationId = null,
+        public bool $duplicateSoon = false,
     ) {}
 }

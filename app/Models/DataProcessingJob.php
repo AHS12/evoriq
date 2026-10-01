@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
@@ -255,6 +256,25 @@ class DataProcessingJob extends Model implements PipelineRunnable
     public function isCancelled(): bool
     {
         return $this->status === DataProcessingJobStatus::CANCELLED;
+    }
+
+    /**
+     * Whether a finished run can be resumed rather than restarted from scratch
+     * (PIPE-07).
+     *
+     * CSV imports re-run idempotently — rows upsert by natural key and
+     * already-imported rows are skipped — so resume is offered while the source
+     * file is still available. Sync runs will expose real checkpoints (SYNC-04).
+     */
+    public function supportsResume(): bool
+    {
+        if (! $this->status->isFinal() || ! $this->isImport() || $this->input_path === null) {
+            return false;
+        }
+
+        $disk = $this->input_disk ?? (string) config('exports.disk', 'local');
+
+        return Storage::disk($disk)->exists($this->input_path);
     }
 
     /**

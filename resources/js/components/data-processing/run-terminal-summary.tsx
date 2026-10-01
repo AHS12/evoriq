@@ -87,6 +87,14 @@ export function RunTerminalSummary({ run, canManage }: Props) {
                     </p>
                 )}
 
+                {run.type === 'import' && (
+                    <p className="text-xs text-muted-foreground">
+                        {t(
+                            'Re-running an import updates existing records instead of creating duplicates.',
+                        )}
+                    </p>
+                )}
+
                 {canManage && run.error_message && (
                     <details className="group">
                         <summary className="cursor-pointer text-xs text-muted-foreground select-none">

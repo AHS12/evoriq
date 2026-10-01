@@ -66,8 +66,8 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 | `PIPE-04` | [Timeline UI primitive](pipeline/PIPE-04-timeline-primitive.md) | M | Done | FND-01 (+ FND-06) | Reusable vertical timeline (rail, markers, time gutter, groups, a11y). |
 | `PIPE-05` | [Run timeline UI](pipeline/PIPE-05-run-timeline-ui.md)         | L | Done | PIPE-03, PIPE-04 | Flagship run view: progress hero, stage lanes, streaming event timeline. |
 | `PIPE-06` | [Run detail & event inspector](pipeline/PIPE-06-run-detail-inspector.md) | M | Done | PIPE-05 | Tabs: overview/timeline/errors/artifacts/params/raw; error grouping. |
-| `PIPE-07` | [Retry, resume, cancel & backoff UX](pipeline/PIPE-07-retry-resume-cancel.md) | M | Draft | PIPE-05         | Cooperative cancel, retry run/stage, resume, backoff display, failed view. |
-| `PIPE-08` | [Global pipeline indicator](pipeline/PIPE-08-global-pipeline-indicator.md) | M | Draft | PIPE-03         | Nav/sidebar live status pill + popover with active runs. |
+| `PIPE-07` | [Retry, resume, cancel & backoff UX](pipeline/PIPE-07-retry-resume-cancel.md) | M | Done | PIPE-05         | Cooperative cancel, retry run/stage, resume, backoff display, failed view. |
+| `PIPE-08` | [Global pipeline indicator](pipeline/PIPE-08-global-pipeline-indicator.md) | M | Done | PIPE-03         | Nav/sidebar live status pill + popover with active runs. |
 | `PIPE-09` | [Historical import progress experience](pipeline/PIPE-09-import-progress-experience.md) | L | Draft | PIPE-05, FND-03 | Range → plan preview → live import → completion, "you can leave". |
 | `PIPE-10` | [Sync health & observability](pipeline/PIPE-10-sync-health-observability.md) | M | Draft | PIPE-02         | Admin page: success rate, durations, queue depth, API usage, correlation search. |
 | `PIPE-11` | [Pipeline lifecycle notifications](pipeline/PIPE-11-pipeline-notifications.md) | S | Draft | PIPE-02         | Queued/started/completed/failed/retrying notifications + preferences. |

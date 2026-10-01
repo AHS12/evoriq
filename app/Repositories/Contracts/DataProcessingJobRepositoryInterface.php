@@ -17,6 +17,20 @@ interface DataProcessingJobRepositoryInterface
     public function findByJobId(string $jobId): ?DataProcessingJob;
 
     /**
+     * Resolve multiple jobs by primary key (for bulk recovery, PIPE-07).
+     *
+     * @param  array<int, int|string>  $ids
+     * @return Collection<int, DataProcessingJob>
+     */
+    public function findManyByIds(array $ids): Collection;
+
+    /**
+     * Whether another job with the same type and entity was created since the
+     * cutoff (the soft "duplicate soon" warning, PIPE-07).
+     */
+    public function recentDuplicateExists(DataProcessingJob $job, CarbonInterface $since): bool;
+
+    /**
      * @return Builder<DataProcessingJob>
      */
     public function buildFilterQuery(DataProcessingJobFilterDTO $filters): Builder;
@@ -51,6 +65,13 @@ interface DataProcessingJobRepositoryInterface
      * user's jobs.
      */
     public function activeCount(?int $userId = null): int;
+
+    /**
+     * The number of jobs that reached the `FAILED` status since the cutoff
+     * (the global indicator's recent-failure nudge, PIPE-08). A null user id
+     * counts every user's jobs.
+     */
+    public function failedRecentCount(?int $userId, CarbonInterface $since): int;
 
     /**
      * A cheap derived revision of the job rows: it changes when a job is

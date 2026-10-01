@@ -12,6 +12,8 @@ export type NavItem = {
     icon?: LucideIcon | null;
     isActive?: boolean;
     badge?: number;
+    /** Render a pulsing live dot next to the badge (PIPE-08). */
+    live?: boolean;
 };
 
 export type NavGroup = {

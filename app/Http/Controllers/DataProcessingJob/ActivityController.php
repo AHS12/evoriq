@@ -10,6 +10,7 @@ use App\Enums\DataProcessingJobType;
 use App\Enums\ExportFormat;
 use App\Exports\ImportTemplateExport;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DataProcessingJob\RetryFailedRequest;
 use App\Http\Requests\DataProcessingJob\StoreImportRequest;
 use App\Http\Requests\Export\StoreExportRequest;
 use App\Http\Resources\Pipeline\PipelineEventResource;
@@ -208,9 +209,58 @@ class ActivityController extends Controller
     {
         Gate::authorize('manage', $dataProcessingJob);
 
-        $this->service->retry($dataProcessingJob);
+        try {
+            $this->service->retry($dataProcessingJob);
+        } catch (RuntimeException $exception) {
+            return $this->rejected($exception);
+        }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Job queued again.')]);
+
+        return back();
+    }
+
+    /**
+     * Resume a finished job from where it stopped (PIPE-07).
+     */
+    public function resume(DataProcessingJob $dataProcessingJob): RedirectResponse
+    {
+        Gate::authorize('manage', $dataProcessingJob);
+
+        try {
+            $this->service->resume($dataProcessingJob);
+        } catch (RuntimeException $exception) {
+            return $this->rejected($exception);
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Job resumed.')]);
+
+        return back();
+    }
+
+    /**
+     * Bulk-retry a set of finished runs (PIPE-07).
+     */
+    public function retryFailed(RetryFailedRequest $request): RedirectResponse
+    {
+        Gate::authorize('viewAny', DataProcessingJob::class);
+
+        /** @var array<int, int> $ids */
+        $ids = $request->validated('ids');
+
+        $result = $this->service->retryFailed(
+            $ids,
+            (int) $request->user()->getKey(),
+            $this->canViewAll($request),
+        );
+
+        Inertia::flash('toast', [
+            'type' => $result['queued'] > 0 ? 'success' : 'info',
+            'message' => __(':queued retried, :skipped skipped.', [
+                'queued' => $result['queued'],
+                'skipped' => $result['skipped'],
+            ]),
+        ]);
 
         return back();
     }
@@ -235,6 +285,19 @@ class ActivityController extends Controller
         $this->service->delete($dataProcessingJob);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Job deleted.')]);
+
+        return back();
+    }
+
+    /**
+     * Flash a rejection toast for an action the run state does not allow.
+     */
+    private function rejected(RuntimeException $exception): RedirectResponse
+    {
+        Inertia::flash('toast', [
+            'type' => 'error',
+            'message' => $exception->getMessage(),
+        ]);
 
         return back();
     }

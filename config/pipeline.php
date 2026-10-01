@@ -89,6 +89,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Recovery (PIPE-07)
+    |--------------------------------------------------------------------------
+    |
+    | `duplicate_soon_seconds` is the window in which a near-identical run is
+    | flagged with the soft `duplicate_soon` warning. Sets larger than
+    | `bulk_retry_threshold` are handed to the `default` queue instead of being
+    | re-dispatched inline.
+    |
+    */
+
+    'duplicate_soon_seconds' => (int) env('PIPELINE_DUPLICATE_SOON_SECONDS', 300),
+
+    'bulk_retry_threshold' => (int) env('PIPELINE_BULK_RETRY_THRESHOLD', 10),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Global status (PIPE-08)
+    |--------------------------------------------------------------------------
+    |
+    | The shared `pipelineStatus` prop is cached for this many seconds so the
+    | aggregate counts / top active runs are cheap on every page. The cache is
+    | invalidated explicitly when a run changes lifecycle state.
+    |
+    */
+
+    'status_cache_seconds' => (int) env('PIPELINE_STATUS_CACHE_SECONDS', 5),
+
+    /*
+    |--------------------------------------------------------------------------
     | Redaction
     |--------------------------------------------------------------------------
     |

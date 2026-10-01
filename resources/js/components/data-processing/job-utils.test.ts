@@ -39,7 +39,12 @@ function makeJob(
         },
         counts: { created: 0, updated: 0, failed: 0, skipped: 0 },
         stages: [],
-        attempts: { current: 1, label: 'Attempt 1', next_retry_at: null },
+        attempts: {
+            current: 1,
+            label: 'Attempt 1',
+            max: 1,
+            next_retry_at: null,
+        },
         failure: null,
         timing: {
             dispatched_at: null,
@@ -54,6 +59,7 @@ function makeJob(
             retry: false,
             resume: false,
             duplicate: true,
+            duplicate_soon: false,
             download: false,
             delete: true,
         },
@@ -73,7 +79,9 @@ function makeJob(
         can: {
             cancel: true,
             retry: false,
+            resume: false,
             duplicate: true,
+            duplicate_soon: false,
             download: false,
             delete: true,
         },

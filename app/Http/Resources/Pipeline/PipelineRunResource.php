@@ -5,7 +5,9 @@ namespace App\Http\Resources\Pipeline;
 use App\DTOs\Pipeline\PipelineIssueGroupDTO;
 use App\DTOs\Pipeline\PipelineRunDTO;
 use App\DTOs\Pipeline\PipelineStageDTO;
+use App\Enums\QueueName;
 use App\Http\Resources\Export\DataProcessingJobResource;
+use App\Registry\QueueRegistry;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Gate;
@@ -38,14 +40,25 @@ class PipelineRunResource extends JsonResource
         $canInspect = $user !== null
             && ($user->can('data-processing.manage') || $user->can('developer.view'));
 
+        // Recovery is available for the two "we stopped early" states; a
+        // completed run is re-run via duplicate instead.
+        $recoverable = $job->isFailed() || $job->isCancelled();
+
         $abilities = [
             'cancel' => $user !== null && $job->isActive() && ! $job->cancellationRequested() && $canManage,
-            'retry' => $user !== null && $job->isFailed() && $canManage,
-            'resume' => false,
+            'retry' => $user !== null && $recoverable && $canManage,
+            'resume' => $user !== null && $recoverable && $canManage && $job->supportsResume(),
             'duplicate' => $canManage,
+            'duplicate_soon' => $canManage && $job->isFailed() && $this->duplicateSoon,
             'download' => $user !== null && Gate::forUser($user)->allows('download', $job),
             'delete' => $user !== null && Gate::forUser($user)->allows('delete', $job),
         ];
+
+        $failureAction = $failure?->action();
+
+        if ($job->next_retry_at !== null && $job->next_retry_at->isFuture()) {
+            $failureAction = 'wait';
+        }
 
         return [
             // --- Run contract ---
@@ -82,13 +95,14 @@ class PipelineRunResource extends JsonResource
             'attempts' => [
                 'current' => $job->attempt,
                 'label' => $job->attemptsLabel(),
+                'max' => QueueRegistry::get(QueueName::HEAVY)->tries,
                 'next_retry_at' => $job->next_retry_at?->toIso8601String(),
             ],
             'failure' => $failure === null ? null : [
                 'reason' => $failure->value,
                 'label' => $failure->label(),
                 'hint' => $failure->hint(),
-                'action' => $failure->action(),
+                'action' => $failureAction,
                 'message' => $job->error_message,
             ],
             'timing' => [
@@ -153,7 +167,9 @@ class PipelineRunResource extends JsonResource
             'can' => [
                 'cancel' => $abilities['cancel'],
                 'retry' => $abilities['retry'],
+                'resume' => $abilities['resume'],
                 'duplicate' => $abilities['duplicate'],
+                'duplicate_soon' => $abilities['duplicate_soon'],
                 'download' => $abilities['download'],
                 'delete' => $abilities['delete'],
             ],

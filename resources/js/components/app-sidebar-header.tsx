@@ -3,6 +3,7 @@ import { Breadcrumbs } from '@/components/breadcrumbs';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { LanguageToggle } from '@/components/app/language-toggle';
 import { NotificationBell } from '@/components/notification/notification-bell';
+import { PipelineIndicator } from '@/components/pipeline/pipeline-indicator';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useCommandPalette } from '@/hooks/use-command-palette';
@@ -40,6 +41,7 @@ export function AppSidebarHeader({
                         ⌘K
                     </kbd>
                 </Button>
+                <PipelineIndicator />
                 <NotificationBell />
                 <LanguageToggle />
                 <ThemeToggle />

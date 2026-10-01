@@ -33,7 +33,7 @@ beforeEach(function () {
     $this->pipeline = Mockery::mock(PipelineEventRecorder::class);
     $this->pipeline->shouldReceive(
         'dispatched', 'started', 'progress', 'artifactReady',
-        'completed', 'failed', 'cancelled', 'retryScheduled',
+        'completed', 'failed', 'cancelled', 'retryScheduled', 'retryStarted', 'warning',
     )->byDefault();
     $this->runs = Mockery::mock(PipelineRunAggregator::class);
     $this->failures = Mockery::mock(FailureReasonResolver::class);

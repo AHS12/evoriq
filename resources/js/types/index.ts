@@ -9,6 +9,7 @@ export type * from './i18n';
 export type * from './navigation';
 export type * from './notification';
 export type * from './pagination';
+export type * from './pipeline';
 export type * from './role';
 export type * from './setting';
 export type * from './ui';

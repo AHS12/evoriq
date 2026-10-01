@@ -21,6 +21,7 @@ type Options = {
     can: (permission: string) => boolean;
     t: TranslationHook['t'];
     activeJobs: number;
+    activeJobsLive?: boolean;
 };
 
 /**
@@ -31,6 +32,7 @@ export function buildAppNavigation({
     can,
     t,
     activeJobs,
+    activeJobsLive = false,
 }: Options): NavGroup[] {
     const workspace: NavItem[] = [];
 
@@ -40,6 +42,7 @@ export function buildAppNavigation({
             href: activityIndex(),
             icon: Activity,
             badge: activeJobs,
+            live: activeJobsLive,
         });
     }
 

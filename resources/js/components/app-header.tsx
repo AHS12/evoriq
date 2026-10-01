@@ -5,6 +5,7 @@ import AppLogoIcon from '@/components/app-logo-icon';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { ThemeToggle } from '@/components/app/theme-toggle';
 import { LanguageToggle } from '@/components/app/language-toggle';
+import { PipelineIndicator } from '@/components/pipeline/pipeline-indicator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -218,6 +219,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                                 ))}
                             </div>
                         </div>
+                        <PipelineIndicator />
                         <ThemeToggle />
                         <LanguageToggle />
                         <DropdownMenu>

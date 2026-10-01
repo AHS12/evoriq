@@ -4,9 +4,11 @@ namespace App\Http\Middleware;
 
 use App\Enums\AppLocale;
 use App\Http\Resources\Notification\NotificationResource;
+use App\Http\Resources\Pipeline\PipelineStatusResource;
 use App\Models\User;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
+use App\Services\Pipeline\PipelineStatusService;
 use App\Services\Setting\LocaleService;
 use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Http\Request;
@@ -74,12 +76,15 @@ class HandleInertiaRequests extends Middleware
             ],
             'notifications' => fn (): array => $this->notificationSummary($request),
             'activeJobs' => fn (): int => $this->activeJobCount($request),
+            'pipelineStatus' => fn (): array => $this->pipelineStatus($request),
             'pipeline_revision' => fn (): string => $this->pipelineRevision($request),
         ];
     }
 
     /**
-     * The number of pending/running jobs the user can see, for the sidebar badge.
+     * The number of pending/running jobs the user can see, for the sidebar
+     * badge. Derived from the cached pipeline status so the two share one
+     * aggregate (PIPE-08).
      */
     private function activeJobCount(Request $request): int
     {
@@ -89,7 +94,27 @@ class HandleInertiaRequests extends Middleware
             return 0;
         }
 
-        return app(DataProcessingJobService::class)->activeCountFor($scope['userId'], $scope['viewAll']);
+        return app(PipelineStatusService::class)
+            ->summary($scope['userId'], $scope['viewAll'])['active_count'];
+    }
+
+    /**
+     * The shared global pipeline snapshot for the header/sidebar indicator
+     * (PIPE-08). Cached, so it is cheap on every page.
+     *
+     * @return array<string, mixed>
+     */
+    private function pipelineStatus(Request $request): array
+    {
+        $scope = $this->dataProcessingScope($request);
+
+        if ($scope === null) {
+            return PipelineStatusService::empty();
+        }
+
+        $summary = app(PipelineStatusService::class)->summary($scope['userId'], $scope['viewAll']);
+
+        return (new PipelineStatusResource($summary))->resolve($request);
     }
 
     /**

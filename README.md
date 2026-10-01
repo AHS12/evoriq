@@ -306,6 +306,8 @@ Full guides live in [`docs/`](docs/README.md):
 | [Architecture](docs/architecture.md) | Service–Repository, Clockify boundary, backups |
 | [Testing](docs/testing.md) | Pest, the quality gate, git hooks |
 | [Translations](docs/translations.md) | The 5-locale i18n layer |
+| [UI conventions](docs/ui-conventions.md) | Motion, feedback, charts and accessibility conventions |
+| [Accessibility](docs/accessibility.md) | Keyboard/focus/contrast audit and high-contrast tokens |
 | [Troubleshooting](docs/troubleshooting.md) | Common problems and fixes |
 
 The full technical design is in [`TDR.md`](TDR.md); the architecture and

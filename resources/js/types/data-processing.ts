@@ -44,6 +44,7 @@ export type JobStage = {
 export type JobAttempts = {
     current: number;
     label: string;
+    max: number;
     next_retry_at: string | null;
 };
 
@@ -122,7 +123,9 @@ export type JobArtifact = {
 export type JobAbilities = {
     cancel: boolean;
     retry: boolean;
+    resume: boolean;
     duplicate: boolean;
+    duplicate_soon: boolean;
     download: boolean;
     delete: boolean;
 };
@@ -155,7 +158,7 @@ export type DataProcessingJob = {
     attempts: JobAttempts;
     failure: JobFailure | null;
     timing: JobTiming;
-    abilities: JobAbilities & { resume: boolean };
+    abilities: JobAbilities;
     timeline: JobTimelineEvent[];
     issues: IssueGroup[];
     advanced: JobAdvanced | null;

@@ -7,11 +7,21 @@ import type { DataProcessingJob } from '@/types';
 type Props = {
     jobs: DataProcessingJob[];
     onOpen: (job: DataProcessingJob) => void;
+    selectable?: boolean;
+    selectedIds?: number[];
+    onToggle?: (id: number) => void;
 };
 
-export function JobList({ jobs, onOpen }: Props) {
+export function JobList({
+    jobs,
+    onOpen,
+    selectable = false,
+    selectedIds = [],
+    onToggle,
+}: Props) {
     const { t } = useTranslation();
     const groups = useMemo(() => groupJobsByDay(jobs, t), [jobs, t]);
+    const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
     return (
         <div className="overflow-hidden rounded-xl border">
@@ -22,7 +32,14 @@ export function JobList({ jobs, onOpen }: Props) {
                     </div>
                     <div className="divide-y">
                         {group.jobs.map((job) => (
-                            <JobRow key={job.id} job={job} onOpen={onOpen} />
+                            <JobRow
+                                key={job.id}
+                                job={job}
+                                onOpen={onOpen}
+                                selectable={selectable}
+                                selected={selected.has(job.id)}
+                                onToggle={onToggle}
+                            />
                         ))}
                     </div>
                 </div>

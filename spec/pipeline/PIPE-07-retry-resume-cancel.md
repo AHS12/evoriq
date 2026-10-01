@@ -1,6 +1,6 @@
 # PIPE-07 — Retry, resume, cancel & backoff UX
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** PIPE-05
@@ -143,16 +143,16 @@ knows what will happen, whether it is safe, and what is already done.
 
 ## 7. Acceptance criteria
 
-- [ ] Cancel on a processing run stops at the next safe boundary and reports
+- [x] Cancel on a processing run stops at the next safe boundary and reports
       "cancelled" with a clear explanation.
-- [ ] Retry on a failed run re-runs safely and is idempotent (no duplicates).
-- [ ] Resume continues from the checkpoint where supported, and is hidden
+- [x] Retry on a failed run re-runs safely and is idempotent (no duplicates).
+- [x] Resume continues from the checkpoint where supported, and is hidden
       otherwise.
-- [ ] Failure reasons drive the correct primary action (retry/reconnect/wait).
-- [ ] Backoff countdown is visible and accurate.
-- [ ] Bulk retry queues owned final runs and skips others, with a result toast.
-- [ ] All confirmations state real consequences.
-- [ ] `composer check` passes.
+- [x] Failure reasons drive the correct primary action (retry/reconnect/wait).
+- [x] Backoff countdown is visible and accurate.
+- [x] Bulk retry queues owned final runs and skips others, with a result toast.
+- [x] All confirmations state real consequences.
+- [x] `composer check` passes.
 
 ## 8. Tests
 

@@ -6,6 +6,7 @@ use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -88,4 +89,37 @@ test('the export endpoint returns the contract with a bounded timeline', functio
         ->assertJsonPath('data.timing.duration_ms', 30000)
         ->assertJsonCount(1, 'data.timeline')
         ->assertJsonPath('data.timeline.0.type', 'dispatched');
+});
+
+test('abilities expose resume for a failed import with an available source', function () {
+    Storage::fake('local');
+    Storage::disk('local')->put('exports/imports/users.csv', 'Name,Email');
+
+    DataProcessingJob::factory()->import()->failed()->create([
+        'user_id' => $this->user->id,
+        'input_disk' => 'local',
+        'input_path' => 'exports/imports/users.csv',
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('activity.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('jobs.data.0.abilities.resume', true)
+            ->where('jobs.data.0.abilities.retry', true));
+});
+
+test('failure action becomes wait while a retry is pending', function () {
+    DataProcessingJob::factory()->failed()->create([
+        'user_id' => $this->user->id,
+        'failure_reason' => null,
+        'error_message' => 'CLOCKIFY rate limit exceeded',
+        'next_retry_at' => now()->addMinutes(5),
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('activity.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('jobs.data.0.failure.action', 'wait'));
 });

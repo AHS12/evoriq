@@ -12,6 +12,7 @@ use App\Enums\PipelineEventType;
 use App\Enums\PipelineFailureReason;
 use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
+use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -31,6 +32,7 @@ class PipelineRunAggregator
         protected PipelineEventRepositoryInterface $events,
         protected FailureReasonResolver $failures,
         protected PipelineIssueAggregator $issues,
+        protected ?DataProcessingJobRepositoryInterface $jobRepository = null,
     ) {}
 
     public function aggregate(DataProcessingJob $job, bool $withTimeline = false): PipelineRunDTO
@@ -48,7 +50,27 @@ class PipelineRunAggregator
             skipped: $this->countSkipped($job),
             issues: $this->issues->summarize($job, $events),
             correlationId: $this->correlationId($events),
+            duplicateSoon: $this->hasRecentDuplicate($job),
         );
+    }
+
+    /**
+     * A soft warning when a finished run has a near-identical sibling started
+     * moments ago (PIPE-07) — surfaced only, never a hard block.
+     */
+    private function hasRecentDuplicate(DataProcessingJob $job): bool
+    {
+        if ($this->jobRepository === null || $job->entity_type === null || ! $job->status->isFinal()) {
+            return false;
+        }
+
+        $window = (int) config('pipeline.duplicate_soon_seconds', 300);
+
+        if ($window <= 0) {
+            return false;
+        }
+
+        return $this->jobRepository->recentDuplicateExists($job, now()->subSeconds($window));
     }
 
     /**

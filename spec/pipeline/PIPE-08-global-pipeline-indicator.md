@@ -1,6 +1,6 @@
 # PIPE-08 — Global pipeline indicator
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** PIPE-03
@@ -106,15 +106,15 @@ None. A short-lived cache entry backs the shared prop.
 
 ## 7. Acceptance criteria
 
-- [ ] Indicator appears in the header on every authenticated page and updates
+- [x] Indicator appears in the header on every authenticated page and updates
       live while runs are active.
-- [ ] Sidebar badge and header count stay in sync from one poll.
-- [ ] Popover lists active runs with live progress and links to the run page.
-- [ ] `failed_recent` surfaces a clear path to the failed view.
-- [ ] Freshness and API-budget slots render only when data exists and are
+- [x] Sidebar badge and header count stay in sync from one poll.
+- [x] Popover lists active runs with live progress and links to the run page.
+- [x] `failed_recent` surfaces a clear path to the failed view.
+- [x] Freshness and API-budget slots render only when data exists and are
       extensible.
-- [ ] Indicator is hidden/quiet when idle.
-- [ ] `composer check` passes.
+- [x] Indicator is hidden/quiet when idle.
+- [x] `composer check` passes.
 
 ## 8. Tests
 

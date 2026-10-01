@@ -9,20 +9,39 @@ import {
     resultSummary,
 } from '@/components/data-processing/job-utils';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
 
 type Props = {
     job: DataProcessingJob;
     onOpen: (job: DataProcessingJob) => void;
+    selectable?: boolean;
+    selected?: boolean;
+    onToggle?: (id: number) => void;
 };
 
-export function JobRow({ job, onOpen }: Props) {
+export function JobRow({
+    job,
+    onOpen,
+    selectable = false,
+    selected = false,
+    onToggle,
+}: Props) {
     const { t } = useTranslation();
     const meta = isActiveStatus(job.status) ? computeEta(job, t) : job.duration;
 
     return (
         <div className="flex items-start gap-3 px-4 py-3 transition-smooth-fast hover:bg-muted/40">
+            {selectable && (
+                <Checkbox
+                    checked={selected}
+                    onCheckedChange={() => onToggle?.(job.id)}
+                    aria-label={t('Select :name', { name: job.name })}
+                    className="mt-1"
+                />
+            )}
+
             <JobTypeIcon icon={job.entity_icon ?? job.type_icon} />
 
             <button

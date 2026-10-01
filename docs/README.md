@@ -17,6 +17,7 @@ PostgreSQL and provides analytics, reporting, comparisons and exports.
 | [Testing](testing.md)                         | Pest setup, the quality gate, git hooks                           |
 | [Translations](translations.md)               | The 5-locale i18n layer and how to add strings                    |
 | [UI conventions](ui-conventions.md)           | Motion tokens, feedback primitives, skeletons, toasts, live regions |
+| [Accessibility](accessibility.md)             | Keyboard/focus/contrast audit, skip link, high-contrast tokens    |
 | [Troubleshooting](troubleshooting.md)         | Common problems and fixes                                         |
 
 ## In the application

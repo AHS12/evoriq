@@ -5,6 +5,7 @@ use App\Enums\PipelineRunType;
 use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Repositories\Contracts\PipelineEventRepositoryInterface;
+use App\Repositories\DataProcessingJob\DataProcessingJobRepository;
 use App\Services\Pipeline\FailureReasonResolver;
 use App\Services\Pipeline\PipelineIssueAggregator;
 use App\Services\Pipeline\PipelineRunAggregator;
@@ -31,7 +32,7 @@ function pipelineEvent(array $attributes): PipelineEvent
 
 beforeEach(function () {
     $this->repository = Mockery::mock(PipelineEventRepositoryInterface::class);
-    $this->aggregator = new PipelineRunAggregator($this->repository, new FailureReasonResolver, new PipelineIssueAggregator);
+    $this->aggregator = new PipelineRunAggregator($this->repository, new FailureReasonResolver, new PipelineIssueAggregator, new DataProcessingJobRepository);
 });
 
 afterEach(function () {

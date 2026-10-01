@@ -1,7 +1,6 @@
 import { Combobox } from '@/components/app/combobox';
 import { LanguageSelect } from '@/components/app/language-select';
 import InputError from '@/components/input-error';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -11,6 +10,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import type { SettingField as SettingFieldType } from '@/types';
 import { useTranslation } from '@/hooks/use-translation';
 import { useState } from 'react';
@@ -36,6 +36,7 @@ export function SettingField({ field, error }: Props) {
     const [selectValue, setSelectValue] = useState<string | undefined>(
         field.value != null ? String(field.value) : undefined,
     );
+    const [switchOn, setSwitchOn] = useState(booleanChecked);
 
     return (
         <div className="grid gap-2">
@@ -75,17 +76,20 @@ export function SettingField({ field, error }: Props) {
                     </SelectContent>
                 </Select>
             ) : field.type === 'boolean' ? (
-                <div className="flex h-9 items-center gap-2">
-                    <input type="hidden" name={field.key} value="0" />
-                    <Checkbox
-                        id={id}
-                        name={field.key}
-                        value="1"
-                        defaultChecked={booleanChecked}
-                    />
+                <div className="flex h-9 items-center justify-between gap-3">
                     <span className="text-sm text-muted-foreground">
-                        {booleanChecked ? t('Enabled') : t('Disabled')}
+                        {switchOn ? t('Enabled') : t('Disabled')}
                     </span>
+                    <input
+                        type="hidden"
+                        name={field.key}
+                        value={switchOn ? '1' : '0'}
+                    />
+                    <Switch
+                        id={id}
+                        checked={switchOn}
+                        onCheckedChange={setSwitchOn}
+                    />
                 </div>
             ) : field.is_secret ? (
                 <Input

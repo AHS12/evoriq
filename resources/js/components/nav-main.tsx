@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { LiveDot } from '@/components/feedback/live-dot';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -28,14 +29,23 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                                     <Link href={item.href} prefetch>
                                         {item.icon && <item.icon />}
                                         <span>{item.title}</span>
-                                        {item.badge !== undefined &&
-                                            item.badge > 0 && (
-                                                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs leading-none font-medium text-primary-foreground group-data-[collapsible=icon]:hidden">
-                                                    {item.badge > 99
-                                                        ? '99+'
-                                                        : item.badge}
-                                                </span>
-                                            )}
+                                        {(item.live ||
+                                            (item.badge !== undefined &&
+                                                item.badge > 0)) && (
+                                            <span className="ml-auto flex items-center gap-1.5 group-data-[collapsible=icon]:hidden">
+                                                {item.live && (
+                                                    <LiveDot active />
+                                                )}
+                                                {item.badge !== undefined &&
+                                                    item.badge > 0 && (
+                                                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs leading-none font-medium text-primary-foreground">
+                                                            {item.badge > 99
+                                                                ? '99+'
+                                                                : item.badge}
+                                                        </span>
+                                                    )}
+                                            </span>
+                                        )}
                                     </Link>
                                 </SidebarMenuButton>
                             </SidebarMenuItem>

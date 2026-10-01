@@ -13,8 +13,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useActiveJobs } from '@/hooks/use-active-jobs';
 import { useCan } from '@/hooks/use-can';
+import { usePipelineStatus } from '@/hooks/use-pipeline-status';
 import { useTranslation } from '@/hooks/use-translation';
 import { buildAppNavigation } from '@/lib/app-navigation';
 import { dashboard } from '@/routes';
@@ -35,10 +35,15 @@ const footerNavItems: NavItem[] = [
 
 export function AppSidebar() {
     const can = useCan();
-    const activeJobs = useActiveJobs();
+    const { status, live } = usePipelineStatus();
     const { t } = useTranslation();
 
-    const groups = buildAppNavigation({ can, t, activeJobs });
+    const groups = buildAppNavigation({
+        can,
+        t,
+        activeJobs: status.active_count,
+        activeJobsLive: status.active_count > 0 && live,
+    });
 
     return (
         <Sidebar collapsible="icon" variant="inset">

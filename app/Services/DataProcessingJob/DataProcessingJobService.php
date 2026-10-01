@@ -19,6 +19,7 @@ use App\Enums\PipelineFailureReason;
 use App\Exports\ImportReportExport;
 use App\Imports\ImportResult;
 use App\Jobs\DataProcessingJobDispatcher;
+use App\Jobs\RetryFailedDataProcessingJobs;
 use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Models\User;
@@ -28,6 +29,7 @@ use App\Services\Notification\NotificationService;
 use App\Services\Pipeline\FailureReasonResolver;
 use App\Services\Pipeline\PipelineEventRecorder;
 use App\Services\Pipeline\PipelineRunAggregator;
+use App\Services\Pipeline\PipelineStatusService;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -158,6 +160,8 @@ class DataProcessingJobService
 
         $job = DB::transaction(fn (): DataProcessingJob => $this->repository->create($attributes));
 
+        PipelineStatusService::forget($job->user_id);
+
         $this->pipeline->dispatched($job, [
             'type' => $job->type->value,
             'entity_type' => $job->entity_type?->value,
@@ -195,7 +199,13 @@ class DataProcessingJobService
         $job = $this->repository->update($job, $data);
 
         if ($firstStart) {
-            $this->pipeline->started($job, $stage);
+            PipelineStatusService::forget($job->user_id);
+
+            if ($job->attempt > 1) {
+                $this->pipeline->retryStarted($job, $job->attempt);
+            } else {
+                $this->pipeline->started($job, $stage);
+            }
         }
 
         return $job;
@@ -291,6 +301,8 @@ class DataProcessingJobService
             'last_heartbeat_at' => now(),
         ]);
 
+        PipelineStatusService::forget($job->user_id);
+
         if (! $wasFinal) {
             $this->pipeline->completed($job, progress: [
                 'total' => $totalItems,
@@ -337,6 +349,8 @@ class DataProcessingJobService
             'last_heartbeat_at' => now(),
         ]);
 
+        PipelineStatusService::forget($job->user_id);
+
         if (! $wasFinal) {
             $this->pipeline->failed($job, $errorMessage);
         }
@@ -374,6 +388,8 @@ class DataProcessingJobService
             'last_heartbeat_at' => now(),
         ]);
 
+        PipelineStatusService::forget($job->user_id);
+
         if (! $wasFinal) {
             $this->pipeline->cancelled($job);
         }
@@ -407,6 +423,10 @@ class DataProcessingJobService
 
         $updated = $this->repository->update($job, ['cancel_requested_at' => now()]);
 
+        PipelineStatusService::forget($updated->user_id);
+
+        $this->pipeline->warning($updated, __('Cancellation requested'), ['requested' => true]);
+
         $this->audit->record(
             AuditEvent::PROCESSING_CANCELLED,
             $updated,
@@ -422,7 +442,10 @@ class DataProcessingJobService
     }
 
     /**
-     * Re-queue a finished job with a clean slate.
+     * Re-queue a finished job with a clean slate (PIPE-07).
+     *
+     * Retry is idempotent: imports upsert by natural key, so re-running never
+     * creates duplicates.
      */
     public function retry(DataProcessingJob $job): DataProcessingJob
     {
@@ -430,6 +453,107 @@ class DataProcessingJobService
             throw new RuntimeException(__('Only finished jobs can be retried.'));
         }
 
+        $job = $this->resetForRequeue($job);
+
+        $this->pipeline->retryScheduled($job);
+
+        DataProcessingJobDispatcher::dispatch($job);
+
+        return $job;
+    }
+
+    /**
+     * Resume a finished job from where it stopped (PIPE-07).
+     *
+     * Only runs that expose a resume strategy can be resumed; today that means
+     * imports whose source file is still available (the re-run skips rows that
+     * were already imported). Sync runs will expose real checkpoints (SYNC-04).
+     */
+    public function resume(DataProcessingJob $job): DataProcessingJob
+    {
+        if (! $job->status->isFinal()) {
+            throw new RuntimeException(__('Only finished jobs can be resumed.'));
+        }
+
+        if (! $this->canResume($job)) {
+            throw new RuntimeException(__('This job cannot be resumed.'));
+        }
+
+        $job = $this->resetForRequeue($job);
+
+        $this->pipeline->retryScheduled(
+            $job,
+            __('Resuming from the last checkpoint.'),
+            null,
+            ['mode' => 'resume'],
+        );
+
+        DataProcessingJobDispatcher::dispatch($job);
+
+        return $job;
+    }
+
+    /**
+     * Whether a resume strategy exists for the run (PIPE-07).
+     */
+    public function canResume(DataProcessingJob $job): bool
+    {
+        return $job->supportsResume();
+    }
+
+    /**
+     * Bulk-retry the owned, final runs in a set (PIPE-07).
+     *
+     * Non-final, unowned and missing rows are skipped. Large sets are handed to
+     * the `default` queue so a mass re-dispatch cannot flood the request.
+     *
+     * @param  array<int, int|string>  $ids
+     * @return array{queued: int, skipped: int, dispatched: bool}
+     */
+    public function retryFailed(array $ids, ?int $userId, bool $viewAll): array
+    {
+        $jobs = $this->repository->findManyByIds($ids)
+            ->when(! $viewAll, fn (Collection $jobs): Collection => $jobs->where('user_id', $userId));
+
+        $retryable = $jobs->filter(fn (DataProcessingJob $job): bool => $job->status->isFinal());
+        $skipped = count($ids) - $retryable->count();
+
+        $threshold = (int) config('pipeline.bulk_retry_threshold', 10);
+
+        if ($retryable->count() > $threshold) {
+            RetryFailedDataProcessingJobs::dispatch($retryable->pluck('id')->all());
+
+            return [
+                'queued' => $retryable->count(),
+                'skipped' => max(0, $skipped),
+                'dispatched' => true,
+            ];
+        }
+
+        $queued = 0;
+
+        foreach ($retryable as $job) {
+            try {
+                $this->retry($job);
+                $queued++;
+            } catch (RuntimeException) {
+                $skipped++;
+            }
+        }
+
+        return [
+            'queued' => $queued,
+            'skipped' => max(0, $skipped),
+            'dispatched' => false,
+        ];
+    }
+
+    /**
+     * Reset a finished job to `PENDING` for a fresh run, preserving the attempt
+     * count so the history stays intact in the event stream.
+     */
+    private function resetForRequeue(DataProcessingJob $job): DataProcessingJob
+    {
         $job = $this->repository->update($job, [
             'status' => DataProcessingJobStatus::PENDING,
             'stage' => null,
@@ -446,9 +570,7 @@ class DataProcessingJobService
             'cancel_requested_at' => null,
         ]);
 
-        $this->pipeline->retryScheduled($job);
-
-        DataProcessingJobDispatcher::dispatch($job);
+        PipelineStatusService::forget($job->user_id);
 
         return $job;
     }
@@ -517,7 +639,11 @@ class DataProcessingJobService
         return DB::transaction(function () use ($job): bool {
             $this->deleteFile($job);
 
-            return $this->repository->delete($job);
+            $deleted = $this->repository->delete($job);
+
+            PipelineStatusService::forget($job->user_id);
+
+            return $deleted;
         });
     }
 

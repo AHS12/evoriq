@@ -1,12 +1,13 @@
 import { Head } from '@inertiajs/react';
 import { Activity, Download, Upload } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { DataTablePagination } from '@/components/app/data-table/data-table-pagination';
 import { ActiveRuns } from '@/components/data-processing/active-runs';
 import { ExportDialog } from '@/components/data-processing/export-dialog';
 import { ImportDialog } from '@/components/data-processing/import-dialog';
+import { JobBulkActions } from '@/components/data-processing/job-bulk-actions';
 import { JobDetailSheet } from '@/components/data-processing/job-detail-sheet';
 import { JobFilters } from '@/components/data-processing/job-filters';
 import { JobList } from '@/components/data-processing/job-list';
@@ -55,6 +56,7 @@ export default function DataProcessingIndex({
         filters.status ?? 'all',
     );
     const [selected, setSelected] = useState<DataProcessingJob | null>(null);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [sheetOpen, setSheetOpen] = useState(false);
     const [exportOpen, setExportOpen] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
@@ -71,6 +73,29 @@ export default function DataProcessingIndex({
 
     const { live, pause, resume } = useJobPoll(activeJobs > 0);
     useJobTransitions(jobs.data);
+
+    const retryableJobs = useMemo(
+        () => jobs.data.filter((job) => job.abilities.retry),
+        [jobs.data],
+    );
+
+    // Drop selections for rows that left the current page/filter.
+    useEffect(() => {
+        const present = new Set(jobs.data.map((job) => job.id));
+        setSelectedIds((previous) => {
+            const next = previous.filter((id) => present.has(id));
+
+            return next.length === previous.length ? previous : next;
+        });
+    }, [jobs.data]);
+
+    const toggleSelected = (id: number): void => {
+        setSelectedIds((previous) =>
+            previous.includes(id)
+                ? previous.filter((value) => value !== id)
+                : [...previous, id],
+        );
+    };
 
     const canExport = can('user.export') || can('export.create');
     const canImport = can('user.import') || can('import.create');
@@ -176,7 +201,20 @@ export default function DataProcessingIndex({
                         <ListSkeleton rows={3} />
                     ) : jobs.data.length > 0 ? (
                         <>
-                            <JobList jobs={jobs.data} onOpen={openJob} />
+                            {retryableJobs.length > 0 && (
+                                <JobBulkActions
+                                    jobs={jobs.data}
+                                    selected={selectedIds}
+                                    onClear={() => setSelectedIds([])}
+                                />
+                            )}
+                            <JobList
+                                jobs={jobs.data}
+                                onOpen={openJob}
+                                selectable={retryableJobs.length > 0}
+                                selectedIds={selectedIds}
+                                onToggle={toggleSelected}
+                            />
                             <DataTablePagination
                                 meta={jobs.meta}
                                 onPageChange={(page) => apply({ page }, true)}

@@ -33,6 +33,31 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
         return DataProcessingJob::query()->where('job_id', $jobId)->first();
     }
 
+    public function findManyByIds(array $ids): Collection
+    {
+        if ($ids === []) {
+            return new Collection;
+        }
+
+        return DataProcessingJob::query()
+            ->whereIn('id', array_map(static fn (int|string $id): int => (int) $id, $ids))
+            ->get();
+    }
+
+    public function recentDuplicateExists(DataProcessingJob $job, CarbonInterface $since): bool
+    {
+        if ($job->entity_type === null) {
+            return false;
+        }
+
+        return DataProcessingJob::query()
+            ->whereKeyNot($job->getKey())
+            ->where('type', $job->type)
+            ->where('entity_type', $job->entity_type)
+            ->where('created_at', '>=', $since)
+            ->exists();
+    }
+
     public function buildFilterQuery(DataProcessingJobFilterDTO $filters): Builder
     {
         $query = DataProcessingJob::query();
@@ -106,6 +131,15 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
         return DataProcessingJob::query()
             ->when($userId !== null, fn (Builder $query): Builder => $query->where('user_id', $userId))
             ->active()
+            ->count();
+    }
+
+    public function failedRecentCount(?int $userId, CarbonInterface $since): int
+    {
+        return DataProcessingJob::query()
+            ->when($userId !== null, fn (Builder $query): Builder => $query->where('user_id', $userId))
+            ->where('status', DataProcessingJobStatus::FAILED)
+            ->where('completed_at', '>=', $since)
             ->count();
     }
 

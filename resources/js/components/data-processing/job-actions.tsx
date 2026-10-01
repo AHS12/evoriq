@@ -6,11 +6,16 @@ import {
     ExternalLink,
     Eye,
     MoreHorizontal,
+    Play,
     RotateCcw,
     Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { ConfirmDialog } from '@/components/app/confirm-dialog';
+import {
+    cancelConfirmation,
+    deleteConfirmation,
+} from '@/components/data-processing/job-recovery';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -19,7 +24,14 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cancel, destroy, duplicate, retry, show } from '@/routes/activity';
+import {
+    cancel,
+    destroy,
+    duplicate,
+    resume,
+    retry,
+    show,
+} from '@/routes/activity';
 import { download } from '@/routes/exports';
 import { useTranslation } from '@/hooks/use-translation';
 import type { DataProcessingJob } from '@/types';
@@ -30,12 +42,24 @@ type Props = {
 };
 
 export function JobActions({ job, onView }: Props) {
-    const [confirmingDelete, setConfirmingDelete] = useState(false);
+    const [confirming, setConfirming] = useState<'cancel' | 'delete' | null>(
+        null,
+    );
     const { t } = useTranslation();
 
     const post = (url: string): void => {
         router.post(url, {}, { preserveScroll: true, preserveState: true });
     };
+
+    const remove = (): void => {
+        router.delete(destroy.url(job.id), {
+            preserveScroll: true,
+            preserveState: true,
+        });
+    };
+
+    const cancelCopy = cancelConfirmation(job, t);
+    const deleteCopy = deleteConfirmation(job, t);
 
     return (
         <div className="flex items-center gap-1">
@@ -93,9 +117,18 @@ export function JobActions({ job, onView }: Props) {
                         </DropdownMenuItem>
                     )}
 
+                    {job.can.resume && (
+                        <DropdownMenuItem
+                            onSelect={() => post(resume.url(job.id))}
+                        >
+                            <Play className="size-4" />
+                            {t('Resume')}
+                        </DropdownMenuItem>
+                    )}
+
                     {job.can.cancel && (
                         <DropdownMenuItem
-                            onSelect={() => post(cancel.url(job.id))}
+                            onSelect={() => setConfirming('cancel')}
                         >
                             <Ban className="size-4" />
                             {t('Stop')}
@@ -107,7 +140,7 @@ export function JobActions({ job, onView }: Props) {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 variant="destructive"
-                                onSelect={() => setConfirmingDelete(true)}
+                                onSelect={() => setConfirming('delete')}
                             >
                                 <Trash2 className="size-4" />
                                 {t('Delete')}
@@ -118,21 +151,28 @@ export function JobActions({ job, onView }: Props) {
             </DropdownMenu>
 
             <ConfirmDialog
-                open={confirmingDelete}
-                onOpenChange={setConfirmingDelete}
-                title={t('Delete job?')}
-                description={t(
-                    '":name" and its files will be permanently deleted.',
-                    { name: job.name },
-                )}
+                open={confirming === 'cancel'}
+                onOpenChange={(open) => setConfirming(open ? 'cancel' : null)}
+                title={cancelCopy.title}
+                description={cancelCopy.description}
+                confirmLabel={t('Stop')}
+                destructive
+                onConfirm={() => {
+                    setConfirming(null);
+                    post(cancel.url(job.id));
+                }}
+            />
+
+            <ConfirmDialog
+                open={confirming === 'delete'}
+                onOpenChange={(open) => setConfirming(open ? 'delete' : null)}
+                title={deleteCopy.title}
+                description={deleteCopy.description}
                 confirmLabel={t('Delete')}
                 destructive
                 onConfirm={() => {
-                    setConfirmingDelete(false);
-                    router.delete(destroy.url(job.id), {
-                        preserveScroll: true,
-                        preserveState: true,
-                    });
+                    setConfirming(null);
+                    remove();
                 }}
             />
         </div>
