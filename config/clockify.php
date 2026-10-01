@@ -52,6 +52,9 @@ return [
         'burst_limit' => (int) env('CLOCKIFY_RATE_LIMIT_BURST', 50),
 
         'cooldown' => (float) env('CLOCKIFY_RATE_LIMIT_COOLDOWN', 0),
+
+        // Free workspaces are limited to 30 requests/hour per workspace.
+        'free_requests_per_hour' => (int) env('CLOCKIFY_FREE_REQUESTS_PER_HOUR', 30),
     ],
 
     /*

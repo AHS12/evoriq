@@ -858,5 +858,14 @@
     ":count background job failed.": ":count টি ব্যাকগ্রাউন্ড জব ব্যর্থ হয়েছে।",
     "All background jobs have finished.": "সব ব্যাকগ্রাউন্ড জব সম্পন্ন হয়েছে।",
     "Background jobs: :count running": "ব্যাকগ্রাউন্ড জব: :count টি চলছে",
-    "Background jobs: :count recent failures": "ব্যাকগ্রাউন্ড জব: :count টি সাম্প্রতিক ব্যর্থতা"
+    "Background jobs: :count recent failures": "ব্যাকগ্রাউন্ড জব: :count টি সাম্প্রতিক ব্যর্থতা",
+    "Global": "গ্লোবাল",
+    "Europe": "ইউরোপ",
+    "United States": "মার্কিন যুক্তরাষ্ট্র",
+    "United Kingdom": "যুক্তরাজ্য",
+    "Australia": "অস্ট্রেলিয়া",
+    "Invalid": "অবৈধ",
+    "Clockify connection created": "Clockify সংযোগ তৈরি হয়েছে",
+    "Clockify connection updated": "Clockify সংযোগ আপডেট হয়েছে",
+    "Clockify connection disabled": "Clockify সংযোগ নিষ্ক্রিয় করা হয়েছে"
 }

@@ -12,15 +12,32 @@ Status: `Draft` `Ready` `In Progress` `Blocked` `Done` `stub`.
 
 ## Build order across phases
 
-The phase tables list the recommended order **within** each phase. One Phase 0
-foundation is pulled forward **just-in-time** against Phase 1 (marked `+` in the
-`Depends` column); `FND-09` (frontend test runner) is already **Done** and
-unblocks the pipeline logic tests. The rest of Phase 0 is not on the Phase 1
-critical path.
+The phase tables list the recommended order **within** each phase, but
+cross-phase dependencies decide the **actual serial**: a later-phase foundation
+is pulled forward when the next spec in phase order is blocked on it.
 
-| When | Spec | Why |
-| ---- | ---- | --- |
-| Immediately before `PIPE-04` | `FND-06` — Loading / empty / error state system | The timeline primitive and every run view reuse these state primitives, so build them before the rail. |
+### Actual serial (executed)
+
+| # | Spec | Notes |
+| - | ---- | ----- |
+| 1 | Phase 0 — `FND-01`…`FND-10` | All **Done**. `FND-06` was pulled forward just-in-time before `PIPE-04`. |
+| 2 | Phase 1 — `PIPE-01`…`PIPE-08` | All **Done**. |
+| 3 | Phase 2 — `CONN-01` | **Done** — pulled forward; see below. |
+| 4 | Phase 2/3/4 — `CONN-02` → `CONN-03`, `SYNC-*`, `ENT-*` | Then resume Phase 1 with `PIPE-09`/`PIPE-10`. |
+
+### Why `CONN-01` before `PIPE-09`
+
+`PIPE-09` (historical import wizard) is the next spec **by phase order**, but it
+is **blocked in practice**: its body consumes a connected workspace
+(`CONN-01…03`), the planner math (`SYNC-03`) and the dispatch engine (`ENT-14`) —
+all still Draft in Phase 2/3. Its own scope lists those as out of bounds, so it
+cannot meet its acceptance criteria yet. `PIPE-10` (sync/pipeline health) is
+similarly gated on `SYNC-*` for its API-budget and queue-depth data.
+
+`CONN-01` is the root dependency that unblocks `PIPE-09`, `PIPE-10` and all of
+Phase 3/4, so Phase 2 was started before finishing Phase 1. `PIPE-11`
+(pipeline lifecycle notifications) is the only remaining **unblocked** Phase 1
+spec and can be taken at any point; `PIPE-12` follows `PIPE-11`.
 
 `FND-05` is the only remaining Phase 0 stub; start it when its consuming phases
 begin (DASH/REP). `FND-07`, `FND-08` and `FND-10` are now **Done**.
@@ -68,8 +85,8 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 | `PIPE-06` | [Run detail & event inspector](pipeline/PIPE-06-run-detail-inspector.md) | M | Done | PIPE-05 | Tabs: overview/timeline/errors/artifacts/params/raw; error grouping. |
 | `PIPE-07` | [Retry, resume, cancel & backoff UX](pipeline/PIPE-07-retry-resume-cancel.md) | M | Done | PIPE-05         | Cooperative cancel, retry run/stage, resume, backoff display, failed view. |
 | `PIPE-08` | [Global pipeline indicator](pipeline/PIPE-08-global-pipeline-indicator.md) | M | Done | PIPE-03         | Nav/sidebar live status pill + popover with active runs. |
-| `PIPE-09` | [Historical import progress experience](pipeline/PIPE-09-import-progress-experience.md) | L | Draft | PIPE-05, FND-03 | Range → plan preview → live import → completion, "you can leave". |
-| `PIPE-10` | [Sync health & observability](pipeline/PIPE-10-sync-health-observability.md) | M | Draft | PIPE-02         | Admin page: success rate, durations, queue depth, API usage, correlation search. |
+| `PIPE-09` | [Historical import progress experience](pipeline/PIPE-09-import-progress-experience.md) | L | Draft | PIPE-05, FND-03, **CONN-01…03, SYNC-03, ENT-14** | Range → plan preview → live import → completion, "you can leave". **Blocked** until Phase 2/3 land. |
+| `PIPE-10` | [Sync health & observability](pipeline/PIPE-10-sync-health-observability.md) | M | Draft | PIPE-02, **SYNC-01/02** | Admin page: success rate, durations, queue depth, API usage, correlation search. **Blocked** on sync data. |
 | `PIPE-11` | [Pipeline lifecycle notifications](pipeline/PIPE-11-pipeline-notifications.md) | S | Draft | PIPE-02         | Queued/started/completed/failed/retrying notifications + preferences. |
 | `PIPE-12` | [Pipeline i18n, states & retention](pipeline/PIPE-12-i18n-states-retention.md) | M | Draft | PIPE-01..11     | 5-locale strings, empty/error states, event coalescing + pruning. |
 
@@ -77,7 +94,7 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 
 | ID        | Spec                                                     | Est | Status | Depends | Scope |
 | --------- | -------------------------------------------------------- | --- | ------ | ------- | ----- |
-| `CONN-01` | [Connection model & credentials](connection/CONN-01-connection-model.md) | M | Draft | ORG-01 | `clockify_connections`; encrypted credentials, region/subdomain base URLs, plan/limit profile. |
+| `CONN-01` | [Connection model & credentials](connection/CONN-01-connection-model.md) | M | Done | ORG-01 | `clockify_connections`; encrypted credentials, region/subdomain base URLs, plan/limit profile. |
 | `CONN-02` | [Validation & capability detection](connection/CONN-02-connection-validation.md) | M | Draft | CONN-01 | Verify key, detect workspace/plan/limits/region; error mapping. |
 | `CONN-03` | [Workspace discovery & selection](connection/CONN-03-workspace-selection.md) | S | Draft | CONN-02 | `clockify_workspaces` + active-workspace selection. |
 | `CONN-04` | [Connect flow UI](connection/CONN-04-connect-flow-ui.md) | M | Draft | CONN-02, CONN-03, CONN-07 | Key entry, verify, workspace picker, plan/budget display. |

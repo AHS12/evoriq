@@ -1,6 +1,6 @@
 # CONN-01 — Connection model & credentials
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** M
 - **Depends on:** ORG-01, SEC-01
@@ -86,11 +86,11 @@ status/plan/workspace (`ConnectionResource`, no secrets).
   plan, workspace, last_verified_at, webhook_limit }` — never `api_key`.
 
 ## 7. Acceptance criteria
-- [ ] Migrating creates the table with `organization_id` and indexes.
-- [ ] Stored keys are encrypted in the DB and absent from JSON.
-- [ ] Region resolves `base_url`/`reports_base_url` correctly.
-- [ ] `rateProfile()` returns hourly limits for Free, per-second for paid.
-- [ ] `composer check` passes.
+- [x] Migrating creates the table with `organization_id` and indexes.
+- [x] Stored keys are encrypted in the DB and absent from JSON.
+- [x] Region resolves `base_url`/`reports_base_url` correctly.
+- [x] `rateProfile()` returns hourly limits for Free, per-second for paid.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ConnectionServiceUnitTest`: create/update/disable, audit calls,

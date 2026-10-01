@@ -858,5 +858,14 @@
     ":count background job failed.": ":count trabajo en segundo plano ha fallado.",
     "All background jobs have finished.": "Todos los trabajos en segundo plano han finalizado.",
     "Background jobs: :count running": "Trabajos en segundo plano: :count en ejecución",
-    "Background jobs: :count recent failures": "Trabajos en segundo plano: :count fallos recientes"
+    "Background jobs: :count recent failures": "Trabajos en segundo plano: :count fallos recientes",
+    "Global": "Global",
+    "Europe": "Europa",
+    "United States": "Estados Unidos",
+    "United Kingdom": "Reino Unido",
+    "Australia": "Australia",
+    "Invalid": "Inválido",
+    "Clockify connection created": "Conexión de Clockify creada",
+    "Clockify connection updated": "Conexión de Clockify actualizada",
+    "Clockify connection disabled": "Conexión de Clockify deshabilitada"
 }

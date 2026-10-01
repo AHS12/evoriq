@@ -858,5 +858,14 @@
     ":count background job failed.": ":count tâche d'arrière-plan a échoué.",
     "All background jobs have finished.": "Toutes les tâches d'arrière-plan sont terminées.",
     "Background jobs: :count running": "Tâches d'arrière-plan : :count en cours",
-    "Background jobs: :count recent failures": "Tâches d'arrière-plan : :count échecs récents"
+    "Background jobs: :count recent failures": "Tâches d'arrière-plan : :count échecs récents",
+    "Global": "Mondial",
+    "Europe": "Europe",
+    "United States": "États-Unis",
+    "United Kingdom": "Royaume-Uni",
+    "Australia": "Australie",
+    "Invalid": "Invalide",
+    "Clockify connection created": "Connexion Clockify créée",
+    "Clockify connection updated": "Connexion Clockify mise à jour",
+    "Clockify connection disabled": "Connexion Clockify désactivée"
 }

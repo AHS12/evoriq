@@ -858,5 +858,14 @@
     ":count background job failed.": ":count background job failed.",
     "All background jobs have finished.": "All background jobs have finished.",
     "Background jobs: :count running": "Background jobs: :count running",
-    "Background jobs: :count recent failures": "Background jobs: :count recent failures"
+    "Background jobs: :count recent failures": "Background jobs: :count recent failures",
+    "Global": "Global",
+    "Europe": "Europe",
+    "United States": "United States",
+    "United Kingdom": "United Kingdom",
+    "Australia": "Australia",
+    "Invalid": "Invalid",
+    "Clockify connection created": "Clockify connection created",
+    "Clockify connection updated": "Clockify connection updated",
+    "Clockify connection disabled": "Clockify connection disabled"
 }

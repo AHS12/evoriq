@@ -40,6 +40,10 @@ enum AuditEvent: string
     case IMPORT_FAILED = 'import_failed';
     case PROCESSING_CANCELLED = 'processing_cancelled';
 
+    case CONNECTION_CREATED = 'connection_created';
+    case CONNECTION_UPDATED = 'connection_updated';
+    case CONNECTION_DISABLED = 'connection_disabled';
+
     case BACKUP_TRIGGERED = 'backup_triggered';
     case BACKUP_COMPLETED = 'backup_completed';
     case BACKUP_FAILED = 'backup_failed';
@@ -77,6 +81,9 @@ enum AuditEvent: string
             self::IMPORT_COMPLETED => 'Import completed',
             self::IMPORT_FAILED => 'Import failed',
             self::PROCESSING_CANCELLED => 'Processing cancelled',
+            self::CONNECTION_CREATED => 'Clockify connection created',
+            self::CONNECTION_UPDATED => 'Clockify connection updated',
+            self::CONNECTION_DISABLED => 'Clockify connection disabled',
             self::BACKUP_TRIGGERED => 'Backup triggered',
             self::BACKUP_COMPLETED => 'Backup completed',
             self::BACKUP_FAILED => 'Backup failed',
