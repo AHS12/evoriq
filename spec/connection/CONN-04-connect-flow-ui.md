@@ -1,6 +1,6 @@
 # CONN-04 — Connect flow UI
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** M
 - **Depends on:** CONN-02, CONN-03, CONN-07
@@ -77,11 +77,11 @@ network error, no-workspaces, success.
 - `connections.store` → redirect.
 
 ## 7. Acceptance criteria
-- [ ] A user can paste a key, verify, pick a workspace and save in one flow.
-- [ ] The key is never rendered after submission and never logged.
-- [ ] Errors are specific and translated (auth vs rate-limit vs network).
-- [ ] Detected plan/limits are shown before saving.
-- [ ] `composer check` passes.
+- [x] A user can paste a key, verify, pick a workspace and save in one flow.
+- [x] The key is never rendered after submission and never logged.
+- [x] Errors are specific and translated (auth vs rate-limit vs network).
+- [x] Detected plan/limits are shown before saving.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Feature** `ConnectionFlowFeatureTest`: index renders; verify validates input;

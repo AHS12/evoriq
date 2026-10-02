@@ -1,6 +1,6 @@
 # CONN-03 — Workspace discovery & selection
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** S
 - **Depends on:** CONN-02
@@ -69,10 +69,10 @@ clockify_workspaces
   sets active workspace.
 
 ## 7. Acceptance criteria
-- [ ] Verify discovers and stores all workspaces for a key.
-- [ ] Exactly one active workspace per connection; switching persists.
-- [ ] Re-verify updates workspace fields without duplicating rows.
-- [ ] `composer check` passes.
+- [x] Verify discovers and stores all workspaces for a key.
+- [x] Exactly one active workspace per connection; switching persists.
+- [x] Re-verify updates workspace fields without duplicating rows.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `WorkspaceServiceUnitTest`: idempotent upsert, active selection.

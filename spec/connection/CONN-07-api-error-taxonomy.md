@@ -1,6 +1,6 @@
 # CONN-07 — Clockify API error taxonomy & messaging
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** S
 - **Depends on:** CONN-02
@@ -61,11 +61,11 @@ and the pipeline UI.
 - Error codes appear on `ApiException`/`PipelineRunResource.failure.reason`.
 
 ## 7. Acceptance criteria
-- [ ] Every documented Clockify failure maps to exactly one `ApiErrorCode`.
-- [ ] `action()` returns a usable primary action.
-- [ ] Rate-limit errors expose the reset/`Retry-After` when available.
-- [ ] No raw API error text reaches normal users.
-- [ ] `composer check` passes.
+- [x] Every documented Clockify failure maps to exactly one `ApiErrorCode`.
+- [x] `action()` returns a usable primary action.
+- [x] Rate-limit errors expose the reset/`Retry-After` when available.
+- [x] No raw API error text reaches normal users.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ClockifyErrorMapperTest`: table-driven across status codes, network

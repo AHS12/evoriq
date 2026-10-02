@@ -55,7 +55,14 @@ enum ApiErrorCode: string
     case EXTERNAL_SERVICE_ERROR = 'external_service_error';
     case CLOCKIFY_API_ERROR = 'clockify_api_error';
     case CLOCKIFY_AUTHENTICATION_FAILED = 'clockify_authentication_failed';
+    case CLOCKIFY_FORBIDDEN = 'clockify_forbidden';
+    case CLOCKIFY_NOT_FOUND = 'clockify_not_found';
     case CLOCKIFY_RATE_LIMITED = 'clockify_rate_limited';
+    case CLOCKIFY_API_UNAVAILABLE = 'clockify_api_unavailable';
+    case CLOCKIFY_NETWORK_ERROR = 'clockify_network_error';
+    case CLOCKIFY_INVALID_RESPONSE = 'clockify_invalid_response';
+    case CLOCKIFY_SUBSCRIPTION_REQUIRED = 'clockify_subscription_required';
+    case CLOCKIFY_UNKNOWN = 'clockify_unknown';
 
     // System
     case INTERNAL_SERVER_ERROR = 'internal_server_error';
@@ -106,7 +113,14 @@ enum ApiErrorCode: string
             self::EXTERNAL_SERVICE_ERROR => 'An external service returned an error.',
             self::CLOCKIFY_API_ERROR => 'The Clockify API returned an error.',
             self::CLOCKIFY_AUTHENTICATION_FAILED => 'Clockify authentication failed.',
+            self::CLOCKIFY_FORBIDDEN => 'This Clockify feature is not available on the current plan.',
+            self::CLOCKIFY_NOT_FOUND => 'The requested Clockify resource was not found.',
             self::CLOCKIFY_RATE_LIMITED => 'The Clockify API rate limit was reached.',
+            self::CLOCKIFY_API_UNAVAILABLE => 'The Clockify API is currently unavailable.',
+            self::CLOCKIFY_NETWORK_ERROR => 'The connection to Clockify was interrupted.',
+            self::CLOCKIFY_INVALID_RESPONSE => 'Clockify returned a response that could not be read.',
+            self::CLOCKIFY_SUBSCRIPTION_REQUIRED => 'This feature requires a paid Clockify plan.',
+            self::CLOCKIFY_UNKNOWN => 'An unexpected Clockify error occurred.',
             self::INTERNAL_SERVER_ERROR => 'An unexpected error occurred.',
             self::NOT_IMPLEMENTED => 'This feature is not implemented.',
             self::MAINTENANCE_MODE => 'The application is in maintenance mode.',
@@ -132,11 +146,13 @@ enum ApiErrorCode: string
             self::INVALID_CREDENTIALS => Response::HTTP_UNAUTHORIZED,
 
             self::FORBIDDEN,
+            self::CLOCKIFY_FORBIDDEN,
             self::ACCOUNT_INACTIVE,
             self::EMAIL_NOT_VERIFIED,
             self::OPERATION_NOT_ALLOWED => Response::HTTP_FORBIDDEN,
 
             self::RESOURCE_NOT_FOUND,
+            self::CLOCKIFY_NOT_FOUND,
             self::FILE_NOT_FOUND,
             self::ROUTE_NOT_FOUND => Response::HTTP_NOT_FOUND,
 
@@ -159,7 +175,13 @@ enum ApiErrorCode: string
 
             self::FILE_TOO_LARGE => Response::HTTP_REQUEST_ENTITY_TOO_LARGE,
 
-            self::SERVICE_UNAVAILABLE => Response::HTTP_SERVICE_UNAVAILABLE,
+            self::SERVICE_UNAVAILABLE,
+            self::CLOCKIFY_API_UNAVAILABLE,
+            self::CLOCKIFY_NETWORK_ERROR => Response::HTTP_SERVICE_UNAVAILABLE,
+
+            self::CLOCKIFY_INVALID_RESPONSE => Response::HTTP_BAD_GATEWAY,
+
+            self::CLOCKIFY_SUBSCRIPTION_REQUIRED => Response::HTTP_PAYMENT_REQUIRED,
 
             self::BAD_REQUEST,
             self::CLOCKIFY_AUTHENTICATION_FAILED => Response::HTTP_BAD_REQUEST,
@@ -169,6 +191,7 @@ enum ApiErrorCode: string
             self::DATABASE_QUERY_FAILED,
             self::EXTERNAL_SERVICE_ERROR,
             self::CLOCKIFY_API_ERROR,
+            self::CLOCKIFY_UNKNOWN,
             self::INTERNAL_SERVER_ERROR,
             self::NOT_IMPLEMENTED,
             self::MAINTENANCE_MODE,
@@ -185,6 +208,67 @@ enum ApiErrorCode: string
     public function isClientError(): bool
     {
         return ! $this->isServerError();
+    }
+
+    /**
+     * A short, user-facing title for the error (CONN-07).
+     */
+    public function label(): string
+    {
+        return match ($this) {
+            self::CLOCKIFY_AUTHENTICATION_FAILED => __('Authentication failed'),
+            self::CLOCKIFY_FORBIDDEN => __('Access forbidden'),
+            self::CLOCKIFY_NOT_FOUND => __('Not found'),
+            self::CLOCKIFY_RATE_LIMITED => __('Rate limited'),
+            self::CLOCKIFY_API_ERROR => __('Clockify rejected the request'),
+            self::CLOCKIFY_API_UNAVAILABLE => __('Clockify is unavailable'),
+            self::CLOCKIFY_NETWORK_ERROR => __('Network error'),
+            self::CLOCKIFY_INVALID_RESPONSE => __('Unexpected response'),
+            self::CLOCKIFY_SUBSCRIPTION_REQUIRED => __('Subscription required'),
+            self::CLOCKIFY_UNKNOWN => __('Something went wrong'),
+            default => $this->description(),
+        };
+    }
+
+    /**
+     * A friendly explanation of what happened and what to do next (CONN-07).
+     */
+    public function hint(): string
+    {
+        return match ($this) {
+            self::CLOCKIFY_AUTHENTICATION_FAILED => __('The Clockify API key was rejected. Reconnect with a valid key.'),
+            self::CLOCKIFY_FORBIDDEN => __('This workspace or feature is not available on your Clockify plan.'),
+            self::CLOCKIFY_NOT_FOUND => __('The requested Clockify resource could not be found.'),
+            self::CLOCKIFY_RATE_LIMITED => __("Clockify's rate limit was reached. It resets shortly and the work will continue."),
+            self::CLOCKIFY_API_ERROR => __('Clockify returned an error for this request.'),
+            self::CLOCKIFY_API_UNAVAILABLE => __("Clockify could not be reached. We'll retry shortly."),
+            self::CLOCKIFY_NETWORK_ERROR => __('A network problem interrupted the connection to Clockify.'),
+            self::CLOCKIFY_INVALID_RESPONSE => __('Clockify returned data we could not read.'),
+            self::CLOCKIFY_SUBSCRIPTION_REQUIRED => __('This feature requires a paid Clockify plan.'),
+            self::CLOCKIFY_UNKNOWN => __('An unexpected Clockify error occurred. Try again or contact support.'),
+            default => '',
+        };
+    }
+
+    /**
+     * The suggested primary action for a Clockify failure (CONN-07):
+     * `retry`, `reconnect`, `wait` or `contact_support`.
+     */
+    public function action(): ?string
+    {
+        return match ($this) {
+            self::CLOCKIFY_AUTHENTICATION_FAILED => 'reconnect',
+            self::CLOCKIFY_FORBIDDEN => 'contact_support',
+            self::CLOCKIFY_NOT_FOUND => 'retry',
+            self::CLOCKIFY_RATE_LIMITED => 'wait',
+            self::CLOCKIFY_API_ERROR,
+            self::CLOCKIFY_API_UNAVAILABLE,
+            self::CLOCKIFY_NETWORK_ERROR,
+            self::CLOCKIFY_INVALID_RESPONSE => 'retry',
+            self::CLOCKIFY_SUBSCRIPTION_REQUIRED,
+            self::CLOCKIFY_UNKNOWN => 'contact_support',
+            default => null,
+        };
     }
 
     /**

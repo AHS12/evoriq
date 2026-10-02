@@ -23,7 +23,11 @@ is pulled forward when the next spec in phase order is blocked on it.
 | 1 | Phase 0 — `FND-01`…`FND-10` | All **Done**. `FND-06` was pulled forward just-in-time before `PIPE-04`. |
 | 2 | Phase 1 — `PIPE-01`…`PIPE-08` | All **Done**. |
 | 3 | Phase 2 — `CONN-01` | **Done** — pulled forward; see below. |
-| 4 | Phase 2/3/4 — `CONN-02` → `CONN-03`, `SYNC-*`, `ENT-*` | Then resume Phase 1 with `PIPE-09`/`PIPE-10`. |
+| 4 | Phase 2 — `CONN-02` | **Done** (pulled the `clockify_workspaces` schema + upsert forward from `CONN-03`). |
+| 5 | Phase 2 — `CONN-03` | **Done** (active-workspace selection + endpoint). |
+| 6 | Phase 2 — `CONN-07` | **Done** — pulled forward to unblock `CONN-04` (connect UI). |
+| 7 | Phase 2 — `CONN-04` | **Done** (connect flow UI: key → verify → workspace → save). |
+| 8 | Phase 2/3/4 — `CONN-05`/`06`/`08`/`09`, `SYNC-*`, `ENT-*` | Then resume Phase 1 with `PIPE-09`/`PIPE-10`. |
 
 ### Why `CONN-01` before `PIPE-09`
 
@@ -95,12 +99,12 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 | ID        | Spec                                                     | Est | Status | Depends | Scope |
 | --------- | -------------------------------------------------------- | --- | ------ | ------- | ----- |
 | `CONN-01` | [Connection model & credentials](connection/CONN-01-connection-model.md) | M | Done | ORG-01 | `clockify_connections`; encrypted credentials, region/subdomain base URLs, plan/limit profile. |
-| `CONN-02` | [Validation & capability detection](connection/CONN-02-connection-validation.md) | M | Draft | CONN-01 | Verify key, detect workspace/plan/limits/region; error mapping. |
-| `CONN-03` | [Workspace discovery & selection](connection/CONN-03-workspace-selection.md) | S | Draft | CONN-02 | `clockify_workspaces` + active-workspace selection. |
-| `CONN-04` | [Connect flow UI](connection/CONN-04-connect-flow-ui.md) | M | Draft | CONN-02, CONN-03, CONN-07 | Key entry, verify, workspace picker, plan/budget display. |
+| `CONN-02` | [Validation & capability detection](connection/CONN-02-connection-validation.md) | M | Done | CONN-01 | Verify key, detect workspace/plan/limits/region; error mapping. |
+| `CONN-03` | [Workspace discovery & selection](connection/CONN-03-workspace-selection.md) | S | Done | CONN-02 | `clockify_workspaces` + active-workspace selection (`PUT /connections/{id}/workspace`). |
+| `CONN-04` | [Connect flow UI](connection/CONN-04-connect-flow-ui.md) | M | Done | CONN-02, CONN-03, CONN-07 | Key entry, verify, workspace picker, plan/budget display. |
 | `CONN-05` | [Manage connections](connection/CONN-05-manage-connections.md) | M | Draft | CONN-02 | Rename/reverify/rotate/disable/disconnect (+ purge choice). |
 | `CONN-06` | [Policy, permissions & audit](connection/CONN-06-policy-permissions-audit.md) | S | Draft | CONN-01 | `connection.view`/`connection.manage`, policy, audit, redaction. |
-| `CONN-07` | [API error taxonomy & messaging](connection/CONN-07-api-error-taxonomy.md) | S | Draft | CONN-02 | `ApiErrorCode` + central mapper → friendly label/hint/action. |
+| `CONN-07` | [API error taxonomy & messaging](connection/CONN-07-api-error-taxonomy.md) | S | Done | CONN-02 | `ApiErrorCode` + central mapper → friendly label/hint/action. |
 | `CONN-08` | [Connection status & security](connection/CONN-08-connection-status-security.md) | S | Draft | CONN-01, CONN-02 | Status resource/widget + secret-leak verification. |
 | `CONN-09` | [Sync & connection settings](connection/CONN-09-sync-connection-settings.md) | M | Draft | CONN-01, SYNC-11 | Auto-sync schedule, reconciliation, tz/currency, rate overrides. |
 

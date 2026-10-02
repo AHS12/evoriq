@@ -3,6 +3,7 @@ import {
     FolderOpen,
     History,
     LayoutGrid,
+    Plug,
     Settings,
     ShieldCheck,
     Users,
@@ -10,6 +11,7 @@ import {
 import type { TranslationHook } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import { index as activityIndex } from '@/routes/activity';
+import { index as connectionsIndex } from '@/routes/connections';
 import { edit as settingsEdit } from '@/routes/admin/settings/general';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import { index as filesIndex } from '@/routes/files';
@@ -43,6 +45,14 @@ export function buildAppNavigation({
             icon: Activity,
             badge: activeJobs,
             live: activeJobsLive,
+        });
+    }
+
+    if (can('connection.view') || can('connection.view.all')) {
+        workspace.push({
+            title: t('Connections'),
+            href: connectionsIndex(),
+            icon: Plug,
         });
     }
 

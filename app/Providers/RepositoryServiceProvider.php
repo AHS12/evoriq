@@ -5,9 +5,11 @@ namespace App\Providers;
 use App\Repositories\AuditLog\AuditLogRepository;
 use App\Repositories\Backup\BackupRunRepository;
 use App\Repositories\Connection\ClockifyConnectionRepository;
+use App\Repositories\Connection\ClockifyWorkspaceRepository;
 use App\Repositories\Contracts\AuditLogRepositoryInterface;
 use App\Repositories\Contracts\BackupRunRepositoryInterface;
 use App\Repositories\Contracts\ClockifyConnectionRepositoryInterface;
+use App\Repositories\Contracts\ClockifyWorkspaceRepositoryInterface;
 use App\Repositories\Contracts\CommandRunRepositoryInterface;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
 use App\Repositories\Contracts\NotificationRepositoryInterface;
@@ -35,6 +37,7 @@ class RepositoryServiceProvider extends ServiceProvider
         AuditLogRepositoryInterface::class => AuditLogRepository::class,
         BackupRunRepositoryInterface::class => BackupRunRepository::class,
         ClockifyConnectionRepositoryInterface::class => ClockifyConnectionRepository::class,
+        ClockifyWorkspaceRepositoryInterface::class => ClockifyWorkspaceRepository::class,
         CommandRunRepositoryInterface::class => CommandRunRepository::class,
         DataProcessingJobRepositoryInterface::class => DataProcessingJobRepository::class,
         NotificationRepositoryInterface::class => NotificationRepository::class,

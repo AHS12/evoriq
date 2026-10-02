@@ -1,6 +1,6 @@
 # CONN-02 — Connection validation & capability detection
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** M
 - **Depends on:** CONN-01
@@ -67,12 +67,12 @@ detected capability profile.
   (CONN-04).
 
 ## 7. Acceptance criteria
-- [ ] A valid key yields a verified profile and upserts its workspaces.
-- [ ] A bad key marks the connection invalid with a mapped error, no key leaked.
-- [ ] Free workspaces resolve to `requests_per_hour = 30`; paid to
+- [x] A valid key yields a verified profile and upserts its workspaces.
+- [x] A bad key marks the connection invalid with a mapped error, no key leaked.
+- [x] Free workspaces resolve to `requests_per_hour = 30`; paid to
       `requests_per_second = 50`.
-- [ ] Regional/subdomain base URLs resolve correctly.
-- [ ] `composer check` passes.
+- [x] Regional/subdomain base URLs resolve correctly.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ConnectionVerifierTest` with `Http::fake()`: success, 401, 429,

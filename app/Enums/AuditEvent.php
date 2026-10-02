@@ -43,6 +43,9 @@ enum AuditEvent: string
     case CONNECTION_CREATED = 'connection_created';
     case CONNECTION_UPDATED = 'connection_updated';
     case CONNECTION_DISABLED = 'connection_disabled';
+    case CONNECTION_VERIFIED = 'connection_verified';
+    case CONNECTION_VALIDATION_FAILED = 'connection_validation_failed';
+    case WORKSPACE_SELECTED = 'workspace_selected';
 
     case BACKUP_TRIGGERED = 'backup_triggered';
     case BACKUP_COMPLETED = 'backup_completed';
@@ -84,6 +87,9 @@ enum AuditEvent: string
             self::CONNECTION_CREATED => 'Clockify connection created',
             self::CONNECTION_UPDATED => 'Clockify connection updated',
             self::CONNECTION_DISABLED => 'Clockify connection disabled',
+            self::CONNECTION_VERIFIED => 'Clockify connection verified',
+            self::CONNECTION_VALIDATION_FAILED => 'Clockify connection validation failed',
+            self::WORKSPACE_SELECTED => 'Workspace selected',
             self::BACKUP_TRIGGERED => 'Backup triggered',
             self::BACKUP_COMPLETED => 'Backup completed',
             self::BACKUP_FAILED => 'Backup failed',

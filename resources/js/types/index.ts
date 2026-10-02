@@ -1,6 +1,7 @@
 export type * from './audit';
 export type * from './auth';
 export type * from './backup';
+export type * from './connection';
 export type * from './dashboard';
 export type * from './data-processing';
 export type * from './developer';
