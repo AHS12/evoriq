@@ -85,7 +85,7 @@
             "@php artisan config:clear --ansi",
             "@lint:check",
             "@types:check",
-            "@php artisan test --parallel"
+            "@php artisan test --parallel --processes=4"
         ],
     "check": [
         "Composer\\Config::disableProcessTimeout",

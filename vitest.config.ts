@@ -22,5 +22,11 @@ export default defineConfig({
         clearMocks: true,
         restoreMocks: true,
         css: false,
+        // Cap the worker pool. Without a limit Vitest spawns one fork per CPU,
+        // and each fork loads jsdom + React; on a memory-constrained dev/CI
+        // machine the combined heap can exhaust and crash a worker, which
+        // surfaces as random 5s test timeouts.
+        maxWorkers: 4,
+        testTimeout: 15000,
     },
 });
