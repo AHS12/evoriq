@@ -6,8 +6,10 @@ use App\DTOs\Connection\ConnectionDTO;
 use App\DTOs\Connection\ConnectionFilterDTO;
 use App\Enums\ApiRegion;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Connection\RotateConnectionKeyRequest;
 use App\Http\Requests\Connection\SelectWorkspaceRequest;
 use App\Http\Requests\Connection\StoreConnectionRequest;
+use App\Http\Requests\Connection\UpdateConnectionRequest;
 use App\Http\Requests\Connection\VerifyConnectionRequest;
 use App\Http\Resources\Connection\ConnectionResource;
 use App\Models\ClockifyConnection;
@@ -50,7 +52,9 @@ class ConnectionController extends Controller
                 ],
                 ApiRegion::cases(),
             ),
-            'canCreate' => Gate::allows('create', ClockifyConnection::class),
+            // MVP: only one connection is supported (the wizard has no picker).
+            'canCreate' => Gate::allows('create', ClockifyConnection::class)
+                && ! $this->repository->hasAny(),
         ]);
     }
 
@@ -76,6 +80,17 @@ class ConnectionController extends Controller
     public function store(StoreConnectionRequest $request): RedirectResponse
     {
         Gate::authorize('create', ClockifyConnection::class);
+
+        // MVP: a single Clockify connection is supported (no picker in the
+        // import wizard yet), so reject any additional one.
+        if ($this->repository->hasAny()) {
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => __('Only one Clockify connection is supported for now.'),
+            ]);
+
+            return back();
+        }
 
         $name = trim((string) ($request->validated('name') ?? ''));
 
@@ -112,13 +127,86 @@ class ConnectionController extends Controller
     }
 
     /**
+     * Rename a connection, optionally re-pointing it at a region/subdomain
+     * (CONN-05).
+     */
+    public function update(UpdateConnectionRequest $request, ClockifyConnection $connection): RedirectResponse
+    {
+        Gate::authorize('update', $connection);
+
+        $this->connections->rename(
+            $connection,
+            (string) $request->validated('name'),
+            $request->validated('region') !== null ? ApiRegion::from((string) $request->validated('region')) : null,
+            $request->validated('subdomain') !== null ? (string) $request->validated('subdomain') : null,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Connection updated.')]);
+
+        return to_route('connections.index');
+    }
+
+    /**
      * Re-verify a stored connection (CONN-02/CONN-05).
      */
     public function reverify(ClockifyConnection $connection): JsonResponse
     {
-        Gate::authorize('update', $connection);
+        Gate::authorize('reverify', $connection);
 
-        return response()->json($this->verifier->verify($connection)->toArray());
+        return response()->json($this->connections->reverify($connection)->toArray());
+    }
+
+    /**
+     * Rotate a connection's API key (CONN-05). The new key is verified before it
+     * replaces the stored credential.
+     */
+    public function rotateKey(RotateConnectionKeyRequest $request, ClockifyConnection $connection): JsonResponse
+    {
+        Gate::authorize('rotateKey', $connection);
+
+        $region = $request->validated('region') !== null
+            ? ApiRegion::from((string) $request->validated('region'))
+            : $connection->region;
+
+        $result = $this->connections->rotateKey(
+            $connection,
+            (string) $request->validated('api_key'),
+            $request->validated('addon_token') !== null
+                ? (string) $request->validated('addon_token')
+                : $connection->addon_token,
+            $region,
+            $request->validated('subdomain') !== null ? (string) $request->validated('subdomain') : null,
+        );
+
+        return response()->json($result->toArray());
+    }
+
+    /**
+     * Disable a connection, stopping its scheduled and manual syncs (CONN-05).
+     */
+    public function disable(ClockifyConnection $connection): RedirectResponse
+    {
+        Gate::authorize('disable', $connection);
+
+        $this->connections->disable($connection);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Connection disabled.')]);
+
+        return to_route('connections.index');
+    }
+
+    /**
+     * Re-enable a disabled connection (CONN-05).
+     */
+    public function enable(ClockifyConnection $connection): RedirectResponse
+    {
+        Gate::authorize('enable', $connection);
+
+        $this->connections->enable($connection);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Connection enabled.')]);
+
+        return to_route('connections.index');
     }
 
     /**

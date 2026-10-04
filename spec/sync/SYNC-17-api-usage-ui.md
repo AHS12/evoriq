@@ -1,6 +1,6 @@
 # SYNC-17 — API usage & budget UI
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-02, PIPE-08
@@ -60,11 +60,11 @@ resources/js/components/pipeline/api-usage-popover.tsx
 - Shared `apiUsage` prop + optional `api-usage.show`.
 
 ## 7. Acceptance criteria
-- [ ] Indicator shows accurate used/remaining for the active window.
-- [ ] Free vs paid wording differs correctly; no fixed-limit implication.
-- [ ] Reset countdown is accurate and updates live.
-- [ ] Exhausted state is clear and links to available actions.
-- [ ] `composer check` passes.
+- [x] Indicator shows accurate used/remaining for the active window.
+- [x] Free vs paid wording differs correctly; no fixed-limit implication.
+- [x] Reset countdown is accurate and updates live.
+- [x] Exhausted state is clear and links to available actions.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Feature** `ApiUsagePropTest`: prop shape by plan; reset math.
@@ -73,3 +73,21 @@ resources/js/components/pipeline/api-usage-popover.tsx
 ## 9. Notes & open questions
 - Decide whether per-second (paid) usage is meaningful to show (it resets
   instantly); for paid, prefer a rate meter rather than a remaining count.
+
+### Implemented notes
+
+- Backend: a lazy shared `apiUsage` prop in `HandleInertiaRequests`, gated by
+  `ClockifyConnectionPolicy::viewAny`, projecting `ApiUsageService::snapshot()`
+  through `ApiUsageResource` (null with no connection / no permission). The
+  existing `GET /api/usage` endpoint remains for direct refresh.
+- Frontend: `ApiUsageIndicator` (navbar + sidebar header) shows
+  `API {remaining}/{limit}` on Free and `API {limit}/s` on paid, toned
+  normal/low/exhausted, with an accessible label. `ApiUsagePopover` renders
+  Used/Remaining/Hourly-limit on Free and an honest per-second sentence on paid,
+  a **1s-ticking reset countdown**, last request, plan badge and a link to sync
+  activity. Hidden entirely when no connection is configured.
+- Freshness: `useApiUsage` polls the shared prop every 15s (idle) via the
+  PIPE-03 transport, so the countdown and remaining count stay current; the poll
+  is disabled when there is no connection.
+- Paid plans show a rate label rather than a remaining count (a per-second
+  window resets instantly and a remaining count would be meaningless).

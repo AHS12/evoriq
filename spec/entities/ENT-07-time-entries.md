@@ -1,6 +1,6 @@
 # ENT-07 — Time entries
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** L
 - **Depends on:** ORG-01, ENT-00, ENT-02, ENT-04, ENT-05, ENT-06
@@ -61,11 +61,11 @@ clockify_time_entries
 - Exposed via analytics (ANA) and reports (REP).
 
 ## 7. Acceptance criteria
-- [ ] Entries sync per user across the selected range, paged and resumable.
-- [ ] `duration_seconds` is derived and correct (incl. null-safe).
-- [ ] Tags, project and task resolve to internal ids; missing parents handled.
-- [ ] Re-running any page creates no duplicates.
-- [ ] `composer check` passes.
+- [x] Entries sync per user across the selected range, paged and resumable.
+- [x] `duration_seconds` is derived and correct (incl. null-safe).
+- [x] Tags, project and task resolve to internal ids; missing parents handled.
+- [x] Re-running any page creates no duplicates.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `TimeEntrySyncHandlerTest` (`Http::fake()`): multi-page per user,
@@ -78,3 +78,20 @@ clockify_time_entries
   beyond `POST /time-entries/batch` (which takes explicit ids only).
 - `hydrated=true` cost: it also returns rates/custom fields — good for ENT-08/10
   but larger payloads; measure.
+- **Implemented notes:**
+  - `clockify_time_entries` (soft-deletable) + `ClockifyTimeEntry`
+    model/factory/casts + relations.
+  - `TimeEntrySyncHandler` (fact phase) reads the per-user `SyncContext`
+    (`userId` + `rangeStart`/`rangeEnd`) and paginates
+    `GET /workspaces/{ws}/user/{userId}/time-entries?start&end&page&page-size&hydrated=true`;
+    a job without a user context is rejected. Duration is derived from
+    `timeInterval`; a running entry (start, no end) stores a null duration and
+    `is_in_progress`; a row with no start at all is skipped per-row.
+  - `TimeEntrySyncRepository` batch-resolves reserved
+    `user_clockify_id`/`project_clockify_id`/`task_clockify_id` keys (targeted
+    ENT-15) and writes tag joins via `TimeEntryTagRepository`; entries with an
+    unresolvable user are skipped (FK required), while project/task are nullable.
+  - `TIME_ENTRY` registered in `config/clockify.php`; the planner already fans
+    the fact out per active user × partition (SYNC-03), which this handler
+    consumes. Rates from `hourlyRate`/`costRate` map to billable/cost columns
+    (workspace-currency fallback); ENT-08 will own historical entry rates.

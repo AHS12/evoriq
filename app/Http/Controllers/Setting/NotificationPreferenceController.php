@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Setting;
 
 use App\DTOs\Setting\NotificationPreferenceDTO;
+use App\Enums\NotificationCategory;
 use App\Enums\NotificationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateNotificationPreferenceRequest;
@@ -29,8 +30,17 @@ class NotificationPreferenceController extends Controller
                 static fn (NotificationType $type): array => [
                     'value' => $type->value,
                     'label' => $type->label(),
+                    'category' => $type->category()->value,
                 ],
                 NotificationType::cases(),
+            ),
+            'categories' => array_map(
+                static fn (NotificationCategory $category): array => [
+                    'value' => $category->value,
+                    'label' => $category->label(),
+                    'description' => $category->description(),
+                ],
+                NotificationCategory::cases(),
             ),
         ]);
     }

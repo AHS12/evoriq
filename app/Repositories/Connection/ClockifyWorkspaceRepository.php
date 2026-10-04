@@ -5,6 +5,7 @@ namespace App\Repositories\Connection;
 use App\Models\ClockifyConnection;
 use App\Models\ClockifyWorkspace;
 use App\Repositories\Contracts\ClockifyWorkspaceRepositoryInterface;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 class ClockifyWorkspaceRepository implements ClockifyWorkspaceRepositoryInterface
@@ -61,5 +62,20 @@ class ClockifyWorkspaceRepository implements ClockifyWorkspaceRepositoryInterfac
             ->where('connection_id', $connection->id)
             ->where('clockify_id', $clockifyId)
             ->update(['active' => true]);
+    }
+
+    public function markInactive(ClockifyConnection $connection, string $clockifyId): void
+    {
+        ClockifyWorkspace::query()
+            ->where('connection_id', $connection->id)
+            ->where('clockify_id', $clockifyId)
+            ->update(['active' => false]);
+    }
+
+    public function advanceChangeFeedCursor(ClockifyWorkspace $workspace, CarbonInterface $at): ClockifyWorkspace
+    {
+        $workspace->update(['change_feed_cursor_at' => $at]);
+
+        return $workspace->refresh();
     }
 }

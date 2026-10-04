@@ -33,6 +33,7 @@ test('the policy gates connection actions by permission', function () {
         'connection.delete',
     ]);
     $viewer = makeUserWithPermissions(['connection.view']);
+    $rotator = makeUserWithPermissions(['connection.credentials.update']);
     $outsider = makeUserWithPermissions(['file.view']);
 
     $connection = ClockifyConnection::factory()->create();
@@ -43,6 +44,12 @@ test('the policy gates connection actions by permission', function () {
         ->and(Gate::forUser($viewer)->allows('create', ClockifyConnection::class))->toBeFalse()
         ->and(Gate::forUser($manager)->allows('create', ClockifyConnection::class))->toBeTrue()
         ->and(Gate::forUser($manager)->allows('update', $connection))->toBeTrue()
+        ->and(Gate::forUser($manager)->allows('reverify', $connection))->toBeTrue()
+        ->and(Gate::forUser($manager)->allows('disable', $connection))->toBeTrue()
+        ->and(Gate::forUser($manager)->allows('enable', $connection))->toBeTrue()
+        ->and(Gate::forUser($manager)->allows('rotateKey', $connection))->toBeFalse()
+        ->and(Gate::forUser($viewer)->allows('rotateKey', $connection))->toBeFalse()
+        ->and(Gate::forUser($rotator)->allows('rotateKey', $connection))->toBeTrue()
         ->and(Gate::forUser($viewer)->allows('delete', $connection))->toBeFalse()
         ->and(Gate::forUser($manager)->allows('delete', $connection))->toBeTrue();
 });

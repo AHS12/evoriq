@@ -7,4 +7,6 @@ php vendor/bin/pint --test --dirty
 echo "==> pre-commit: frontend format, lint and types"
 npm run check
 
+# Backend tests run in parallel on push (composer check -> composer test ->
+# `php artisan test --parallel`). They are intentionally not on pre-commit.
 echo "All pre-commit checks passed."

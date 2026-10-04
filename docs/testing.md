@@ -5,15 +5,26 @@ test**, **1 Controller = 1 feature test**.
 
 ## Running tests
 
+The suite runs **in parallel** (Pest + Paratest), which is what the git hooks
+and CI use:
+
 ```sh
-php artisan test                       # everything
-php artisan test --filter=Setup        # one area
-php artisan test --testsuite=Unit      # unit only
+php artisan test --parallel             # everything (recommended)
+php artisan test --parallel --processes=4   # cap worker processes
+php artisan test                        # serial fallback
+php artisan test --filter=Setup         # one area
+php artisan test --testsuite=Unit       # unit only
 ```
 
 Tests use `RefreshDatabase` against an in-memory SQLite database (configured
 in `phpunit.xml`). The suite seeds RBAC and settings in every feature test via
 `tests/TestCase.php` (`$seed = true`).
+
+> **Windows:** `--parallel` is supported (Paratest needs neither `pcntl` nor
+> `posix`). Each worker receives its own in-memory SQLite database, so runs are
+> isolated. If you see a flake only under `--parallel`, check that the test does
+> not write to a shared path — maintenance mode is driven by the `cache` store
+> in `phpunit.xml` rather than a shared `storage/framework/maintenance.php`.
 
 ## Test helpers
 
@@ -50,7 +61,7 @@ Individual steps:
 | ------- | ---- |
 | `composer lint` / `composer lint:check` | Pint (fix / check) |
 | `composer types:check` | PHPStan / Larastan |
-| `php artisan test` | Pest (unit + feature) |
+| `php artisan test --parallel` | Pest (unit + feature) |
 | `npm run check` | Frontend format + lint (`vp check`) |
 | `npm run types:check` | TypeScript compiler |
 | `npm run build` | Production asset build |

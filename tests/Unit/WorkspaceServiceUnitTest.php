@@ -7,9 +7,9 @@ use App\Repositories\Contracts\ClockifyConnectionRepositoryInterface;
 use App\Repositories\Contracts\ClockifyWorkspaceRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\Connection\WorkspaceService;
+use App\Support\Clockify\WorkspaceMapper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -20,7 +20,7 @@ beforeEach(function () {
     $this->audit = Mockery::mock(AuditLogService::class);
     $this->audit->shouldReceive('record')->byDefault();
 
-    $this->service = new WorkspaceService($this->workspaces, $this->connections, $this->audit);
+    $this->service = new WorkspaceService($this->workspaces, $this->connections, $this->audit, new WorkspaceMapper);
 });
 
 afterEach(function () {

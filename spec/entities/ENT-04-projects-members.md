@@ -1,6 +1,6 @@
 # ENT-04 — Projects & project members
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** L
 - **Depends on:** ORG-01, ENT-00, ENT-02, ENT-03
@@ -59,11 +59,11 @@ clockify_project_members
 - Exposed via report/dashboard resources.
 
 ## 7. Acceptance criteria
-- [ ] Projects map to the correct internal client; missing client handled.
-- [ ] Per-project member rates are stored and preserved.
-- [ ] Removing a project member reflects after re-sync; no duplicates.
-- [ ] Re-sync idempotent.
-- [ ] `composer check` passes.
+- [x] Projects map to the correct internal client; missing client handled.
+- [x] Per-project member rates are stored and preserved.
+- [x] Removing a project member reflects after re-sync; no duplicates.
+- [x] Re-sync idempotent.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ProjectSyncHandlerTest` + `ProjectMemberSyncHandlerTest`
@@ -72,3 +72,23 @@ clockify_project_members
 ## 9. Notes & open questions
 - `UserIdWithRatesRequest`/membership schemas are not fully documented; map the
   documented fields and store raw for later enrichment.
+- **Implemented notes:**
+  - `clockify_projects` (soft-deletable) + `clockify_project_members` tables,
+    `ClockifyProject`/`ClockifyProjectMember` models + factories and casts.
+  - `ProjectSyncHandler` (reference phase) paginates
+    `GET /workspaces/{ws}/projects?memberships=ALL&hydrated=true` (unknown params
+    are ignored by Clockify). `hourlyRate`/`costRate` map to the billable/cost
+    rate columns with the workspace currency as fallback; `estimate.estimate`
+    (ISO-8601) is parsed to decimal `estimated_hours`.
+  - `ProjectSyncRepository` keeps `clientId` as a reserved
+    `client_clockify_id`, batch-resolves it to an internal `client_id` (missing
+    clients → null), then upserts. This is a targeted slice of ENT-15.
+  - Project members are derived from the same payload (there is no
+    `PROJECT_MEMBER` entity type). The reserved `memberships` key is `null` when
+    the payload omits the list (existing members left untouched) and an array
+    otherwise; `ClockifyProjectMemberRepository::syncForProject` then deletes the
+    project's rows and inserts the new set (replace), so removals reflect and
+    re-runs never duplicate. Unresolved users are skipped.
+  - `ClockifyProjectMemberRepositoryInterface` is bound in
+    `RepositoryServiceProvider`; the handler is registered in
+    `config/clockify.php`.

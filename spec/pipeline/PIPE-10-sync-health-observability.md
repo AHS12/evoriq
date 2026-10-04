@@ -1,6 +1,6 @@
 # PIPE-10 — Sync & pipeline health observability
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** PIPE-02
@@ -117,13 +117,13 @@ resources/js/types/pipeline-health.ts
 
 ## 7. Acceptance criteria
 
-- [ ] The page renders for developers and 403s otherwise.
-- [ ] KPI cards reflect seeded jobs correctly.
-- [ ] Queue depth shows per-channel values or a graceful message.
-- [ ] Recent failures link to the run page and expose retry.
-- [ ] `PipelineHealthCheck` appears in the health list and can degrade status.
-- [ ] Correlation search navigates to the right destination.
-- [ ] `composer check` passes.
+- [x] The page renders for developers and 403s otherwise.
+- [x] KPI cards reflect seeded jobs correctly.
+- [x] Queue depth shows per-channel values or a graceful message.
+- [x] Recent failures link to the run page and expose retry.
+- [x] `PipelineHealthCheck` appears in the health list and can degrade status.
+- [x] Correlation search navigates to the right destination.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
@@ -140,3 +140,26 @@ resources/js/types/pipeline-health.ts
   `data-processing.view.all` (recommendation: a reduced, non-technical summary
   later).
 - API budget source is SYNC-02; until then render it as "not configured".
+- **Implemented notes:**
+  - `PipelineMetricsService` (cached `pipeline.metrics_cache_seconds`) computes
+    status counts, 7-day success rate, avg + nearest-rank p95 duration, records,
+    24h failures, stale runs and top failure reasons. Duration percentiles are
+    computed **in PHP** over the 7-day finished runs, so they are portable across
+    SQLite/Postgres (the spec's open question); all queries live in
+    `DataProcessingJobRepository` (`finishedRunsSince`, `runsCreatedSince`,
+    `recentRuns`, `recentFailures`).
+  - `QueueDepthReader` reads the `jobs` table per named channel and reports
+    `available: false` with the driver name when no table exists (e.g. `sync`).
+    Horizon integration is deferred to OPS-01.
+  - `PipelineHealthCheck` (registered in `HealthServiceProvider`) degrades on
+    stale runs, 7-day failure rate or queue depth using `config('pipeline.health')`
+    thresholds.
+  - `Developer\PipelineController` (`GET /admin/settings/developer/pipeline`,
+    `developer.pipeline`, `EnsureDeveloperAccess` + `viewDeveloperTools` gate)
+    renders `pages/developer/pipeline.tsx` with a KPI grid, per-channel queue
+    depth, API-budget placeholder, recent failures (deep-linked + retry), recent
+    runs table, health list, tool links and a correlation/job-id search. It
+    auto-refreshes with PIPE-03 `useLivePoll`.
+  - `apiBudget` is `null` until SYNC-17 surfaces the per-connection budget; the
+    page shows a "not configured" message.
+  - The Developer overview page links to the pipeline health page.

@@ -1,10 +1,10 @@
 # SYNC-14 — Pipeline event integration
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** S
 - **Depends on:** SYNC-04, PIPE-01
-- **Blocks:** PIPE-05, SYNC-18
+- **Blocks:** PIPE-05, PIPE-09, SYNC-18
 - **TDR:** §35, §36, §42
 
 ## 1. Why
@@ -51,10 +51,10 @@ into the shared pipeline event stream.
   labels; existing props unchanged otherwise.
 
 ## 7. Acceptance criteria
-- [ ] A sync run produces a complete event trail and a live progress bar.
-- [ ] Per-job stages are visible in the run timeline.
-- [ ] Rate-limit waits appear as warnings with retry info.
-- [ ] `composer check` passes.
+- [x] A sync run produces a complete event trail and a live progress bar.
+- [x] Per-job stages are visible in the run timeline.
+- [x] Rate-limit waits appear as warnings with retry info.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `SyncEventEmitterTest`: event mapping per lifecycle step.
@@ -65,3 +65,20 @@ into the shared pipeline event stream.
 - Decide the run route: reuse `/activity/{id}` with a type discriminator vs a
   dedicated `/sync/{run}` page that reuses the same components. Recommendation:
   a shared route keyed by type.
+
+### Implemented notes
+
+- `ClockifySyncRun` implements `PipelineRunnable` (`run_type = sync`,
+  `run_id = id`), so the existing `PipelineEventRecorder` accepts it directly.
+- `SyncEventEmitter` wraps the recorder and projects the lifecycle:
+  run queued/started/completed/failed/cancelled, job started/progress/completed/
+  failed, and a `budgetExhausted` warning. Stages are keyed by entity
+  (`time_entry`, `projects`, …) so per-user/partition jobs share a stage; job
+  context carries `entity_type`/`job_id`/`user_clockify_id`.
+- Wired into `SyncRunService` (run events + budget warning), `SyncJobRunner`
+  (job started/progress/completed) and `SyncEntityJob::failed()` (job failed).
+- Aggregation: `SyncRunPresenter` emits the same run contract the PIPE-05 UI
+  renders, with progress measured across jobs (`completed_jobs / total_jobs`)
+  and stages derived from the run's jobs; the event timeline comes from
+  `pipeline_events`. Route decision: a dedicated `/import/{run}` page that
+  reuses the PIPE-05 components (PIPE-09).

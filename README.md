@@ -231,7 +231,7 @@ Individual steps:
 | ------- | ---- |
 | `composer lint` / `composer lint:check` | Pint (fix / check) |
 | `composer types:check` | PHPStan / Larastan |
-| `php artisan test` | Pest (unit + feature) |
+| `php artisan test --parallel` | Pest (unit + feature) |
 | `npm run check` | Frontend format + lint (`vp check`) |
 | `npm run types:check` | TypeScript compiler |
 | `npm run build` | Production asset build |
@@ -282,14 +282,25 @@ for the full contract.
 
 ## Testing
 
+The suite runs **in parallel** for speed (Pest + `brianium/paratest`):
+
 ```sh
-php artisan test                       # everything
-php artisan test --filter=Setup        # one area
-php artisan test --testsuite=Unit      # unit only
+php artisan test --parallel             # everything (recommended)
+php artisan test --parallel --processes=4   # cap the worker count
+php artisan test                        # serial fallback
+php artisan test --filter=Setup         # one area
+php artisan test --testsuite=Unit       # unit only
 ```
 
 Tests use Pest with `RefreshDatabase` against an in-memory SQLite database
 (`phpunit.xml`). The suite seeds RBAC and settings in every feature test.
+
+> **Windows:** `php artisan test --parallel` works natively — Paratest does not
+> need `pcntl`/`posix` (those are only required by Horizon, which is Linux-only).
+> Each worker gets its own in-memory SQLite database, so the run is isolated;
+> use `--processes=N` to scale down on low-memory machines. If a flaky failure
+> appears only under `--parallel`, confirm no test writes to a shared path (the
+> maintenance-mode driver is set to `cache` in `phpunit.xml` for this reason).
 
 ---
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Backup\BackupController;
 use App\Http\Controllers\Developer\DeveloperController;
+use App\Http\Controllers\Developer\PipelineController;
 use App\Http\Controllers\Setting\AppearanceController;
 use App\Http\Controllers\Setting\MailSettingController;
 use App\Http\Controllers\Setting\SettingController;
@@ -93,6 +94,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         Route::get('developer', [DeveloperController::class, 'index'])
             ->middleware(EnsureDeveloperAccess::class)
             ->name('developer.edit');
+
+        Route::get('developer/pipeline', [PipelineController::class, 'index'])
+            ->middleware(EnsureDeveloperAccess::class)
+            ->name('developer.pipeline');
 
         Route::post('developer/maintenance/{action}', [DeveloperController::class, 'maintenance'])
             ->middleware(EnsureDeveloperAccess::class)

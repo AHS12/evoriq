@@ -13,7 +13,6 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

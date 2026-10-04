@@ -6,7 +6,6 @@ use App\Enums\UserSettingKey;
 use App\Services\Audit\AuditLogService;
 use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -27,6 +26,7 @@ test('defaults are returned when nothing is stored', function () {
         'sound' => true,
         'desktop' => false,
         'muted_types' => [],
+        'muted_categories' => [],
     ]);
 });
 
@@ -49,7 +49,19 @@ test('update persists the preferences and they are merged on read', function () 
         'sound' => false,
         'desktop' => true,
         'muted_types' => [NotificationType::EXPORT_COMPLETED->value],
+        'muted_categories' => [],
     ]);
+});
+
+test('a muted category suppresses notifications of that category', function () {
+    $user = member();
+
+    $this->service->update($user, new NotificationPreferenceDTO(
+        mutedCategories: ['pipeline'],
+    ));
+
+    expect($this->service->allows($user, NotificationType::JOB_QUEUED))->toBeFalse()
+        ->and($this->service->allows($user, NotificationType::USER_INVITED))->toBeTrue();
 });
 
 test('stored muted types drop unknown values', function () {

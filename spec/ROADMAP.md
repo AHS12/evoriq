@@ -27,7 +27,32 @@ is pulled forward when the next spec in phase order is blocked on it.
 | 5 | Phase 2 — `CONN-03` | **Done** (active-workspace selection + endpoint). |
 | 6 | Phase 2 — `CONN-07` | **Done** — pulled forward to unblock `CONN-04` (connect UI). |
 | 7 | Phase 2 — `CONN-04` | **Done** (connect flow UI: key → verify → workspace → save). |
-| 8 | Phase 2/3/4 — `CONN-05`/`06`/`08`/`09`, `SYNC-*`, `ENT-*` | Then resume Phase 1 with `PIPE-09`/`PIPE-10`. |
+| 8 | Phase 3 — `SYNC-01`…`SYNC-09` | **Done** (sync engine: schema, budget, planner, resumable job, raw store, change feed, deletions, upsert, orchestration). Plus `CONN-05`/`CONN-06`. |
+| 9 | Phase 4 — `ENT-00` | **Done** — ingestion framework (`AbstractSyncHandler`, registry, delete policy). Unblocks `ENT-01`…`ENT-15` → `ENT-14` → `PIPE-09`. |
+| 10 | Phase 4 — `ENT-01` | **Done** — workspace dimension sync handler + enriched `clockify_workspaces`. |
+| 11 | Phase 4 — `ENT-02` | **Done** — users + workspace memberships/rate history (`clockify_users`, `clockify_memberships`). |
+| 12 | Phase 4 — `ENT-03` | **Done** — client dimension (`clockify_clients`), archived-aware. |
+| 13 | Phase 4 — `ENT-04` | **Done** — project dimension + project members/rates (`clockify_projects`, `clockify_project_members`), client resolution. |
+| 14 | Phase 4 — `ENT-05` | **Done** — nested per-project task dimension (`clockify_tasks`), project/assignee resolution, ISO-8601 durations. |
+| 15 | Phase 4 — `ENT-06` + `ENT-07` | **Done** — tags dimension + time-entry ↔ tag joins (`clockify_tags`, `clockify_time_entry_tags`) and the per-user time-entry fact (`clockify_time_entries`). Built together: the join needs the entries table (circular pair), so tags were pulled forward. |
+| 16 | Phase 4 — `ENT-08` | **Done** — historical per-entry rate fact (`clockify_time_entry_rates`), derived from hydrated entries. |
+| 17 | Phase 4 — `ENT-09` | **Done** — custom-field definitions (`clockify_custom_fields`): types, entity type, allowed values, defaults. |
+| 18 | Phase 4 — `ENT-10` | **Done** — time-entry custom-field value facts (`clockify_time_entry_custom_field_values`), replace-per-entry. |
+| 19 | Phase 4 — `ENT-11` | **Done** — user custom-field value facts (`clockify_user_custom_field_values`), derived during the USER sync. |
+| 20 | Phase 4 — `ENT-12` | **Done** — user groups/teams + members (`clockify_user_groups`, `clockify_user_group_members`). |
+| 21 | Phase 4 — `ENT-13` | **Done** — per-entity deletion/restore policy + cascade safety (tag joins, group members, memberships, workspace inactivity; idempotent re-apply). |
+| 22 | Phase 1 — `PIPE-11` | **Done** — lifecycle notifications (queued/retrying/completed/failed), pipeline category muting. |
+| 23 | Phase 1 — `PIPE-10` | **Done** — sync/pipeline health page (`/admin/settings/developer/pipeline`): KPIs, queue depth, recent runs/failures, health check, correlation search. |
+| 24 | Phase 1 — `PIPE-09` (+`ENT-14`) then `PIPE-12` | **Done** — import wizard + orchestration (`ENT-14`) with full `SYNC-14` pipeline integration, then `PIPE-12` (i18n, states, retention). |
+| 25 | Phase 1/2 closeout — `PIPE-12`, `CONN-05`, `CONN-08` | **Done** — Phase 1 and Phase 2 close out; only `CONN-09` (needs `SYNC-11`) remains in Phase 2. |
+| 26 | Phase 3 — `SYNC-13` | **Done** — reliability contract: budget deferral (no blocking), retry/backoff, stale reaper. |
+| 27 | Phase 3 — `SYNC-17` | **Done** — navbar API-budget indicator + popover (honest hourly/per-second, live reset countdown). |
+| 28 | Phase 3 — `SYNC-20` | **Done** — priority→channel ordering, budget gate, starvation avoidance, concurrency caps. |
+| 29 | Phase 2/4 — remaining `SYNC-*` (`SYNC-10/11/12/18`), `ENT-15` | Next: sync automation + freshness, then entity/ops backlog. |
+
+> **Tooling:** the Pest suite now runs in parallel (`php artisan test --parallel`,
+> wired into `composer test` and therefore the git hooks/CI). Documented in the
+> README and `docs/testing.md` (Windows support included).
 
 ### Why `CONN-01` before `PIPE-09`
 
@@ -89,10 +114,10 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 | `PIPE-06` | [Run detail & event inspector](pipeline/PIPE-06-run-detail-inspector.md) | M | Done | PIPE-05 | Tabs: overview/timeline/errors/artifacts/params/raw; error grouping. |
 | `PIPE-07` | [Retry, resume, cancel & backoff UX](pipeline/PIPE-07-retry-resume-cancel.md) | M | Done | PIPE-05         | Cooperative cancel, retry run/stage, resume, backoff display, failed view. |
 | `PIPE-08` | [Global pipeline indicator](pipeline/PIPE-08-global-pipeline-indicator.md) | M | Done | PIPE-03         | Nav/sidebar live status pill + popover with active runs. |
-| `PIPE-09` | [Historical import progress experience](pipeline/PIPE-09-import-progress-experience.md) | L | Draft | PIPE-05, FND-03, **CONN-01…03, SYNC-03, ENT-14** | Range → plan preview → live import → completion, "you can leave". **Blocked** until Phase 2/3 land. |
-| `PIPE-10` | [Sync health & observability](pipeline/PIPE-10-sync-health-observability.md) | M | Draft | PIPE-02, **SYNC-01/02** | Admin page: success rate, durations, queue depth, API usage, correlation search. **Blocked** on sync data. |
-| `PIPE-11` | [Pipeline lifecycle notifications](pipeline/PIPE-11-pipeline-notifications.md) | S | Draft | PIPE-02         | Queued/started/completed/failed/retrying notifications + preferences. |
-| `PIPE-12` | [Pipeline i18n, states & retention](pipeline/PIPE-12-i18n-states-retention.md) | M | Draft | PIPE-01..11     | 5-locale strings, empty/error states, event coalescing + pruning. |
+| `PIPE-09` | [Historical import progress experience](pipeline/PIPE-09-import-progress-experience.md) | L | Done | PIPE-05, FND-03, **CONN-01…03, SYNC-03, ENT-14** | Range → plan preview → live import → completion, "you can leave". |
+| `PIPE-10` | [Sync health & observability](pipeline/PIPE-10-sync-health-observability.md) | M | Done | PIPE-02, SYNC-01/02 | Admin page: success rate, durations, queue depth, API usage, correlation search. |
+| `PIPE-11` | [Pipeline lifecycle notifications](pipeline/PIPE-11-pipeline-notifications.md) | S | Done | PIPE-02         | Queued/started/completed/failed/retrying notifications + preferences. |
+| `PIPE-12` | [Pipeline i18n, states & retention](pipeline/PIPE-12-i18n-states-retention.md) | M | Done | PIPE-01..11     | 5-locale strings, empty/error states, event coalescing + pruning. |
 
 ## Phase 2 — Clockify connection & workspace
 
@@ -102,56 +127,56 @@ The live timeline for imports, syncs and exports. Detailed in `pipeline/`.
 | `CONN-02` | [Validation & capability detection](connection/CONN-02-connection-validation.md) | M | Done | CONN-01 | Verify key, detect workspace/plan/limits/region; error mapping. |
 | `CONN-03` | [Workspace discovery & selection](connection/CONN-03-workspace-selection.md) | S | Done | CONN-02 | `clockify_workspaces` + active-workspace selection (`PUT /connections/{id}/workspace`). |
 | `CONN-04` | [Connect flow UI](connection/CONN-04-connect-flow-ui.md) | M | Done | CONN-02, CONN-03, CONN-07 | Key entry, verify, workspace picker, plan/budget display. |
-| `CONN-05` | [Manage connections](connection/CONN-05-manage-connections.md) | M | Draft | CONN-02 | Rename/reverify/rotate/disable/disconnect (+ purge choice). |
-| `CONN-06` | [Policy, permissions & audit](connection/CONN-06-policy-permissions-audit.md) | S | Draft | CONN-01 | `connection.view`/`connection.manage`, policy, audit, redaction. |
+| `CONN-05` | [Manage connections](connection/CONN-05-manage-connections.md) | M | Done | CONN-02 | Rename/reverify/rotate/disable/enable. Disconnect + purge deferred to OPS-05. |
+| `CONN-06` | [Policy, permissions & audit](connection/CONN-06-policy-permissions-audit.md) | S | Done | CONN-01 | Granular connection permissions, policy abilities (rotation = credentials), audit + redaction, scheduler guard. |
 | `CONN-07` | [API error taxonomy & messaging](connection/CONN-07-api-error-taxonomy.md) | S | Done | CONN-02 | `ApiErrorCode` + central mapper → friendly label/hint/action. |
-| `CONN-08` | [Connection status & security](connection/CONN-08-connection-status-security.md) | S | Draft | CONN-01, CONN-02 | Status resource/widget + secret-leak verification. |
+| `CONN-08` | [Connection status & security](connection/CONN-08-connection-status-security.md) | S | Done | CONN-01, CONN-02 | Status resource/widget + secret-leak verification. |
 | `CONN-09` | [Sync & connection settings](connection/CONN-09-sync-connection-settings.md) | M | Draft | CONN-01, SYNC-11 | Auto-sync schedule, reconciliation, tz/currency, rate overrides. |
 
 ## Phase 3 — Sync infrastructure
 
 | ID        | Spec                                                     | Est | Status | Depends | Scope |
 | --------- | -------------------------------------------------------- | --- | ------ | ------- | ----- |
-| `SYNC-01` | [Sync state schema](sync/SYNC-01-sync-state-schema.md) | L | Draft | ORG-01, CONN-01 | Runs, jobs, checkpoints, api usage, entity changes, deleted entities, raw records. |
-| `SYNC-02` | [Plan-aware API usage accounting](sync/SYNC-02-api-usage-accounting.md) | M | Draft | SYNC-01, CONN-02 | Self-accounted budget (Free 30/h, paid 50/s) shared by every request path. |
-| `SYNC-03` | [Sync planner](sync/SYNC-03-sync-planner.md) | L | Draft | SYNC-01, SYNC-02, CONN-03 | Range/scope → ordered budget-aware plan with 31-day partitions. |
-| `SYNC-04` | [Resumable sync job engine](sync/SYNC-04-resumable-sync-job.md) | L | Draft | SYNC-01, SYNC-02, SYNC-03 | Generic checkpointed per-page job; crash-resume. |
-| `SYNC-05` | [Raw record store](sync/SYNC-05-raw-record-store.md) | M | Draft | SYNC-01 | Persist/dedupe upstream payloads for recovery. |
-| `SYNC-06` | [Entity Changes adapter](sync/SYNC-06-entity-changes-adapter.md) | M | Draft | SYNC-01 | Isolated created/updated/deleted feed with documented caveats. |
-| `SYNC-07` | [Deleted entities application](sync/SYNC-07-deleted-entities-application.md) | M | Draft | SYNC-06 | Apply deletions idempotently; preserve historical facts. |
-| `SYNC-08` | [Idempotent upsert conventions](sync/SYNC-08-idempotent-upsert.md) | M | Draft | SYNC-01 | Natural key + upsert contract + create/update counters. |
-| `SYNC-09` | [Sync run orchestration](sync/SYNC-09-sync-run-orchestration.md) | L | Draft | SYNC-03, SYNC-04 | Plan → run → budget-aware dispatch → finalize → analytics. |
+| `SYNC-01` | [Sync state schema](sync/SYNC-01-sync-state-schema.md) | L | Done | ORG-01, CONN-01 | Runs, jobs, checkpoints, api usage, entity changes, deleted entities, raw records. |
+| `SYNC-02` | [Plan-aware API usage accounting](sync/SYNC-02-api-usage-accounting.md) | M | Done | SYNC-01, CONN-02 | Self-accounted budget (Free 30/h, paid 50/s) shared by every request path. |
+| `SYNC-03` | [Sync planner](sync/SYNC-03-sync-planner.md) | L | Done | SYNC-01, SYNC-02, CONN-03 | Range/scope → ordered budget-aware plan with 31-day partitions. |
+| `SYNC-04` | [Resumable sync job engine](sync/SYNC-04-resumable-sync-job.md) | L | Done | SYNC-01, SYNC-02, SYNC-03 | Generic checkpointed per-page job; crash-resume. |
+| `SYNC-05` | [Raw record store](sync/SYNC-05-raw-record-store.md) | M | Done | SYNC-01 | Persist/dedupe upstream payloads for recovery. |
+| `SYNC-06` | [Entity Changes adapter](sync/SYNC-06-entity-changes-adapter.md) | M | Done | SYNC-01 | Isolated created/updated/deleted feed with documented caveats. |
+| `SYNC-07` | [Deleted entities application](sync/SYNC-07-deleted-entities-application.md) | M | Done | SYNC-06 | Apply deletions idempotently; preserve historical facts. |
+| `SYNC-08` | [Idempotent upsert conventions](sync/SYNC-08-idempotent-upsert.md) | M | Done | SYNC-01 | Natural key + upsert contract + create/update counters. |
+| `SYNC-09` | [Sync run orchestration](sync/SYNC-09-sync-run-orchestration.md) | L | Done | SYNC-03, SYNC-04 | Plan → run → budget-aware dispatch → finalize → analytics. |
 | `SYNC-10` | [Rolling reconciliation](sync/SYNC-10-rolling-reconciliation.md) | M | Draft | SYNC-09, SYNC-06 | Daily 7-day / weekly 30–31-day re-fetch. |
 | `SYNC-11` | [Daily automatic sync](sync/SYNC-11-daily-automatic-sync.md) | M | Draft | SYNC-09, SYNC-06 | Scheduled incremental sync + checkpoint freshness. |
 | `SYNC-12` | [Manual "Sync Now"](sync/SYNC-12-manual-sync-now.md) | M | Draft | SYNC-09 | Incremental, deduped, budget-guarded manual trigger. |
-| `SYNC-13` | [Failure/retry/resume policy](sync/SYNC-13-failure-retry-resume-policy.md) | M | Draft | SYNC-04, SYNC-09 | Backoff, attempt caps, resume, stale reaper. |
-| `SYNC-14` | [Pipeline event integration](sync/SYNC-14-pipeline-event-integration.md) | S | Draft | SYNC-04, PIPE-01 | Emit sync lifecycle into the shared PIPE stream. |
+| `SYNC-13` | [Failure/retry/resume policy](sync/SYNC-13-failure-retry-resume-policy.md) | M | Done | SYNC-04, SYNC-09 | Backoff, attempt caps, resume, stale reaper. |
+| `SYNC-14` | [Pipeline event integration](sync/SYNC-14-pipeline-event-integration.md) | S | Done | SYNC-04, PIPE-01 | Emit sync lifecycle into the shared PIPE stream. |
 | `SYNC-15` | [Webhook endpoint](sync/SYNC-15-webhook-endpoint.md) | M | Draft | CONN-01 | Token-validated, fast-ack receiver. |
 | `SYNC-16` | [Webhook incremental fetch](sync/SYNC-16-webhook-incremental-fetch.md) | M | Draft | SYNC-15, SYNC-06 | Event → targeted rate-limited fetch/delete. |
-| `SYNC-17` | [API usage & budget UI](sync/SYNC-17-api-usage-ui.md) | M | Draft | SYNC-02, PIPE-08 | Navbar indicator + popover; honest hourly/per-second wording. |
+| `SYNC-17` | [API usage & budget UI](sync/SYNC-17-api-usage-ui.md) | M | Done | SYNC-02, PIPE-08 | Navbar indicator + popover; honest hourly/per-second wording. |
 | `SYNC-18` | [Sync status & freshness contract](sync/SYNC-18-sync-status-freshness.md) | M | Draft | SYNC-09, SYNC-10, SYNC-11 | Last synced, data through, historical range, next run, health. |
 | `SYNC-19` | [Webhook registration & lifecycle](sync/SYNC-19-webhook-registration-lifecycle.md) | M | Draft | SYNC-15, CONN-01 | Register/rotate/disable + delivery health. |
-| `SYNC-20` | [Priority, scheduling & backpressure](sync/SYNC-20-priority-scheduling-backpressure.md) | M | Draft | SYNC-02, SYNC-09 | Priority→channel mapping, budget gate, concurrency caps. |
+| `SYNC-20` | [Priority, scheduling & backpressure](sync/SYNC-20-priority-scheduling-backpressure.md) | M | Done | SYNC-02, SYNC-09 | Priority→channel mapping, budget gate, concurrency caps. |
 
 ## Phase 4 — MVP entity sync
 
 | ID       | Spec                                                    | Est | Status | Depends | Scope |
 | -------- | ------------------------------------------------------- | --- | ------ | ------- | ----- |
-| `ENT-00` | [Ingestion framework](entities/ENT-00-ingestion-framework.md) | L | Draft | ORG-01, SYNC-04/05/08 | The per-entity `SyncHandler` contract, registry and mapping conventions. |
-| `ENT-01` | [Workspace dimension](entities/ENT-01-workspace-dimension.md) | M | Draft | ORG-01, ENT-00, CONN-03 | Enrich `clockify_workspaces` (currency, tz, rates, org id). |
-| `ENT-02` | [Users & memberships](entities/ENT-02-users-memberships.md) | L | Draft | ORG-01, ENT-00 | Identity + capacity + historical rates. |
-| `ENT-03` | [Clients](entities/ENT-03-clients.md) | M | Draft | ORG-01, ENT-00 | Client dimension. |
-| `ENT-04` | [Projects & members](entities/ENT-04-projects-members.md) | L | Draft | ORG-01, ENT-00, ENT-02, ENT-03 | Primary dimension + per-user project rates. |
-| `ENT-05` | [Tasks](entities/ENT-05-tasks.md) | M | Draft | ORG-01, ENT-00, ENT-04 | Nested per-project tasks. |
-| `ENT-06` | [Tags & entry tags](entities/ENT-06-tags.md) | M | Draft | ORG-01, ENT-00, ENT-07 | Relational tags (no JSON). |
-| `ENT-07` | [Time entries](entities/ENT-07-time-entries.md) | L | Draft | ORG-01, ENT-00, ENT-02/04/05/06 | Primary fact; **per-user** fetch; derive duration. |
-| `ENT-08` | [Time entry rates](entities/ENT-08-time-entry-rates.md) | M | Draft | ORG-01, ENT-00, ENT-07 | Historical rates per entry. |
-| `ENT-09` | [Custom fields](entities/ENT-09-custom-fields.md) | M | Draft | ORG-01, ENT-00 | Field definitions + option sets. |
-| `ENT-10` | [Time entry CF values](entities/ENT-10-time-entry-custom-field-values.md) | M | Draft | ORG-01, ENT-00, ENT-07, ENT-09 | Entry metadata facts. |
-| `ENT-11` | [User CF values](entities/ENT-11-user-custom-field-values.md) | S | Draft | ORG-01, ENT-00, ENT-02, ENT-09 | User/team metadata. |
-| `ENT-12` | [User groups & members](entities/ENT-12-user-groups.md) | M | Draft | ORG-01, ENT-00, ENT-02 | Team dimension. |
-| `ENT-13` | [Deletions & restores](entities/ENT-13-deletions-restores.md) | M | Draft | SYNC-07, ENT-01..12 | Per-entity delete/restore policy + cascades. |
-| `ENT-14` | [Historical import wizard end-to-end](entities/ENT-14-historical-import-wizard.md) | L | Draft | SYNC-03/09, PIPE-09, ENT-01..13 | Real import orchestration + concurrency guard. |
+| `ENT-00` | [Ingestion framework](entities/ENT-00-ingestion-framework.md) | L | Done | ORG-01, SYNC-04/05/08 | The per-entity `SyncHandler` contract, registry and mapping conventions. |
+| `ENT-01` | [Workspace dimension](entities/ENT-01-workspace-dimension.md) | M | Done | ORG-01, ENT-00, CONN-03 | Enrich `clockify_workspaces` (currency, tz, rates, org id). |
+| `ENT-02` | [Users & memberships](entities/ENT-02-users-memberships.md) | L | Done | ORG-01, ENT-00 | Identity + capacity + historical rates. |
+| `ENT-03` | [Clients](entities/ENT-03-clients.md) | M | Done | ORG-01, ENT-00 | Client dimension. |
+| `ENT-04` | [Projects & members](entities/ENT-04-projects-members.md) | L | Done | ORG-01, ENT-00, ENT-02, ENT-03 | Primary dimension + per-user project rates. |
+| `ENT-05` | [Tasks](entities/ENT-05-tasks.md) | M | Done | ORG-01, ENT-00, ENT-04 | Nested per-project tasks. |
+| `ENT-06` | [Tags & entry tags](entities/ENT-06-tags.md) | M | Done | ORG-01, ENT-00, ENT-07 | Relational tags (no JSON). |
+| `ENT-07` | [Time entries](entities/ENT-07-time-entries.md) | L | Done | ORG-01, ENT-00, ENT-02/04/05/06 | Primary fact; **per-user** fetch; derive duration. |
+| `ENT-08` | [Time entry rates](entities/ENT-08-time-entry-rates.md) | M | Done | ORG-01, ENT-00, ENT-07 | Historical rates per entry. |
+| `ENT-09` | [Custom fields](entities/ENT-09-custom-fields.md) | M | Done | ORG-01, ENT-00 | Field definitions + option sets. |
+| `ENT-10` | [Time entry CF values](entities/ENT-10-time-entry-custom-field-values.md) | M | Done | ORG-01, ENT-00, ENT-07, ENT-09 | Entry metadata facts. |
+| `ENT-11` | [User CF values](entities/ENT-11-user-custom-field-values.md) | S | Done | ORG-01, ENT-00, ENT-02, ENT-09 | User/team metadata. |
+| `ENT-12` | [User groups & members](entities/ENT-12-user-groups.md) | M | Done | ORG-01, ENT-00, ENT-02 | Team dimension. |
+| `ENT-13` | [Deletions & restores](entities/ENT-13-deletions-restores.md) | M | Done | SYNC-07, ENT-01..12 | Per-entity delete/restore policy + cascades. |
+| `ENT-14` | [Historical import wizard end-to-end](entities/ENT-14-historical-import-wizard.md) | L | Done | SYNC-03/09/14, PIPE-09, ENT-01..13 | Real import orchestration + concurrency guard. |
 | `ENT-15` | [ID mapping & resolution](entities/ENT-15-id-mapping-resolution.md) | M | Draft | ORG-01, ENT-00 | Batched Clockify↔internal id resolution. |
 
 ## Phase 5 — Analytics engine

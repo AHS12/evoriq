@@ -1,6 +1,6 @@
 # SYNC-04 — Resumable sync job engine
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** L
 - **Depends on:** SYNC-01, SYNC-02, SYNC-03
@@ -66,22 +66,37 @@ so a worker lost at page 37 resumes at page 37 — the full import never restart
 - None; dispatched by SYNC-09.
 
 ## 7. Acceptance criteria
-- [ ] A job stopped after page N resumes at page N+1 with no duplicate rows.
-- [ ] Each page is atomic (partial page never persisted on failure).
-- [ ] Counters (created/updated/processed) are accurate per job and run.
-- [ ] On Free plans the job waits for the hourly window rather than erroring.
-- [ ] Cancellation stops between pages and reports `cancelled`.
-- [ ] `composer check` passes.
+- [x] A job stopped after page N resumes at page N+1 with no duplicate rows.
+- [x] Each page is atomic (partial page never persisted on failure).
+- [x] Counters (created/updated/processed) are accurate per job and run.
+- [x] On Free plans the job waits for the hourly window rather than erroring.
+- [x] Cancellation stops between pages and reports `cancelled`.
+- [x] `composer check` passes.
 
 ## 8. Tests
-- **Unit** `SyncJobRunnerTest` (handler mocked): resume from page, per-page
-  transaction rollback, cancel, counter aggregation.
+- **Unit** `SyncJobRunnerTest` (handler mocked): resume from page, counter
+  aggregation, page-failure rollback (no checkpoint advance), cancellation,
+  empty page completion.
 - **Feature** `SyncJobResumeTest` with `Http::fake()` sequence: fail mid-way,
-  re-run, assert no duplicates and checkpoint advanced (mirrors the
-  `clockify-sync-feature` skill example).
+  re-run, assert no duplicates and checkpoint advanced.
 
 ## 9. Notes & open questions
 - Page size default 200 (config); Free plans may prefer smaller pages to spread
   budget — planner decides.
 - If a single page can never complete within an hourly window (huge volume),
   shrink pages (SYNC-03) rather than block.
+- **Implemented notes:**
+  - The runner does not spend budget itself: every fetch goes through
+    `ClockifyClient::forConnection(...)`, which reserves/records against
+    `ApiUsageService` and blocks for the window reset (SYNC-02), so Free plans
+    wait rather than error.
+  - `SyncHandler` follows ENT-00's contract (`entityType`, `phase`,
+    `fetchPage`, `map`, `repository`, `delete`); `SyncHandlerRegistry` resolves a
+    `SyncEntityType` to its handler (populated by the ENT specs).
+  - A page is last when it returns fewer rows than `page_size` (the paginator's
+    own rule), so no extra request is needed. Raw payloads are stored before the
+    per-page `DB::transaction` that upserts the mapped rows.
+  - `clockify_sync_jobs` gained a nullable `user_clockify_id` (SYNC-01 schema
+    refinement) so per-user fact jobs can rebuild the `SyncContext`.
+  - PIPE event emission is deferred to SYNC-14; `SyncEntityJob::failed()` is a
+    minimal terminal-state guarantee that SYNC-13 will extend with retry/backoff.

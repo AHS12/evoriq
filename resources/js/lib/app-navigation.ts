@@ -1,5 +1,6 @@
 import {
     Activity,
+    CloudDownload,
     FolderOpen,
     History,
     LayoutGrid,
@@ -12,6 +13,7 @@ import type { TranslationHook } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import { index as activityIndex } from '@/routes/activity';
 import { index as connectionsIndex } from '@/routes/connections';
+import { index as importIndex } from '@/routes/import';
 import { edit as settingsEdit } from '@/routes/admin/settings/general';
 import { index as auditLogsIndex } from '@/routes/audit-logs';
 import { index as filesIndex } from '@/routes/files';
@@ -53,6 +55,14 @@ export function buildAppNavigation({
             title: t('Connections'),
             href: connectionsIndex(),
             icon: Plug,
+        });
+    }
+
+    if (can('sync.trigger') || can('import.create')) {
+        workspace.push({
+            title: t('Historical import'),
+            href: importIndex(),
+            icon: CloudDownload,
         });
     }
 

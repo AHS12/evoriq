@@ -1,4 +1,4 @@
-import { Head, usePoll } from '@inertiajs/react';
+import { Head, Link, usePoll } from '@inertiajs/react';
 import { LayoutDashboard, Wrench } from 'lucide-react';
 import { useEffect } from 'react';
 import { CommandRuns } from '@/components/developer/command-runs';
@@ -13,9 +13,11 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatDateTime } from '@/lib/format';
+import { pipeline } from '@/routes/admin/settings/developer';
 import type {
     BackupDevStatus,
     DeveloperTool,
@@ -92,6 +94,24 @@ export default function DeveloperSettings({
                             <ToolCard key={tool.key} tool={tool} />
                         ))}
                     </div>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Pipeline health')}</CardTitle>
+                            <CardDescription>
+                                {t(
+                                    'Success rate, queue depth, recent failures and API budget.',
+                                )}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Button asChild variant="outline">
+                                <Link href={pipeline()}>
+                                    {t('Open pipeline health')}
+                                </Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
 
                     <div className="grid items-start gap-4 lg:grid-cols-2">
                         <Card>

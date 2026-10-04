@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { EmptyState } from '@/components/app/empty-state';
 import { PageHeader } from '@/components/app/page-header';
 import { ConnectDialog } from '@/components/connection/connect-dialog';
+import { ConnectionCardActions } from '@/components/connection/connection-card-actions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { useCan } from '@/hooks/use-can';
 import { useTranslation } from '@/hooks/use-translation';
 import { formatRelativeTime } from '@/lib/format';
 import { index as connectionsIndex } from '@/routes/connections';
@@ -17,7 +19,15 @@ type Props = {
     canCreate: boolean;
 };
 
-function ConnectionCard({ connection }: { connection: Connection }) {
+function ConnectionCard({
+    connection,
+    canManage,
+    canRotate,
+}: {
+    connection: Connection;
+    canManage: boolean;
+    canRotate: boolean;
+}) {
     const { t } = useTranslation();
 
     return (
@@ -37,13 +47,23 @@ function ConnectionCard({ connection }: { connection: Connection }) {
                         {connection.name}
                     </span>
                 </div>
-                <Badge
-                    variant={
-                        connection.status === 'active' ? 'default' : 'secondary'
-                    }
-                >
-                    {connection.status_label}
-                </Badge>
+                <div className="flex items-center gap-1">
+                    <Badge
+                        variant={
+                            connection.status === 'active'
+                                ? 'default'
+                                : 'secondary'
+                        }
+                    >
+                        {connection.status_label}
+                    </Badge>
+                    {canManage && (
+                        <ConnectionCardActions
+                            connection={connection}
+                            canRotate={canRotate}
+                        />
+                    )}
+                </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -81,7 +101,12 @@ export default function ConnectionsIndex({
     canCreate,
 }: Props) {
     const { t } = useTranslation();
+    const can = useCan();
     const [connectOpen, setConnectOpen] = useState(false);
+
+    const canManage =
+        can('connection.update') || can('connection.credentials.update');
+    const canRotate = can('connection.credentials.update');
 
     const openConnect = (): void => setConnectOpen(true);
 
@@ -127,6 +152,8 @@ export default function ConnectionsIndex({
                             <ConnectionCard
                                 key={connection.id}
                                 connection={connection}
+                                canManage={canManage}
+                                canRotate={canRotate}
                             />
                         ))}
                     </div>

@@ -18,6 +18,8 @@ enum NotificationType: string
     case IMPORT_FAILED = 'import.failed';
     case REPORT_COMPLETED = 'report.completed';
     case REPORT_FAILED = 'report.failed';
+    case JOB_QUEUED = 'job.queued';
+    case JOB_RETRYING = 'job.retrying';
     case JOB_CANCELLED = 'job.cancelled';
     case CLOCKIFY_SYNC_COMPLETED = 'clockify.sync.completed';
     case CLOCKIFY_SYNC_FAILED = 'clockify.sync.failed';
@@ -35,6 +37,8 @@ enum NotificationType: string
             self::IMPORT_FAILED => 'Import failed',
             self::REPORT_COMPLETED => 'Report completed',
             self::REPORT_FAILED => 'Report failed',
+            self::JOB_QUEUED => 'Job queued',
+            self::JOB_RETRYING => 'Job retrying',
             self::JOB_CANCELLED => 'Job cancelled',
             self::CLOCKIFY_SYNC_COMPLETED => 'Sync completed',
             self::CLOCKIFY_SYNC_FAILED => 'Sync failed',
@@ -52,7 +56,8 @@ enum NotificationType: string
             self::CLOCKIFY_SYNC_COMPLETED => NotificationPriority::SUCCESS,
             self::EXPORT_FAILED, self::IMPORT_FAILED, self::REPORT_FAILED,
             self::CLOCKIFY_SYNC_FAILED, self::BACKUP_FAILED => NotificationPriority::CRITICAL,
-            self::JOB_CANCELLED, self::BACKUP_UNHEALTHY => NotificationPriority::WARNING,
+            self::JOB_RETRYING, self::JOB_CANCELLED, self::BACKUP_UNHEALTHY => NotificationPriority::WARNING,
+            self::JOB_QUEUED => NotificationPriority::INFO,
         };
     }
 
@@ -70,11 +75,26 @@ enum NotificationType: string
             self::IMPORT_FAILED => 'file-x',
             self::REPORT_COMPLETED => 'file-text',
             self::REPORT_FAILED => 'file-x',
+            self::JOB_QUEUED => 'list-clock',
+            self::JOB_RETRYING => 'rotate-cw',
             self::JOB_CANCELLED => 'ban',
             self::CLOCKIFY_SYNC_COMPLETED => 'refresh-cw',
             self::CLOCKIFY_SYNC_FAILED => 'alert-triangle',
             self::BACKUP_FAILED => 'archive-x',
             self::BACKUP_UNHEALTHY => 'shield-alert',
+        };
+    }
+
+    /**
+     * The coarse category this type belongs to (PIPE-11), used for the
+     * preference grouping/muting.
+     */
+    public function category(): NotificationCategory
+    {
+        return match ($this) {
+            self::USER_INVITED => NotificationCategory::ACCOUNT,
+            self::SYSTEM_ANNOUNCEMENT, self::BACKUP_FAILED, self::BACKUP_UNHEALTHY => NotificationCategory::SYSTEM,
+            default => NotificationCategory::PIPELINE,
         };
     }
 

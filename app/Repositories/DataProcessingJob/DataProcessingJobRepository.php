@@ -200,4 +200,36 @@ class DataProcessingJobRepository implements DataProcessingJobRepositoryInterfac
 
         return $query->get();
     }
+
+    public function finishedRunsSince(CarbonInterface $since): Collection
+    {
+        return DataProcessingJob::query()
+            ->whereIn('status', [DataProcessingJobStatus::COMPLETED, DataProcessingJobStatus::FAILED])
+            ->where('completed_at', '>=', $since)
+            ->get(['id', 'status', 'started_at', 'completed_at', 'success_count', 'failure_reason']);
+    }
+
+    public function runsCreatedSince(CarbonInterface $since): int
+    {
+        return DataProcessingJob::query()
+            ->where('created_at', '>=', $since)
+            ->count();
+    }
+
+    public function recentRuns(int $limit): Collection
+    {
+        return DataProcessingJob::query()
+            ->orderByDesc('created_at')
+            ->limit(max(1, $limit))
+            ->get();
+    }
+
+    public function recentFailures(int $limit): Collection
+    {
+        return DataProcessingJob::query()
+            ->where('status', DataProcessingJobStatus::FAILED)
+            ->orderByDesc('completed_at')
+            ->limit(max(1, $limit))
+            ->get();
+    }
 }

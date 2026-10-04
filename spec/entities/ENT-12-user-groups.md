@@ -1,6 +1,6 @@
 # ENT-12 — User groups & members
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** ORG-01, ENT-00, ENT-02
@@ -46,10 +46,10 @@ clockify_user_group_members
 - Exposed via analytics.
 
 ## 7. Acceptance criteria
-- [ ] Groups and memberships sync idempotently.
-- [ ] Membership removals reflected after re-sync.
-- [ ] Unknown user ids handled without failing.
-- [ ] `composer check` passes.
+- [x] Groups and memberships sync idempotently.
+- [x] Membership removals reflected after re-sync.
+- [x] Unknown user ids handled without failing.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `UserGroupSyncHandlerTest` (`Http::fake()`): groups + member replace.
@@ -57,3 +57,18 @@ clockify_user_group_members
 ## 9. Notes & open questions
 - Classified `MVP / Phase 2` in TDR §9.3; implement in the reference phase but it
   may ship after the core MVP entities.
+- **Implemented notes:**
+  - `clockify_user_groups` (soft-deletable) + `ClockifyUserGroup` model/factory.
+    `team_managers` is stored as a **JSON array of Clockify user ids** on the
+    group (the TDR only defines a member join, not a manager join).
+  - `clockify_user_group_members` join (FKs to groups + users, cascade) +
+    `ClockifyUserGroupMember` model/factory; unique
+    `(organization_id, workspace_id, user_group_id, user_id)`.
+  - `UserGroupSyncHandler` (reference phase) paginates
+    `GET /workspaces/{ws}/user-groups`; `userIds[]` become the reserved
+    `user_clockify_ids` key (absent → members untouched, array → authoritative),
+    resolved and written by `UserGroupSyncRepository` via
+    `UserGroupMemberRepository` (delete–insert per group). Unknown user ids are
+    skipped.
+  - `UserGroupMemberRepositoryInterface` bound; `USER_GROUPS` registered in
+    `config/clockify.php` (already in the planner's reference order).

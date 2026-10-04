@@ -1,6 +1,6 @@
 # SYNC-02 — Plan-aware API usage accounting
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-01, CONN-02
@@ -65,19 +65,34 @@ rests on accurate, plan-aware accounting that every request path shares.
 - `GET /api/usage` (internal/resource) consumed by SYNC-17.
 
 ## 7. Acceptance criteria
-- [ ] Free connections consume the **hourly** window; paid use **per-second**.
-- [ ] `reserve()` is race-safe under concurrent jobs (no overrun past 90%).
-- [ ] When exhausted, the client waits and emits a budget-wait event instead of
+- [x] Free connections consume the **hourly** window; paid use **per-second**.
+- [x] `reserve()` is race-safe under concurrent jobs (no overrun past 90%).
+- [x] When exhausted, the client waits and emits a budget-wait event instead of
       hammering Clockify.
-- [ ] `snapshot()` is accurate to the DB and exposes `resets_in`.
-- [ ] `composer check` passes.
+- [x] `snapshot()` is accurate to the DB and exposes `resets_in`.
+- [x] `composer check` passes.
 
 ## 8. Tests
-- **Unit** `ApiUsageServiceTest`: window resolution by plan, reserve/record,
-  rollover, safety factor, concurrency via sequential reservations past limit.
-- **Feature** `ApiUsageIntegrationTest`: `Http::fake()` bursts respect the budget
-  and emit events.
+- **Unit** `ApiUsageServiceTest`: window resolution by plan, reserve up to the
+  safety margin, `canAfford` without spending, 429 exhaustion, configurable
+  factor.
+- **Feature** `ApiUsageIntegrationTest`: the client reserves/records, waits and
+  emits `ApiBudgetExhausted` on exhaustion, an unbound client never touches the
+  table, and `GET /api/usage` projects the window.
 
 ## 9. Notes & open questions
 - Free hourly windows make very large imports multi-hour; the orchestrator must
   schedule around window resets (SYNC-09/SYNC-20).
+- **Implemented deviations:**
+  - `reserve()` increments the window atomically (row lock in a service
+    transaction) and `record()` only stamps `last_request_at` / mirrors a 429 —
+    this avoids double-counting while keeping the "checks + reserves" contract.
+  - Budget-wait is surfaced as a plain domain event `ApiBudgetExhausted`
+    (carrying the snapshot); SYNC-14 maps it onto the PIPE `WARNING` /
+    `RETRY_SCHEDULED` stream, so the Clockify client never depends on the
+    pipeline UI.
+  - The client blocks up to `clockify.budget_wait_max_seconds` (default 3600);
+    SYNC-20 prevents reaching this by budget-gating dispatch.
+  - `GET /api/usage` (`api-usage.show`) + `ApiUsageResource` ship here as the
+    ready-made feed for SYNC-17; the per-connection override from CONN-09 will
+    layer onto `rateProfile()`.

@@ -1,6 +1,6 @@
 # ENT-02 — Users & workspace memberships
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** L
 - **Depends on:** ORG-01, ENT-00
@@ -59,11 +59,11 @@ clockify_memberships
 - User dimension exposed via report/dashboard resources (REP/DASH).
 
 ## 7. Acceptance criteria
-- [ ] All workspace users are synced with status, timezone, capacity, working
+- [x] All workspace users are synced with status, timezone, capacity, working
       days.
-- [ ] Workspace rates are preserved historically (not overwritten blindly).
-- [ ] Re-sync is idempotent.
-- [ ] `composer check` passes.
+- [x] Workspace rates are preserved historically (not overwritten blindly).
+- [x] Re-sync is idempotent.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `UserSyncHandlerTest` + `MembershipSyncHandlerTest` (`Http::fake()`);
@@ -72,3 +72,26 @@ clockify_memberships
 ## 9. Notes & open questions
 - `memberships` object schema isn't fully documented; derive what we can and
   store raw. Confirm rate-history requirement with product.
+- **Implemented notes:**
+  - `clockify_users` (soft-deleted, org-owned) + `clockify_memberships` tables,
+    models, factories and casts. `ClockifyUserStatus` and `ClockifyMembershipType`
+    are enums.
+  - Memberships are **derived in the `USER` handler** from
+    `GET /workspaces/{ws}/users?memberships=ALL`: there is no `MEMBERSHIP`
+    entity type, so re-fetching users for a separate job would be wasteful.
+    `UserSyncRepository` writes the user, then hands the reserved `memberships`
+    list to `ClockifyMembershipRepository`. ENT-02 owns workspace memberships
+    only; project/user-group rows land in ENT-04/ENT-12.
+  - `work_capacity` stores **parsed seconds** (`Iso8601Duration`, e.g. `PT7H30M`
+    → `27000`); `working_days` is parsed from the JSON string; status/capacity
+    are optional and tolerant.
+  - Rate history: membership rows are keyed by target + `effective_from`, so a
+    rate that starts at a new `since` appends a row; a null `effective_from`
+    updates the single current row.
+  - `UpsertsByClockifyId` now queries without the `SoftDeletingScope`, so a
+    re-sync finds a soft-deleted row and restores it instead of colliding on the
+    natural key. (Users need `deleted_at` fillable for the restore fill to
+    apply.)
+  - Deletion of relationships remains out of scope here (full-snapshot sync
+    treats absence as "not a deletion", SYNC-08); explicit deletes arrive with
+    SYNC-07/ENT-13.

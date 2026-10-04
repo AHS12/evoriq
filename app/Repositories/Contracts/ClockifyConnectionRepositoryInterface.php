@@ -22,6 +22,20 @@ interface ClockifyConnectionRepositoryInterface
     public function findActive(?int $organizationId = null): ?ClockifyConnection;
 
     /**
+     * Whether any connection exists (any status). Used to enforce the
+     * single-connection MVP limit.
+     */
+    public function hasAny(): bool;
+
+    /**
+     * Every active connection the scheduler may sync; disabled/invalid
+     * connections are excluded (CONN-06).
+     *
+     * @return Collection<int, ClockifyConnection>
+     */
+    public function allActive(?int $organizationId = null): Collection;
+
+    /**
      * @return Builder<ClockifyConnection>
      */
     public function buildFilterQuery(ConnectionFilterDTO $filters): Builder;

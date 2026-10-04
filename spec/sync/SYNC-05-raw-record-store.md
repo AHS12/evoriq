@@ -1,6 +1,6 @@
 # SYNC-05 — Raw record store
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-01
@@ -51,16 +51,23 @@ This is our recovery layer and a prerequisite for safe, re-runnable imports.
 - None.
 
 ## 7. Acceptance criteria
-- [ ] Every fetched page's payloads are persisted with a stable hash.
-- [ ] Unchanged payloads do not create new writes (hash dedupe).
-- [ ] Records are keyed and unique by org/workspace/entity/clockify id.
-- [ ] `composer check` passes.
+- [x] Every fetched page's payloads are persisted with a stable hash.
+- [x] Unchanged payloads do not create new writes (hash dedupe).
+- [x] Records are keyed and unique by org/workspace/entity/clockify id.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `RawRecordStoreTest`: put/dedupe/hash, putMany, delete-for.
-- **Feature** `RawRecordPersistenceTest`: after a sync run, raw rows exist and
-  match the faked payloads.
+- **Feature** `RawRecordPersistenceTest`: after a paginated fetch, raw rows
+  exist and match the faked payloads.
 
 ## 9. Notes & open questions
 - Storage growth: raw records are the largest table; confirm compression/
   pruning defaults in OPS-03 before production.
+- **Implemented:** the org is derived from the workspace (`workspace.organization_id`)
+  rather than passed separately — a workspace is org-owned, so this is
+  unambiguous and keeps the call sites (`SyncJobRunner`) simple. `putMany` loads
+  the page's existing hashes in one query and batch-upserts only changed rows via
+  `Model::upsert`. `RawRecordSource` (api/webhook/change_feed) is an enum; the
+  `prune` repository method + `clockify.raw_records.retention_days` config are the
+  retention hook OPS-03 will execute.

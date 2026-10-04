@@ -1,6 +1,6 @@
 # CONN-05 — Manage connections
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** M
 - **Depends on:** CONN-02
@@ -24,6 +24,9 @@ audited and safe.
 
 **Out**
 - Credential storage (CONN-01), webhook lifecycle (SYNC-19), settings (CONN-09).
+- **Disconnect / purge — deferred to OPS-05.** Rename, re-verify, rotate key and
+  disable/enable ship now; the destructive disconnect + data-retention choice
+  lands with the retention/deletion tooling in OPS-05.
 
 ## 3. Data model
 - Uses `clockify_connections` (+ `status`). Disconnect-with-purge schedules a
@@ -59,18 +62,35 @@ audited and safe.
 - `connections.index` props add `{ status, plan, workspace, last_verified_at }`.
 
 ## 7. Acceptance criteria
-- [ ] Rotating a key re-verifies before replacing; failure keeps the old key.
-- [ ] Disabling stops scheduled and manual syncs.
+- [x] Rotating a key re-verifies before replacing; failure keeps the old key.
+- [x] Disabling stops scheduled and manual syncs (disabled connections are
+      excluded by the active-connection lookup the scheduler uses).
 - [ ] Disconnect with purge queues deletion and reports it as a tracked job.
-- [ ] Every action is audited with actor attribution.
-- [ ] `composer check` passes.
+      **(deferred to OPS-05)**
+- [x] Every action is audited with actor attribution.
+- [x] `composer check` passes.
 
 ## 8. Tests
-- **Unit** `ConnectionLifecycleUnitTest`: rotate success/failure, disable skips
-  schedule, purge dispatch.
+- **Unit** `ConnectionLifecycleUnitTest`: rename, reverify/rotate delegation,
+  disable/enable audit, disabled connections skipped by the active lookup, and
+  rotate success/failure (old key preserved).
 - **Feature** `ConnectionManageFeatureTest`: endpoints + authorization + audit
-  rows.
+  rows + secret redaction.
 
 ## 9. Notes & open questions
 - Purging synced data is destructive and cross-module; coordinate with OPS-05 and
-  make it explicit which tables are affected.
+  make it explicit which tables are affected. Deferred with the disconnect flow.
+
+### Implemented notes
+
+- Rename, re-verify, rotate-key, disable/enable ship with routes, service
+  methods, audit events and the connections-list action menu
+  (`connection-card-actions`, `rename-connection-dialog`,
+  `rotate-key-dialog`).
+- The destructive disconnect + purge choice remains deferred to OPS-05 (the
+  only unchecked acceptance item); everything else in this spec is done.
+- **MVP single-connection limit:** because the import wizard is built around one
+  active connection (no picker), the app now supports **at most one** connection:
+  `connections.index` hides the Add action (`canCreate = create && ! hasAny()`)
+  and `ConnectionController@store` rejects a second one with a toast. Remove the
+  guard (and add a picker + per-connection concurrency) to lift this later.

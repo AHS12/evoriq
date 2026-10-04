@@ -22,6 +22,7 @@ export type NotificationPreferences = {
     sound: boolean;
     desktop: boolean;
     muted_types: string[];
+    muted_categories: string[];
 };
 
 export type NotificationSummary = {
@@ -33,6 +34,13 @@ export type NotificationSummary = {
 export type NotificationTypeOption = {
     value: string;
     label: string;
+    category: string;
+};
+
+export type NotificationCategoryOption = {
+    value: string;
+    label: string;
+    description: string;
 };
 
 export type NotificationPriorityOption = {

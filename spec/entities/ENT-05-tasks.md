@@ -1,6 +1,6 @@
 # ENT-05 — Tasks
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** ORG-01, ENT-00, ENT-04
@@ -44,10 +44,10 @@ clockify_tasks
 - Exposed via report resources.
 
 ## 7. Acceptance criteria
-- [ ] All tasks per project sync with status and assignee.
-- [ ] ISO-8601 duration parsed correctly.
-- [ ] Re-sync idempotent; project parent resolved.
-- [ ] `composer check` passes.
+- [x] All tasks per project sync with status and assignee.
+- [x] ISO-8601 duration parsed correctly.
+- [x] Re-sync idempotent; project parent resolved.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `TaskSyncHandlerTest` (`Http::fake()`): nested per-project paging,
@@ -56,3 +56,23 @@ clockify_tasks
 ## 9. Notes & open questions
 - Tasks are nested by project, so task sync cost scales with project count;
   planner accounts for this.
+- **Implemented notes:**
+  - `clockify_tasks` (soft-deletable, project FK required, assignee FK) +
+    `ClockifyTask` model/factory/casts.
+  - Nested pagination: the runner's flat `page` counter does not map onto
+    (project × page), so `TaskSyncHandler::fetchPage()` overrides the base
+    single-page fetch — it iterates the workspace's already-synced projects
+    (via `ClockifyProjectRepositoryInterface`) and paginates the tasks endpoint
+    per project (`ClockifyClient::paginate`), aggregating the whole reference
+    set on the first call (subsequent calls complete the job). The trade-off is
+    that a task snapshot is written in one page-transaction rather than being
+    resumable mid-snapshot; acceptable for a reference dimension.
+  - `AbstractSyncHandler::endpoint()` is now a concrete method that throws by
+    default, so handlers that override `fetchPage()` (this nested case) are not
+    forced to declare an endpoint.
+  - `TaskSyncRepository` resolves reserved `project_clockify_id` /
+    `assignee_clockify_id` keys to internal ids in a batch (targeted ENT-15);
+    tasks with an unresolvable project are skipped (the FK is required). The
+    handler also maps `hourlyRate`/`costRate` (workspace-currency fallback).
+  - `estimated_hours` is parsed from `estimate`/`duration` ISO-8601 (or a
+    numeric `estimatedHours`) via `Iso8601Duration`.

@@ -6,6 +6,7 @@ use App\DTOs\Connection\ConnectionVerificationResult;
 use App\Enums\ApiErrorCode;
 use App\Enums\ApiRegion;
 use App\Enums\AuditEvent;
+use App\Enums\AuditLogName;
 use App\Enums\ConnectionStatus;
 use App\Models\ClockifyConnection;
 use App\Repositories\Contracts\ClockifyConnectionRepositoryInterface;
@@ -71,14 +72,90 @@ class ConnectionVerifier
             return $this->fail($connection, $probe['error']);
         }
 
-        $default = $probe['default'];
-        $profile = PlanProfile::fromWorkspace($default);
-        $subdomain = $this->resolveSubdomain($connection, $default);
-        $reportsBaseUrl = $connection->region->reportsBaseUrlFor($subdomain);
-        $activeId = $probe['active_id'];
+        $persisted = $this->persist($connection, $probe);
 
-        $persisted = DB::transaction(function () use ($connection, $default, $profile, $activeId, $subdomain, $reportsBaseUrl, $probe): ClockifyConnection {
+        $this->audit->record(
+            AuditEvent::CONNECTION_VERIFIED,
+            $persisted,
+            ['plan' => PlanProfile::fromWorkspace($probe['default'])->plan, 'workspaces' => count($probe['workspaces'])],
+            actor: auth()->user(),
+            description: __('Clockify connection verified'),
+        );
+
+        return $this->result($persisted, $probe);
+    }
+
+    /**
+     * Rotate a connection's credentials (CONN-05): probe the new key first and
+     * only replace the stored credentials once it verifies. A failed probe
+     * leaves the existing (working) key untouched.
+     */
+    public function rotate(
+        ClockifyConnection $connection,
+        string $apiKey,
+        ?string $addonToken,
+        ApiRegion $region,
+        ?string $subdomain,
+    ): ConnectionVerificationResult {
+        $probe = $this->probe($apiKey, $addonToken, $region->baseUrl(), (string) $connection->id);
+
+        if (! $probe['ok'] || $probe['default'] === null) {
+            $this->audit->record(
+                AuditEvent::CONNECTION_VALIDATION_FAILED,
+                $connection,
+                ['action' => 'rotate_key', 'code' => $probe['error']['code']->value],
+                actor: auth()->user(),
+                channel: AuditLogName::SECURITY,
+                description: __('Clockify connection key rotation failed'),
+            );
+
+            return ConnectionVerificationResult::failure(
+                $probe['error']['code'],
+                $probe['error']['message'],
+                $probe['error']['retry_after'],
+            );
+        }
+
+        $persisted = $this->persist($connection, $probe, [
+            'api_key' => $apiKey,
+            'addon_token' => $addonToken,
+            'region' => $region->value,
+            'base_url' => $region->baseUrl(),
+            'subdomain' => $subdomain,
+        ]);
+
+        $this->audit->record(
+            AuditEvent::CONNECTION_KEY_ROTATED,
+            $persisted,
+            ['plan' => PlanProfile::fromWorkspace($probe['default'])->plan],
+            actor: auth()->user(),
+            channel: AuditLogName::SECURITY,
+            description: __('Clockify connection key rotated'),
+        );
+
+        return $this->result($persisted, $probe);
+    }
+
+    /**
+     * Persist a successful probe: profile, endpoints, active workspace and the
+     * discovered workspaces. Optional overrides carry rotated credentials.
+     *
+     * @param  array{ok: bool, error: array{code: ApiErrorCode, message: string, retry_after: int|null}, user: array<string, mixed>, workspaces: array<int, array<string, mixed>>, active_id: string|null, default: array<string, mixed>|null}  $probe
+     * @param  array<string, mixed>  $overrides
+     */
+    private function persist(ClockifyConnection $connection, array $probe, array $overrides = []): ClockifyConnection
+    {
+        $default = (array) $probe['default'];
+        $profile = PlanProfile::fromWorkspace($default);
+        $activeId = $probe['active_id'];
+        $subdomain = $overrides['subdomain'] ?? $this->resolveSubdomain($connection, $default);
+        $region = isset($overrides['region']) ? ApiRegion::from((string) $overrides['region']) : $connection->region;
+
+        unset($overrides['subdomain']);
+
+        return DB::transaction(function () use ($connection, $default, $profile, $activeId, $subdomain, $region, $overrides, $probe): ClockifyConnection {
             $updated = $this->connections->update($connection, [
+                ...$overrides,
                 'status' => ConnectionStatus::ACTIVE->value,
                 'last_verified_at' => now(),
                 'last_error' => null,
@@ -89,23 +166,26 @@ class ConnectionVerifier
                 'requests_per_second' => $profile->requestsPerSecond,
                 'workspace_id' => $activeId,
                 'subdomain' => $subdomain,
-                'reports_base_url' => $reportsBaseUrl,
+                'base_url' => $region->baseUrl(),
+                'reports_base_url' => $region->reportsBaseUrlFor($subdomain),
             ]);
 
             $this->workspaces->syncFromConnection($updated, $probe['workspaces'], $activeId);
 
             return $updated;
         });
+    }
 
-        $this->audit->record(
-            AuditEvent::CONNECTION_VERIFIED,
-            $persisted,
-            ['plan' => $profile->plan, 'workspaces' => count($probe['workspaces'])],
-            actor: auth()->user(),
-            description: __('Clockify connection verified'),
-        );
+    /**
+     * Build the credential-free success result for a persisted probe.
+     *
+     * @param  array{ok: bool, error: array{code: ApiErrorCode, message: string, retry_after: int|null}, user: array<string, mixed>, workspaces: array<int, array<string, mixed>>, active_id: string|null, default: array<string, mixed>|null}  $probe
+     */
+    private function result(ClockifyConnection $connection, array $probe): ConnectionVerificationResult
+    {
+        $profile = PlanProfile::fromWorkspace((array) $probe['default']);
 
-        $workspaces = $this->workspaces->forConnection($persisted)
+        $workspaces = $this->workspaces->forConnection($connection)
             ->map(fn ($workspace): array => [
                 'id' => $workspace->id,
                 'clockify_id' => $workspace->clockify_id,

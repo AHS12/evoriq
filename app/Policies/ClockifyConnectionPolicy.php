@@ -28,12 +28,44 @@ class ClockifyConnectionPolicy
 
     public function update(User $user, ClockifyConnection $connection): bool
     {
-        return $this->hasAny($user, ['connection.update', 'connection.credentials.update']);
+        return $this->manage($user);
+    }
+
+    public function reverify(User $user, ClockifyConnection $connection): bool
+    {
+        return $this->manage($user);
+    }
+
+    public function disable(User $user, ClockifyConnection $connection): bool
+    {
+        return $this->manage($user);
+    }
+
+    public function enable(User $user, ClockifyConnection $connection): bool
+    {
+        return $this->manage($user);
+    }
+
+    /**
+     * Rotating the API key is a credential action: it needs the dedicated
+     * `connection.credentials.update` grant (CONN-06).
+     */
+    public function rotateKey(User $user, ClockifyConnection $connection): bool
+    {
+        return $this->hasAny($user, ['connection.credentials.update']);
     }
 
     public function delete(User $user, ClockifyConnection $connection): bool
     {
         return $this->hasAny($user, ['connection.delete']);
+    }
+
+    /**
+     * Any grant that may manage a connection's non-credential lifecycle.
+     */
+    private function manage(User $user): bool
+    {
+        return $this->hasAny($user, ['connection.update', 'connection.credentials.update']);
     }
 
     /**

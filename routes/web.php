@@ -19,6 +19,7 @@ require __DIR__.'/notifications.php';
 require __DIR__.'/activity.php';
 require __DIR__.'/audit.php';
 require __DIR__.'/connection.php';
+require __DIR__.'/sync.php';
 require __DIR__.'/exports.php';
 require __DIR__.'/files.php';
 require __DIR__.'/users.php';

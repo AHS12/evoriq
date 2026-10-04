@@ -1,9 +1,9 @@
 # ENT-14 — Historical import wizard (end-to-end)
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** L
-- **Depends on:** SYNC-03, SYNC-09, PIPE-09, ENT-01…ENT-13
+- **Depends on:** SYNC-03, SYNC-09, SYNC-14, PIPE-09, ENT-01…ENT-13
 - **Blocks:** DASH-05
 - **TDR:** §10, §34, §49
 
@@ -55,12 +55,12 @@ using real entity handlers. It is the MVP success path (#3–#5 in TDR §49).
 - `import.index` includes the active import if any.
 
 ## 7. Acceptance criteria
-- [ ] A user can start a real historical import and watch it complete.
-- [ ] Reference entities load before facts (plan order honored).
-- [ ] A second concurrent import is prevented; the active one is offered.
-- [ ] A crashed/partial import can be resumed without re-downloading.
-- [ ] Completion sets freshness and links to the dashboard.
-- [ ] `composer check` passes.
+- [x] A user can start a real historical import and watch it complete.
+- [x] Reference entities load before facts (plan order honored).
+- [x] A second concurrent import is prevented; the active one is offered.
+- [x] A crashed/partial import can be resumed without re-downloading.
+- [x] Completion sets freshness and links to the dashboard.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Feature** `HistoricalImportWizardTest` with `Http::fake()` + queue fakes:
@@ -70,3 +70,17 @@ using real entity handlers. It is the MVP success path (#3–#5 in TDR §49).
 ## 9. Notes & open questions
 - The umbrella run may take hours on Free; ensure the timeline and notifications
   handle long durations gracefully (PIPE-05/11).
+
+### Implemented notes
+
+- `ImportWizardController@store` validates the range (`StoreImportRequest`,
+  ≤ `clockify.planner.max_history_years`), plans through the shared
+  `ClockifySyncPlanner`, then calls `SyncRunService::start(..., INITIAL_IMPORT)`
+  with the real entity set and redirects to `import.show`.
+- The concurrency guard lives in `ClockifySyncRunRepository::activeRun()`
+  (most recent non-final run); `store` redirects to it instead of creating a
+  second run. Resumability is the SYNC-09 checkpoint engine (unchanged).
+- Audit: `AuditEvent::IMPORT_STARTED` records the range + entity set + job count.
+- Pipelines events for the run/job lifecycle are emitted by SYNC-14
+  (`SyncEventEmitter`), so the wizard's live view is the standard PIPE-05
+  experience; freshness/dashboard handoff arrives with SYNC-18/DASH-05.

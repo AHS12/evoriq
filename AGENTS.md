@@ -68,7 +68,7 @@ Run **`composer check`** before considering any task complete. It runs:
 - `npm run check` — frontend format + lint (`vp check`)
 - `npm run types:check` — TypeScript compiler
 - `npm run test` — frontend unit/component tests (`vp test` / Vitest)
-- `composer test` — Pint, PHPStan/Larastan and Pest
+- `composer test` — Pint, PHPStan/Larastan and Pest (parallel)
 
 Auto-fix formatting and lint issues with `composer check:fix`.
 
@@ -79,7 +79,7 @@ Auto-fix formatting and lint issues with `composer check:fix`.
 | Format PHP (fix)           | `composer lint`             |
 | Check PHP formatting       | `composer lint:check`       |
 | PHP static analysis        | `composer types:check`      |
-| PHP tests                  | `php artisan test`          |
+| PHP tests                  | `php artisan test --parallel` |
 | PHP gate only              | `composer test`             |
 | Frontend format + lint     | `npm run check`             |
 | TypeScript type check      | `npm run types:check`       |

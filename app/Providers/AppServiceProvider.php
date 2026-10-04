@@ -5,9 +5,13 @@ namespace App\Providers;
 use App\Listeners\Audit\AuthAuditSubscriber;
 use App\Listeners\Backup\RecordBackupFailure;
 use App\Listeners\Backup\RecordBackupSuccess;
+use App\Services\Clockify\ChangeFeed\ClockifyEntityChangesFeed;
 use App\Services\Clockify\ClockifyClient;
 use App\Services\Clockify\ClockifyPaginator;
 use App\Services\Clockify\ClockifyRateLimiter;
+use App\Services\Sync\ApiUsageService;
+use App\Services\Sync\Contracts\ChangeFeed;
+use App\Services\Sync\SyncHandlerRegistry;
 use App\Support\OrganizationContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\DevCommands;
@@ -28,6 +32,19 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->registerClockifyServices();
         $this->registerOrganizationContext();
+        $this->registerSyncServices();
+    }
+
+    /**
+     * Register the sync handler registry as a shared singleton so every
+     * entity spec can register its handler once (SYNC-04, ENT-00).
+     */
+    protected function registerSyncServices(): void
+    {
+        $this->app->singleton(SyncHandlerRegistry::class);
+
+        // The experimental Clockify change feed is swappable behind a contract.
+        $this->app->bind(ChangeFeed::class, ClockifyEntityChangesFeed::class);
     }
 
     /**
@@ -58,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(ClockifyClient::class, fn ($app): ClockifyClient => new ClockifyClient(
             $app->make(ClockifyRateLimiter::class),
             $app->make(ClockifyPaginator::class),
+            $app->make(ApiUsageService::class),
             config('clockify'),
         ));
     }
@@ -68,10 +86,19 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->registerSyncHandlers();
         $this->configureDevCommands();
         $this->configureAudit();
         $this->configureBackup();
         $this->configureTranslations();
+    }
+
+    /**
+     * Bind every entity handler declared in config (ENT-00).
+     */
+    protected function registerSyncHandlers(): void
+    {
+        $this->app->make(SyncHandlerRegistry::class)->registerFromConfig();
     }
 
     /**
@@ -102,7 +129,8 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
-     * Make `composer run dev` consume every queue channel locally.
+     * Make `composer run dev` consume every queue channel locally and run the
+     * scheduler, so background resumes (SYNC-13/20) work without extra setup.
      */
     protected function configureDevCommands(): void
     {
@@ -114,6 +142,8 @@ class AppServiceProvider extends ServiceProvider
             'queue:listen --queue=critical,default,heavy --tries=1 --timeout=0',
             'queue',
         );
+
+        DevCommands::artisan('schedule:work', 'schedule');
     }
 
     /**

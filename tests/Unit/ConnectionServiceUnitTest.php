@@ -8,9 +8,9 @@ use App\Models\ClockifyConnection;
 use App\Repositories\Contracts\ClockifyConnectionRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\Connection\ClockifyConnectionService;
+use App\Services\Connection\ConnectionVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -19,8 +19,9 @@ beforeEach(function () {
     $this->repository = Mockery::mock(ClockifyConnectionRepositoryInterface::class);
     $this->audit = Mockery::mock(AuditLogService::class);
     $this->audit->shouldReceive('record')->byDefault();
+    $this->verifier = Mockery::mock(ConnectionVerifier::class);
 
-    $this->service = new ClockifyConnectionService($this->repository, $this->audit);
+    $this->service = new ClockifyConnectionService($this->repository, $this->audit, $this->verifier);
 });
 
 afterEach(function () {

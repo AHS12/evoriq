@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Connection\ConnectionStatusResource;
 use App\Repositories\Contracts\UserRepositoryInterface;
+use App\Services\Connection\ConnectionStatusService;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -11,17 +14,23 @@ class DashboardController extends Controller
 {
     public function __construct(
         private readonly UserRepositoryInterface $users,
+        private readonly ConnectionStatusService $status,
     ) {}
 
     /**
      * Show the dashboard shell.
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $connection = $this->status->forOrganization();
+
         return Inertia::render('dashboard', [
             'stats' => $this->stats(),
             'setup' => $this->setupChecklist(),
             'hasAnalytics' => false,
+            'connectionStatus' => $connection !== null
+                ? ConnectionStatusResource::make($connection)->resolve($request)
+                : null,
         ]);
     }
 

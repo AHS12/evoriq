@@ -69,6 +69,12 @@ class PipelineEventRecorder
             organizationId: $this->normalizeOrganizationId($options['organization_id'] ?? null),
         );
 
+        if ($this->shouldDropForCap($dto)) {
+            $this->recordCapWarning($dto);
+
+            return;
+        }
+
         $this->store($dto);
     }
 
@@ -265,6 +271,60 @@ class PipelineEventRecorder
         $options['organization_id'] ??= $this->organizationIdOf($run);
 
         $this->record($run->pipelineRunType(), $run->pipelineRunId(), $event, $options);
+    }
+
+    /**
+     * Whether an event should be dropped because the run has hit its per-run
+     * cap. Only noise (progress/debug/info) is dropped; stage, warning, error
+     * and terminal events always persist.
+     */
+    private function shouldDropForCap(PipelineEventDTO $dto): bool
+    {
+        $cap = (int) config('pipeline.max_events_per_run', 0);
+
+        if ($cap <= 0 || $this->isCapWarning($dto)) {
+            return false;
+        }
+
+        if ($this->repository->countForRun($dto->runType, $dto->runId) < $cap) {
+            return false;
+        }
+
+        return $dto->type === PipelineEventType::PROGRESS
+            || $dto->level === PipelineEventLevel::DEBUG
+            || $dto->level === PipelineEventLevel::INFO;
+    }
+
+    private function isCapWarning(PipelineEventDTO $dto): bool
+    {
+        return $dto->type === PipelineEventType::WARNING
+            && ($dto->context['event_cap'] ?? false) === true;
+    }
+
+    /**
+     * Record the single "cap reached" warning, unless the latest event is
+     * already that warning.
+     */
+    private function recordCapWarning(PipelineEventDTO $dto): void
+    {
+        $last = $this->repository->latestForRun($dto->runType, $dto->runId);
+
+        if ($last !== null
+            && $last->type === PipelineEventType::WARNING
+            && ($last->context['event_cap'] ?? false) === true) {
+            return;
+        }
+
+        $this->store(new PipelineEventDTO(
+            runType: $dto->runType,
+            runId: $dto->runId,
+            type: PipelineEventType::WARNING,
+            level: PipelineEventLevel::WARNING,
+            message: __('Event cap reached — further progress events for this run are not stored.'),
+            context: ['event_cap' => true, 'max_events' => (int) config('pipeline.max_events_per_run', 0)],
+            attempt: $dto->attempt,
+            organizationId: $dto->organizationId,
+        ));
     }
 
     /**

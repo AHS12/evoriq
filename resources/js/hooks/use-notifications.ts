@@ -9,6 +9,7 @@ const FALLBACK: NotificationSummary = {
         sound: true,
         desktop: false,
         muted_types: [],
+        muted_categories: [],
     },
 };
 

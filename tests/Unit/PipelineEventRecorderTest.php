@@ -7,7 +7,6 @@ use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use App\Services\Pipeline\PipelineEventRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -41,6 +40,7 @@ beforeEach(function () {
     $this->repository->shouldReceive('nextSequence')->andReturn(1)->byDefault();
     $this->repository->shouldReceive('append')->andReturn(new PipelineEvent)->byDefault();
     $this->repository->shouldReceive('latestProgressForRun')->andReturn(null)->byDefault();
+    $this->repository->shouldReceive('countForRun')->andReturn(0)->byDefault();
 
     $this->recorder = new PipelineEventRecorder($this->repository);
 });

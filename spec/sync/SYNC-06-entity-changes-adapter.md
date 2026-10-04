@@ -1,6 +1,6 @@
 # SYNC-06 — Entity Changes adapter
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-01
@@ -59,11 +59,11 @@ behind a swappable adapter.
 - None.
 
 ## 7. Acceptance criteria
-- [ ] Created/updated/deleted changes are fetched and recorded for a range.
-- [ ] Both documented `deleted` response shapes are handled.
-- [ ] Pagination by `page`/`limit` works and stops at the end.
-- [ ] The adapter can be replaced without touching callers.
-- [ ] `composer check` passes.
+- [x] Created/updated/deleted changes are fetched and recorded for a range.
+- [x] Both documented `deleted` response shapes are handled.
+- [x] Pagination by `page`/`limit` works and stops at the end.
+- [x] The adapter can be replaced without touching callers.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ClockifyEntityChangesFeedTest` with fixtures for the two deleted
@@ -74,3 +74,17 @@ behind a swappable adapter.
 - Only `TIME_ENTRY`, `TIME_ENTRY_RATE`, `TIME_ENTRY_CUSTOM_FIELD_VALUE` are
   documented stable; treat others as best-effort and reconcile via snapshots
   (SYNC-10) when uncertain.
+- **Implemented notes:**
+  - `since()` fetches page N of all three endpoints (`created`/`updated`/
+    `deleted`) for one type and merges them into one page, tagging each item with
+    its `changeType`; `hasMore` is inferred from any endpoint returning a full
+    `limit` page. A `page` argument was added to the contract so callers loop.
+  - `clockify_entity_changes` gained a unique index on
+    `(org, workspace, entity_type, clockify_id, change_type, source_at)` so
+    `EntityChangeRecorder` can batch-upsert idempotently (the recorder defaults a
+    missing `source_at` to the detection time).
+  - The "last scan time" checkpoint lives in
+    `clockify_workspaces.change_feed_cursor_at` with
+    `ClockifyWorkspaceRepository::advanceChangeFeedCursor` (SYNC-11 consumes it).
+  - `ChangeFeed` is bound to `ClockifyEntityChangesFeed`; the config flag
+    `clockify.change_feed.enabled` short-circuits the feed to an empty page.

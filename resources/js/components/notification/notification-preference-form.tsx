@@ -11,7 +11,11 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import type { NotificationPreferences, NotificationTypeOption } from '@/types';
+import type {
+    NotificationCategoryOption,
+    NotificationPreferences,
+    NotificationTypeOption,
+} from '@/types';
 
 type FormDefinition = {
     action: string;
@@ -23,11 +27,13 @@ type PreferenceData = {
     sound: boolean;
     desktop: boolean;
     muted_types: string[];
+    muted_categories: string[];
 };
 
 type Props = {
     preferences: NotificationPreferences;
     types: NotificationTypeOption[];
+    categories: NotificationCategoryOption[];
     action: FormDefinition;
 };
 
@@ -56,6 +62,7 @@ const TOGGLES: {
 export function NotificationPreferenceForm({
     preferences,
     types,
+    categories,
     action,
 }: Props) {
     const { t } = useTranslation();
@@ -64,6 +71,7 @@ export function NotificationPreferenceForm({
         sound: preferences.sound,
         desktop: preferences.desktop,
         muted_types: preferences.muted_types,
+        muted_categories: preferences.muted_categories,
     });
     const [saving, setSaving] = useState(false);
     const [desktopBlocked, setDesktopBlocked] = useState(
@@ -131,6 +139,16 @@ export function NotificationPreferenceForm({
         persist(next);
     };
 
+    const toggleCategory = (value: string, muted: boolean): void => {
+        const muted_categories = muted
+            ? [...data.muted_categories, value]
+            : data.muted_categories.filter((category) => category !== value);
+
+        const next = { ...data, muted_categories };
+        setData(next);
+        persist(next);
+    };
+
     return (
         <div className="space-y-6">
             <Card>
@@ -170,6 +188,47 @@ export function NotificationPreferenceForm({
                                     settings, then toggle this switch again.
                                 </p>
                             )}
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>{t('Categories')}</CardTitle>
+                    <CardDescription>
+                        {t(
+                            'Muting a category stops those notifications from being created at all.',
+                        )}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {categories.map((category) => (
+                        <div
+                            key={category.value}
+                            className="flex items-center justify-between gap-4"
+                        >
+                            <div className="space-y-0.5">
+                                <Label htmlFor={`category-${category.value}`}>
+                                    {t(category.label)}
+                                </Label>
+                                <p className="text-sm text-muted-foreground">
+                                    {t(category.description)}
+                                </p>
+                            </div>
+                            <Switch
+                                id={`category-${category.value}`}
+                                checked={data.muted_categories.includes(
+                                    category.value,
+                                )}
+                                disabled={saving}
+                                onCheckedChange={(checked) =>
+                                    toggleCategory(
+                                        category.value,
+                                        checked === true,
+                                    )
+                                }
+                            />
                         </div>
                     ))}
                 </CardContent>

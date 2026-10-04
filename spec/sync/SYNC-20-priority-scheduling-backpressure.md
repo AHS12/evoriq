@@ -1,6 +1,6 @@
 # SYNC-20 — Priority, scheduling & backpressure
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-02, SYNC-09
@@ -59,12 +59,12 @@ bypass the rate limiter.
 - None.
 
 ## 7. Acceptance criteria
-- [ ] Manual/webhook work always precedes daily, which precedes reconciliation.
-- [ ] No job starts if the current window cannot afford it; it defers instead.
-- [ ] Deferred work resumes automatically at window reset.
-- [ ] Concurrency cap is respected.
-- [ ] No code path reaches Clockify without the limiter/budget.
-- [ ] `composer check` passes.
+- [x] Manual/webhook work always precedes daily, which precedes reconciliation.
+- [x] No job starts if the current window cannot afford it; it defers instead.
+- [x] Deferred work resumes automatically at window reset.
+- [x] Concurrency cap is respected.
+- [x] No code path reaches Clockify without the limiter/budget.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `SyncPriorityTest`: ordering, channel mapping, starvation rules.
@@ -74,3 +74,25 @@ bypass the rate limiter.
 ## 9. Notes & open questions
 - Reconcile the TDR's HIGH/NORMAL/LOW with the project's
   `critical/default/heavy` channels (this spec is the resolution point).
+
+### Implemented notes
+
+- **Channel mapping:** `SyncPriority::queue()` → `high`→`critical`,
+  `normal`→`default`, `low`→`heavy`. Workers drain those channels in order, so
+  manual/webhook work precedes daily, which precedes reconciliation.
+- **Deviation — timeout/retries:** sync jobs keep the **heavy** channel's
+  timeout and always run with `tries = 1`, because retries are owned by
+  SYNC-13's `SyncRetryPolicy` (a queue attempt count > 1 would double-retry and
+  bypass the attempt counter). Priority therefore affects the *channel/ordering*
+  only, not the job's retry/timeout budget.
+- **Budget gate:** `SyncRunService::dispatchPending()` still refuses to dispatch
+  when `ApiUsageService::canAfford()` is false and schedules a resume at the
+  window reset; the runner additionally parks a job that hits the limit mid-page
+  (SYNC-13).
+- **Starvation avoidance:** a `low` run only starts when no `high`/`normal` run
+  is active (`hasActiveHigherPriority`) and the window is at least
+  `clockify.sync_job.low_priority_min_free_ratio` (20%) free. Otherwise it
+  defers to the next window.
+- **Concurrency:** `clockify.sync_concurrency` bounds in-flight jobs per wave.
+- **Never bypass:** every request flows through `ClockifyClient` →
+  `ApiUsageService`; there is no direct HTTP path.

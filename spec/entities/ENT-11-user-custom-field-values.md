@@ -1,6 +1,6 @@
 # ENT-11 — User custom field values
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** S
 - **Depends on:** ORG-01, ENT-00, ENT-02, ENT-09
@@ -39,9 +39,9 @@ clockify_user_custom_field_values
 - Exposed via analytics.
 
 ## 7. Acceptance criteria
-- [ ] User custom field values sync with correct JSON values.
-- [ ] Re-sync idempotent; removals reflected.
-- [ ] `composer check` passes.
+- [x] User custom field values sync with correct JSON values.
+- [x] Re-sync idempotent; removals reflected.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `UserCfValueSyncHandlerTest` (`Http::fake()`).
@@ -49,3 +49,20 @@ clockify_user_custom_field_values
 ## 9. Notes & open questions
 - Values may arrive on the users list, the profile endpoint, or via user CF
   updates; pick the cheapest source and document it.
+- **Implemented notes:**
+  - **Cheapest source:** the values are derived during the **USER sync (ENT-02)**
+    from the already-fetched `GET /users?memberships=ALL` payload — there is no
+    `USER_CUSTOM_FIELD_VALUE` entity type, and a separate handler would re-fetch
+    the users list for free otherwise. The handler maps a reserved
+    `custom_field_values` key (from `customFieldValues`/`userCustomFieldValues`,
+    absent → null = leave untouched).
+  - `clockify_user_custom_field_values` (FKs to users + custom fields, cascade) +
+    `ClockifyUserCustomFieldValue` model/factory; unique
+    `(organization_id, workspace_id, user_id, custom_field_id)`; JSON `value`.
+  - `UserCfValueRepository` (bound as `UserCfValueRepositoryInterface`) replaces
+    a user's rows (delete–insert); unknown custom fields are skipped.
+    `UserSyncRepository` writes users, memberships and custom field values in one
+    pass.
+  - The spec's nominal `UserCfValueSyncHandler` is intentionally folded into
+    `UserSyncHandler` (same reasoning as ENT-02's memberships); the dedicated
+    test lives in `UserCustomFieldValueTest`.

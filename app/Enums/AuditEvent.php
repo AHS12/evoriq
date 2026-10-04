@@ -38,14 +38,22 @@ enum AuditEvent: string
     case EXPORT_FAILED = 'export_failed';
     case IMPORT_COMPLETED = 'import_completed';
     case IMPORT_FAILED = 'import_failed';
+    case IMPORT_STARTED = 'import_started';
     case PROCESSING_CANCELLED = 'processing_cancelled';
 
     case CONNECTION_CREATED = 'connection_created';
     case CONNECTION_UPDATED = 'connection_updated';
     case CONNECTION_DISABLED = 'connection_disabled';
+    case CONNECTION_ENABLED = 'connection_enabled';
     case CONNECTION_VERIFIED = 'connection_verified';
     case CONNECTION_VALIDATION_FAILED = 'connection_validation_failed';
+    case CONNECTION_KEY_ROTATED = 'connection_key_rotated';
     case WORKSPACE_SELECTED = 'workspace_selected';
+
+    case SYNC_RUN_STARTED = 'sync_run_started';
+    case SYNC_RUN_COMPLETED = 'sync_run_completed';
+    case SYNC_RUN_FAILED = 'sync_run_failed';
+    case SYNC_RUN_CANCELLED = 'sync_run_cancelled';
 
     case BACKUP_TRIGGERED = 'backup_triggered';
     case BACKUP_COMPLETED = 'backup_completed';
@@ -83,13 +91,20 @@ enum AuditEvent: string
             self::EXPORT_FAILED => 'Export failed',
             self::IMPORT_COMPLETED => 'Import completed',
             self::IMPORT_FAILED => 'Import failed',
+            self::IMPORT_STARTED => 'Import started',
             self::PROCESSING_CANCELLED => 'Processing cancelled',
             self::CONNECTION_CREATED => 'Clockify connection created',
             self::CONNECTION_UPDATED => 'Clockify connection updated',
             self::CONNECTION_DISABLED => 'Clockify connection disabled',
+            self::CONNECTION_ENABLED => 'Clockify connection enabled',
             self::CONNECTION_VERIFIED => 'Clockify connection verified',
             self::CONNECTION_VALIDATION_FAILED => 'Clockify connection validation failed',
+            self::CONNECTION_KEY_ROTATED => 'Clockify connection key rotated',
             self::WORKSPACE_SELECTED => 'Workspace selected',
+            self::SYNC_RUN_STARTED => 'Sync run started',
+            self::SYNC_RUN_COMPLETED => 'Sync run completed',
+            self::SYNC_RUN_FAILED => 'Sync run failed',
+            self::SYNC_RUN_CANCELLED => 'Sync run cancelled',
             self::BACKUP_TRIGGERED => 'Backup triggered',
             self::BACKUP_COMPLETED => 'Backup completed',
             self::BACKUP_FAILED => 'Backup failed',

@@ -101,4 +101,31 @@ interface DataProcessingJobRepositoryInterface
      * @return Collection<int, DataProcessingJob>
      */
     public function completedBefore(Carbon $cutoff, int $limit = 0): Collection;
+
+    /**
+     * Completed + failed jobs that finished since the cutoff, with the columns
+     * the health metrics need (PIPE-10).
+     *
+     * @return Collection<int, DataProcessingJob>
+     */
+    public function finishedRunsSince(CarbonInterface $since): Collection;
+
+    /**
+     * The number of jobs created since the cutoff ("runs today").
+     */
+    public function runsCreatedSince(CarbonInterface $since): int;
+
+    /**
+     * The most recently created runs (PIPE-10 recent-runs table).
+     *
+     * @return Collection<int, DataProcessingJob>
+     */
+    public function recentRuns(int $limit): Collection;
+
+    /**
+     * The most recently failed runs (PIPE-10 recent-failures list).
+     *
+     * @return Collection<int, DataProcessingJob>
+     */
+    public function recentFailures(int $limit): Collection;
 }

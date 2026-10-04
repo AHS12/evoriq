@@ -44,6 +44,7 @@ return [
         'remember_token',
         'two_factor_secret',
         'two_factor_recovery_codes',
+        'api_key',
         '*token',
         '*secret*',
         'card_number',

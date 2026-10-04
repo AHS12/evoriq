@@ -13,6 +13,7 @@ import { PageHeader } from '@/components/app/page-header';
 import { StatCard } from '@/components/app/stat-card';
 import { AnalyticsPreview } from '@/components/dashboard/analytics-preview';
 import { SetupChecklist } from '@/components/dashboard/setup-checklist';
+import { ConnectionStatusCard } from '@/components/connection/connection-status-card';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -23,12 +24,17 @@ import {
 } from '@/components/ui/card';
 import { dashboard } from '@/routes';
 import { useTranslation } from '@/hooks/use-translation';
-import type { DashboardStat, SetupStep } from '@/types';
+import type {
+    ConnectionStatusSummary,
+    DashboardStat,
+    SetupStep,
+} from '@/types';
 
 type Props = {
     stats: DashboardStat[];
     setup: SetupStep[];
     hasAnalytics: boolean;
+    connectionStatus: ConnectionStatusSummary | null;
 };
 
 const statIcons: Record<string, LucideIcon> = {
@@ -38,7 +44,12 @@ const statIcons: Record<string, LucideIcon> = {
     projects: Briefcase,
 };
 
-export default function Dashboard({ stats, setup, hasAnalytics }: Props) {
+export default function Dashboard({
+    stats,
+    setup,
+    hasAnalytics,
+    connectionStatus,
+}: Props) {
     const { t } = useTranslation();
 
     return (
@@ -50,6 +61,10 @@ export default function Dashboard({ stats, setup, hasAnalytics }: Props) {
                     title={t('Dashboard')}
                     description={t('An overview of your workspace.')}
                 />
+
+                {connectionStatus && (
+                    <ConnectionStatusCard status={connectionStatus} />
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {stats.map((stat) => (

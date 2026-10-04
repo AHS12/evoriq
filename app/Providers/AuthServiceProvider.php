@@ -52,5 +52,16 @@ class AuthServiceProvider extends ServiceProvider
 
         // In-app maintenance actions are restricted to super admins.
         Gate::define('manageDeveloperTools', fn (?User $user): bool => $user?->isSuperAdmin() ?? false);
+
+        // Triggering (and planning) a synchronization is a sync.trigger action.
+        Gate::define('triggerSync', fn (?User $user): bool => $user?->hasPermissionTo('sync.trigger') ?? false);
+
+        // Opening the import wizard (PIPE-09) is available to anyone who may
+        // trigger a sync, import entities or view connections.
+        Gate::define('viewImportWizard', fn (?User $user): bool => $user !== null && (
+            $user->hasPermissionTo('sync.trigger')
+            || $user->hasPermissionTo('import.create')
+            || $user->hasPermissionTo('connection.view')
+        ));
     }
 }

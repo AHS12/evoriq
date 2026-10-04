@@ -1,6 +1,6 @@
 # ENT-09 — Custom fields
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** ORG-01, ENT-00
@@ -47,9 +47,9 @@ clockify_custom_fields
 - Exposed via analytics/report metadata.
 
 ## 7. Acceptance criteria
-- [ ] Field definitions (type, entity type, allowed values) sync correctly.
-- [ ] Re-sync idempotent; status changes reflect.
-- [ ] `composer check` passes.
+- [x] Field definitions (type, entity type, allowed values) sync correctly.
+- [x] Re-sync idempotent; status changes reflect.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `CustomFieldSyncHandlerTest` (`Http::fake()`): types, allowed values,
@@ -57,3 +57,15 @@ clockify_custom_fields
 
 ## 9. Notes & open questions
 - Type enum values are partially documented; keep an unknown fallback.
+- **Implemented notes:**
+  - `clockify_custom_fields` (soft-deletable) + `ClockifyCustomField` model/factory.
+    `type`/`entity_type`/`status` are stored as **strings** (Clockify's enum set
+    is only partially documented) rather than enums, with `TEXT`/`TIMEENTRY`
+    fallbacks — the "unknown fallback" the spec calls for.
+  - `CustomFieldSyncHandler` (reference phase) paginates
+    `GET /workspaces/{ws}/custom-fields`; maps `allowedValues` (Select fields),
+    `workspaceDefaultValue`/`projectDefaultValues` (JSON scalars or objects),
+    `placeholder`, `required`, `onlyAdminCanEdit`. `ClockifyCustomField` casts
+    the JSON columns so scalars and objects both round-trip.
+  - Registered `CUSTOM_FIELDS => CustomFieldSyncHandler` in `config/clockify.php`;
+    entitle value specs (ENT-10/11) build on this definition table.

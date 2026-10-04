@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Setting;
 
+use App\Enums\NotificationCategory;
 use App\Enums\NotificationType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -24,6 +25,8 @@ class UpdateNotificationPreferenceRequest extends FormRequest
             'desktop' => ['required', 'boolean'],
             'muted_types' => ['array'],
             'muted_types.*' => ['string', Rule::in(NotificationType::values())],
+            'muted_categories' => ['array'],
+            'muted_categories.*' => ['string', Rule::in(NotificationCategory::values())],
         ];
     }
 }

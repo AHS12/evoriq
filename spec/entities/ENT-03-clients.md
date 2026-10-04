@@ -1,6 +1,6 @@
 # ENT-03 — Clients
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** ORG-01, ENT-00
@@ -42,10 +42,10 @@ clockify_clients
 - Exposed via report/dashboard resources.
 
 ## 7. Acceptance criteria
-- [ ] All clients (incl. archived) sync with correct flags.
-- [ ] Re-sync idempotent; archived→unarchived reflects.
-- [ ] Soft delete handled (SYNC-07).
-- [ ] `composer check` passes.
+- [x] All clients (incl. archived) sync with correct flags.
+- [x] Re-sync idempotent; archived→unarchived reflects.
+- [x] Soft delete handled (SYNC-07).
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ClientSyncHandlerTest` (`Http::fake()`): paging, archived flags,
@@ -53,3 +53,16 @@ clockify_clients
 
 ## 9. Notes & open questions
 - Client currency may be null; fall back to workspace currency.
+- **Implemented notes:**
+  - `clockify_clients` (soft-deletable, org-owned) + `ClockifyClient` model,
+    factory and casts. `archived`/`archived_at` are Clockify's own flag and are
+    kept distinct from `deleted_at` (upstream deletion, SYNC-07).
+  - `ClientSyncHandler` (reference phase) paginates
+    `GET /workspaces/{ws}/clients` with `page`/`page-size`. It does **not** pass
+    an `archived` filter, so the endpoint returns the full set (including
+    archived) which is what the dimension needs.
+  - `currency_code` falls back to the active workspace's currency when the
+    client payload omits it; `archived` defaults to `false`.
+  - Upsert is via the shared `AbstractSyncUpsertRepository` and the
+    soft-delete-aware `UpsertsByClockifyId`, so a re-sync restores a deleted
+    client instead of duplicating it.

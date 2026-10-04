@@ -65,6 +65,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Per-run event cap
+    |--------------------------------------------------------------------------
+    |
+    | A single long run can emit a very large number of progress/info events.
+    | Once a run reaches this many events the recorder stops persisting
+    | progress/debug/info events (never stage, warning, error or terminal
+    | events) and writes a single "cap reached" warning.
+    |
+    */
+
+    'max_events_per_run' => (int) env('PIPELINE_MAX_EVENTS_PER_RUN', 5000),
+
+    /*
+    |--------------------------------------------------------------------------
     | Event context size
     |--------------------------------------------------------------------------
     |
@@ -115,6 +129,35 @@ return [
     */
 
     'status_cache_seconds' => (int) env('PIPELINE_STATUS_CACHE_SECONDS', 5),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Health observability (PIPE-10)
+    |--------------------------------------------------------------------------
+    |
+    | `metrics_cache_seconds` bounds how often the developer pipeline page
+    | recomputes its aggregates. The `health` thresholds drive the
+    | `PipelineHealthCheck`: stale runs, the 7-day failure rate (percent) and
+    | total queue depth each warn, then fail, a `>=` comparison.
+    |
+    */
+
+    'metrics_cache_seconds' => (int) env('PIPELINE_METRICS_CACHE_SECONDS', 15),
+
+    'health' => [
+        'stale_runs' => [
+            'warning' => (int) env('PIPELINE_HEALTH_STALE_WARNING', 1),
+            'failed' => (int) env('PIPELINE_HEALTH_STALE_FAILED', 3),
+        ],
+        'failure_rate' => [
+            'warning' => (float) env('PIPELINE_HEALTH_FAILURE_RATE_WARNING', 10.0),
+            'failed' => (float) env('PIPELINE_HEALTH_FAILURE_RATE_FAILED', 25.0),
+        ],
+        'queue_depth' => [
+            'warning' => (int) env('PIPELINE_HEALTH_QUEUE_WARNING', 100),
+            'failed' => (int) env('PIPELINE_HEALTH_QUEUE_FAILED', 500),
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------

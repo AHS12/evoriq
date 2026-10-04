@@ -17,6 +17,7 @@ enum UserSettingKey: string
     case NOTIFICATION_SOUND_ENABLED = 'notifications.sound';
     case NOTIFICATION_DESKTOP_ENABLED = 'notifications.desktop';
     case NOTIFICATION_MUTED_TYPES = 'notifications.muted_types';
+    case NOTIFICATION_MUTED_CATEGORIES = 'notifications.muted_categories';
 
     case LOCALE = 'locale';
 }

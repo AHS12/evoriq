@@ -1,6 +1,6 @@
 # SYNC-03 — Sync planner
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** L
 - **Depends on:** SYNC-01, SYNC-02, CONN-03
@@ -65,19 +65,29 @@ assume "one month = one request" and must respect the Free hourly budget.
 - `POST /import/inspect` → `ImportPlanResource` (PIPE-09).
 
 ## 7. Acceptance criteria
-- [ ] A 5-year request produces a plan capped at 5 years with 31-day partitions
+- [x] A 5-year request produces a plan capped at 5 years with 31-day partitions
       by default.
-- [ ] Time entries fan out per user; reference entities load first.
-- [ ] Estimates include request counts and a duration based on the real budget.
-- [ ] Plan is deterministic and serializable.
-- [ ] `composer check` passes.
+- [x] Time entries fan out per user; reference entities load first.
+- [x] Estimates include request counts and a duration based on the real budget.
+- [x] Plan is deterministic and serializable.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `ClockifySyncPlannerTest`: range clamping, phase ordering, per-user
   fan-out, budget-based duration on Free vs paid, partition shrink, determinism.
+- **Feature** `ImportPlanFeatureTest`: `POST /import/inspect` returns a plan for
+  the active connection, is gated by `sync.trigger`, and validates the range.
 
 ## 9. Notes & open questions
 - Volume inspection costs requests (counts against the budget); make it optional
   and cacheable, and allow "start without estimate" (PIPE-09).
 - Decide exact thresholds for shrinking partitions empirically (`SPIKE-06`
   adjacent).
+- **Implemented notes:** Clockify exposes no total-count endpoint, so
+  `WorkspaceInspector` resolves the user list (the fan-out input) and leaves
+  volume hints empty; the planner treats an unknown volume as one request per
+  job and applies the shrink rule once volumes are supplied (tests inject them).
+  History is clamped by `clockify.planner.max_history_years` (default 5) and
+  partitions by `clockify.planner.partition_days` (31) / `partition_max_items`.
+  `POST /import/inspect` is gated by a `triggerSync` gate (`sync.trigger`) and
+  returns `ImportPlanResource` for PIPE-09.

@@ -5,7 +5,6 @@ use App\Services\Setup\EnvironmentWriter;
 use App\Services\Setup\SetupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

@@ -73,3 +73,29 @@ export type ConnectionVerification = {
     workspaces: WorkspaceOption[];
     account: ConnectionAccount | null;
 };
+
+/**
+ * CONN-08 — the credential-safe connection status summary rendered by the
+ * dashboard and connections page. Never contains key material.
+ */
+export type ConnectionStatusSummary = {
+    id: number;
+    name: string;
+    status: ConnectionStatus;
+    status_label: string;
+    workspace: {
+        id: string | null;
+        subdomain: string | null;
+    };
+    plan: {
+        is_free: boolean;
+        subscription_type: string | null;
+        rate: ConnectionPlanRate;
+    };
+    budget: {
+        requests_per_hour: number | null;
+        requests_per_second: number | null;
+    };
+    webhook_limit: number | null;
+    last_verified_at: string | null;
+};

@@ -41,6 +41,24 @@ class ClockifyConnectionRepository implements ClockifyConnectionRepositoryInterf
         return $query->latest('id')->first();
     }
 
+    public function hasAny(): bool
+    {
+        return ClockifyConnection::query()->exists();
+    }
+
+    public function allActive(?int $organizationId = null): Collection
+    {
+        $query = ClockifyConnection::query()
+            ->where('status', ConnectionStatus::ACTIVE);
+
+        if ($organizationId !== null) {
+            $query->withoutOrganizationScope()
+                ->where('organization_id', $organizationId);
+        }
+
+        return $query->orderBy('id')->get();
+    }
+
     public function buildFilterQuery(ConnectionFilterDTO $filters): Builder
     {
         $query = ClockifyConnection::query();

@@ -1,6 +1,6 @@
 # ENT-06 — Tags & time-entry tags
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** ORG-01, ENT-00, ENT-07
@@ -48,10 +48,10 @@ clockify_time_entry_tags
 - Exposed via report resources.
 
 ## 7. Acceptance criteria
-- [ ] Tags sync idempotently; archived flags correct.
-- [ ] Time-entry tag joins reflect adds/removals after re-sync.
-- [ ] Unknown tag ids are handled without failing the entry.
-- [ ] `composer check` passes.
+- [x] Tags sync idempotently; archived flags correct.
+- [x] Time-entry tag joins reflect adds/removals after re-sync.
+- [x] Unknown tag ids are handled without failing the entry.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `TagSyncHandlerTest` (`Http::fake()`) + join-write test via
@@ -60,3 +60,16 @@ clockify_time_entry_tags
 ## 9. Notes & open questions
 - Join rows are owned jointly by ENT-06 and ENT-07; document the ownership to
   avoid double-writing.
+- **Implemented notes:**
+  - `clockify_tags` (soft-deletable) + `ClockifyTag` model/factory; `TagSyncHandler`
+    (reference phase) paginates `GET /workspaces/{ws}/tags` and maps the archived
+    flag. Registered in `config/clockify.php`.
+  - `clockify_time_entry_tags` join (FK to `clockify_time_entries` and
+    `clockify_tags`) + `ClockifyTimeEntryTag` model/factory.
+  - Join ownership resolved: **ENT-07's `TimeEntrySyncHandler` writes the joins**
+    via `TimeEntryTagRepository::syncForTimeEntry()` (bound in
+    `RepositoryServiceProvider`), delete–insert per entry so adds/removals
+    reflect. Unknown tag ids are skipped; `null` tag list leaves joins untouched.
+  - ENT-06 and ENT-07 were built together because the join table needs the
+    entries table (circular dependency); the tags dimension was pulled forward
+    into the ENT-07 work, mirroring the CONN-02 precedent.

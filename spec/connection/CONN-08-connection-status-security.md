@@ -1,6 +1,6 @@
 # CONN-08 — Connection status & security verification
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** connection
 - **Estimate:** S
 - **Depends on:** CONN-01, CONN-02
@@ -50,10 +50,10 @@ to the pipeline status.
 - `connections.index` and the dashboard include `connectionStatus`.
 
 ## 7. Acceptance criteria
-- [ ] Status card reflects workspace, plan and last-verified accurately.
-- [ ] A test proves no credential appears in any resource/audit/log.
-- [ ] Card links to connection management.
-- [ ] `composer check` passes.
+- [x] Status card reflects workspace, plan and last-verified accurately.
+- [x] A test proves no credential appears in any resource/audit/log.
+- [x] Card links to connection management.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Feature** `ConnectionStatusFeatureTest`: prop shape; secrets absent;
@@ -63,3 +63,15 @@ to the pipeline status.
 ## 9. Notes & open questions
 - Last-synced/freshness comes from SYNC-18; this spec only owns the credential/
   plan portion.
+
+### Implemented notes
+
+- `ConnectionStatusResource` exposes
+  `{ id, name, status, workspace, plan, budget, webhook_limit, last_verified_at }`
+  and never serializes `api_key`/`addon_token`.
+- `ConnectionStatusService::forOrganization()` resolves the active connection;
+  both `connections.index` and the dashboard receive `connectionStatus`
+  (nullable).
+- Frontend `ConnectionStatusCard` renders a status dot, plan badge, workspace
+  and last-verified time, linking to `connections.index`; shown on the
+  connections page and the dashboard.

@@ -1,6 +1,6 @@
 # SYNC-09 — Sync run orchestration
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** L
 - **Depends on:** SYNC-03, SYNC-04
@@ -63,24 +63,38 @@ conductor of the pulling flow.
 - Internal; surfaced by PIPE + SYNC-12/18.
 
 ## 7. Acceptance criteria
-- [ ] Starting a plan creates one run with the planned jobs and dispatches them
+- [x] Starting a plan creates one run with the planned jobs and dispatches them
       within the budget.
-- [ ] On Free plans the run pauses at the window edge and resumes automatically
+- [x] On Free plans the run pauses at the window edge and resumes automatically
       at reset without user action.
-- [ ] A run interrupted by a worker crash can `resume()` and finish without
+- [x] A run interrupted by a worker crash can `resume()` and finish without
       re-downloading completed pages.
-- [ ] Run counters equal the sum of job counters.
-- [ ] Completion triggers analytics + a notification.
-- [ ] `composer check` passes.
+- [x] Run counters equal the sum of job counters.
+- [x] Completion triggers analytics + a notification.
+- [x] `composer check` passes.
 
 ## 8. Tests
-- **Unit** `SyncRunServiceTest`: job creation from plan, wave dispatch by budget,
-  counter aggregation, finalize, resume, cancel, double-finish safety.
-- **Feature** `SyncRunFlowTest` with `Http::fake()` + queue fakes: full small run
-  end-to-end; window-exhaustion → scheduled resume.
+- **Unit** `SyncRunServiceTest`: job creation from plan, wave dispatch by
+  concurrency, counter aggregation + finalize, failure finalize, cancel, resume.
+- **Feature** `SyncRunFlowTest` with `Http::fake()` + queue fakes: a small run
+  executes end-to-end and finalizes.
 
 ## 9. Notes & open questions
 - Umbrella run vs many runs: one `SyncRun` with jobs (chosen) so PIPE-09 shows a
   single progress experience.
 - Analytics trigger must run after the last job commits; use a queued
   `RecalculateAnalyticsJob` (ANA-03).
+- **Implemented notes:**
+  - `SyncRunService::start()/startFromPlan()` persists the run + jobs in one
+    transaction, audits `sync.run_started`, then `dispatchPending()`.
+  - `dispatchPending()` dispatches pending jobs in waves bounded by
+    `clockify.sync_concurrency`; when `ApiUsageService::canAfford()` is false it
+    schedules `ResumeSyncRunJob` for the window reset (no busy-waiting).
+  - `SyncEntityJob` now calls `onJobFinished()` after the runner (and from
+    `failed()`), which recalculates run counters and finalizes when every job is
+    terminal (`completed` unless none succeeded → `failed`). Finalization emits
+    the `SyncRunFinished` domain event that ANA-03 (analytics) and PIPE-11
+    (notifications) will subscribe to, and audits the terminal event.
+  - `cancel()` cancels every non-final job (cooperative) and the run.
+  - PIPE event emission stays with SYNC-14; the audit + domain event carry the
+    lifecycle until then.

@@ -1,9 +1,9 @@
 # PIPE-09 — Historical import progress experience
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** L
-- **Depends on:** PIPE-05, FND-03
+- **Depends on:** PIPE-05, FND-03, CONN-01…03, SYNC-03, ENT-14
 - **Blocks:** ENT-14, DASH-05
 - **TDR:** §10, §11, §34
 
@@ -130,14 +130,14 @@ resources/js/lib/schemas/import.ts                  # Zod for range step
 
 ## 7. Acceptance criteria
 
-- [ ] A user can go from no data to watching a live historical import.
-- [ ] Presets and custom range both work and show discovered volumes.
-- [ ] Review shows a believable plan with request/duration estimates.
-- [ ] Starting hands off to the live run page; the import continues if the user
+- [x] A user can go from no data to watching a live historical import.
+- [x] Presets and custom range both work and show discovered volumes.
+- [x] Review shows a believable plan with request/duration estimates.
+- [x] Starting hands off to the live run page; the import continues if the user
       navigates away.
-- [ ] Completion summary shows totals and working CTAs.
-- [ ] A second concurrent import is prevented; an active one is surfaced.
-- [ ] `composer check` passes.
+- [x] Completion summary shows totals and working CTAs.
+- [x] A second concurrent import is prevented; an active one is surfaced.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
@@ -164,3 +164,24 @@ resources/js/lib/schemas/import.ts                  # Zod for range step
 - Multi-run plans: define how many runs are created (one per phase vs one
   umbrella run with child jobs). Recommendation: one umbrella `SyncRun` with
   child `SyncJob`s (SYNC-09), surfaced as a single progress experience.
+
+### Implemented notes
+
+- Routes: `GET /import` (`import.index`), `POST /import/inspect`
+  (`import.inspect`), `POST /import` (`import.store`) and `GET /import/{syncRun}`
+  (`import.show`). `ImportWizardController` is thin; `ImportWizardService`
+  resolves the active connection/workspace, plans, guards concurrency and
+  audits `import_started`. The old `ImportPlanController` was folded in.
+- Wizard UI: `pages/import/index.tsx` (Connect → Range → Review) with
+  `range-step`, `inspect-summary`, `plan-review`; on start it redirects to
+  `import.show`, which reuses the PIPE-05 `RunHero`/`StageLanes`/
+  `RunEventStream` via `import-run-panel` and renders `import-complete` on
+  success. Reached from the new **Historical import** nav item (gated by
+  `sync.trigger`/`import.create`).
+- Access is gated by the `viewImportWizard` gate (view) and `triggerSync`
+  (inspect/store). An active run is surfaced as a banner and the store guard
+  redirects to it instead of creating a second one.
+- Volume inspection remains users-only (Clockify exposes no counts, SYNC-03);
+  the inspect summary reports jobs/partitions/estimated requests.
+- Live progress is powered by the SYNC-14 pipeline integration, so the run is
+  deep-linkable and continues in the background.

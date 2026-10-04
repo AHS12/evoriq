@@ -10,7 +10,6 @@ use App\Services\Notification\NotificationService;
 use App\Services\Setting\SettingService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

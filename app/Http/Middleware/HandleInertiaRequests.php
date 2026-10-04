@@ -5,13 +5,19 @@ namespace App\Http\Middleware;
 use App\Enums\AppLocale;
 use App\Http\Resources\Notification\NotificationResource;
 use App\Http\Resources\Pipeline\PipelineStatusResource;
+use App\Http\Resources\Sync\ApiUsageResource;
+use App\Models\ClockifyConnection;
 use App\Models\User;
+use App\Repositories\Contracts\ClockifyConnectionRepositoryInterface;
+use App\Repositories\Contracts\ClockifyWorkspaceRepositoryInterface;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
 use App\Services\Pipeline\PipelineStatusService;
 use App\Services\Setting\LocaleService;
 use App\Services\Setting\NotificationPreferenceService;
+use App\Services\Sync\ApiUsageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -77,8 +83,40 @@ class HandleInertiaRequests extends Middleware
             'notifications' => fn (): array => $this->notificationSummary($request),
             'activeJobs' => fn (): int => $this->activeJobCount($request),
             'pipelineStatus' => fn (): array => $this->pipelineStatus($request),
+            'apiUsage' => fn (): ?array => $this->apiUsage($request),
             'pipeline_revision' => fn (): string => $this->pipelineRevision($request),
         ];
+    }
+
+    /**
+     * The active connection's current API budget window for the navbar
+     * indicator (SYNC-17). Null when the user may not see connections or none
+     * is configured, so the indicator simply hides.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function apiUsage(Request $request): ?array
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User || ! Gate::forUser($user)->allows('viewAny', ClockifyConnection::class)) {
+            return null;
+        }
+
+        $connection = app(ClockifyConnectionRepositoryInterface::class)->findActive();
+
+        if ($connection === null) {
+            return null;
+        }
+
+        $workspace = $connection->workspace_id !== null
+            ? app(ClockifyWorkspaceRepositoryInterface::class)
+                ->findByClockifyId($connection->id, $connection->workspace_id)
+            : null;
+
+        return ApiUsageResource::make(
+            app(ApiUsageService::class)->snapshot($connection, $workspace),
+        )->resolve($request);
     }
 
     /**

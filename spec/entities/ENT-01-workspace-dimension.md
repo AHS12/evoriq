@@ -1,6 +1,6 @@
 # ENT-01 — Workspace dimension
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** ORG-01, ENT-00, CONN-03
@@ -41,10 +41,10 @@ Extends `clockify_workspaces` (CONN-03) with: `default_billable`,
 - Workspace summary in `connectionStatus` (CONN-08).
 
 ## 7. Acceptance criteria
-- [ ] Workspace fields (currency, time zone, week start, org id) are persisted.
-- [ ] Missing optional fields do not break the sync.
-- [ ] Re-sync updates without duplicating.
-- [ ] `composer check` passes.
+- [x] Workspace fields (currency, time zone, week start, org id) are persisted.
+- [x] Missing optional fields do not break the sync.
+- [x] Re-sync updates without duplicating.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `WorkspaceSyncHandlerTest` with `Http::fake()` (full + partial payloads).
@@ -52,3 +52,18 @@ Extends `clockify_workspaces` (CONN-03) with: `default_billable`,
 ## 9. Notes & open questions
 - `workspaceSettings`/`currencies` schemas are not expanded in the API reference;
   treat fields as optional and store the raw payload for later mapping.
+- **Implemented notes:**
+  - `clockify_workspaces` gained `default_billable`, `default_hourly_rate`
+    (`decimal:2`), `default_cost_rate` (`decimal:2`), `workspace_settings` (json)
+    and an indexed `cake_organization_id`; the model/factory/casts were updated.
+  - Shared `App\Support\Clockify\WorkspaceMapper` normalizes the payload for
+    both connect-time discovery (`WorkspaceService`, CONN-03) and the sync
+    handler, so there is a single mapping source.
+  - `WorkspaceSyncHandler` (`reference` phase) fetches `GET /workspaces/{id}`,
+    maps, and upserts via `WorkspaceSyncRepository`. The handler drops absent
+    (null) fields so a partial detail response never erases stored values; the
+    deletion policy is `NONE`.
+  - The workspace dimension is its own parent, so `WorkspaceSyncRepository`
+    overrides `UpsertsByClockifyId::syncUsesWorkspace()` to key by
+    `(organization_id, clockify_id)` instead of the generic three-column key
+    (the trait gained that hook for exactly this case).

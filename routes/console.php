@@ -13,8 +13,18 @@ Schedule::command('data-processing:cleanup-completed')->daily();
 // Reliability: fail jobs whose worker was lost (crash, OOM, timeout).
 Schedule::command('data-processing:reap-stale')->everyFiveMinutes();
 
+// Reliability: reap lost sync jobs and resume their runs (SYNC-13).
+Schedule::command('sync:reap-stale')->everyFiveMinutes();
+
+// Reliability: re-drive budget-parked/retry sync runs once the window resets
+// (SYNC-13/SYNC-20) — the safety net if a delayed resume job was lost.
+Schedule::command('sync:resume')->everyMinute();
+
 // Retention: prune expired and old in-app notifications.
 Schedule::command('notifications:prune')->daily();
+
+// Retention: prune pipeline events beyond the configured window (PIPE-12).
+Schedule::command('pipeline:prune-events')->daily();
 
 // Retention: prune audit log entries per each channel's retention window.
 Schedule::command('audit:clean')->dailyAt('03:30');

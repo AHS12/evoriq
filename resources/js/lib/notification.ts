@@ -1,10 +1,12 @@
 import {
     AlertTriangle,
     Bell,
+    Clock,
     FileCheck2,
     FileX2,
     Megaphone,
     RefreshCw,
+    RotateCw,
     UserPlus,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -17,6 +19,8 @@ const ICONS: Record<string, LucideIcon> = {
     'file-x': FileX2,
     'refresh-cw': RefreshCw,
     'alert-triangle': AlertTriangle,
+    'list-clock': Clock,
+    'rotate-cw': RotateCw,
 };
 
 export function notificationIcon(notification: NotificationItem): LucideIcon {

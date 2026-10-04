@@ -138,3 +138,36 @@ test('store requires the create permission', function () {
         ])
         ->assertForbidden();
 });
+
+test('a second connection cannot be added (single-connection MVP)', function () {
+    $user = makeUserWithPermissions(['connection.create']);
+    ClockifyConnection::factory()->create();
+
+    $this->actingAs($user)
+        ->post(route('connections.store'), [
+            'name' => 'Second',
+            'api_key' => 'key',
+            'region' => 'global',
+            'clockify_id' => 'w1',
+        ])
+        ->assertRedirect();
+
+    expect(ClockifyConnection::query()->count())->toBe(1);
+});
+
+test('the add action is hidden once a connection exists', function () {
+    $user = makeUserWithPermissions(['connection.create', 'connection.view']);
+    ClockifyConnection::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('connections.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('canCreate', false));
+});
+
+test('the add action is available before any connection exists', function () {
+    $user = makeUserWithPermissions(['connection.create', 'connection.view']);
+
+    $this->actingAs($user)
+        ->get(route('connections.index'))
+        ->assertInertia(fn (Assert $page) => $page->where('canCreate', true));
+});

@@ -23,18 +23,26 @@ use Illuminate\Support\Carbon;
  * @property string|null $currency
  * @property string|null $time_zone
  * @property string|null $week_start
+ * @property bool|null $default_billable
+ * @property string|null $default_hourly_rate
+ * @property string|null $default_cost_rate
  * @property string|null $feature_subscription_type
+ * @property string|null $cake_organization_id
  * @property array<string, mixed>|null $features
+ * @property array<string, mixed>|null $workspace_settings
  * @property bool $active
  * @property array<string, mixed>|null $raw_data
  * @property Carbon|null $synced_at
+ * @property Carbon|null $change_feed_cursor_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
 #[Fillable([
     'organization_id', 'connection_id', 'clockify_id', 'name', 'subdomain',
-    'currency', 'time_zone', 'week_start', 'feature_subscription_type',
-    'features', 'active', 'raw_data', 'synced_at',
+    'currency', 'time_zone', 'week_start', 'default_billable',
+    'default_hourly_rate', 'default_cost_rate', 'feature_subscription_type',
+    'cake_organization_id', 'features', 'workspace_settings', 'active',
+    'raw_data', 'synced_at', 'change_feed_cursor_at',
 ])]
 class ClockifyWorkspace extends Model
 {
@@ -53,9 +61,14 @@ class ClockifyWorkspace extends Model
     {
         return [
             'features' => 'array',
+            'workspace_settings' => 'array',
             'raw_data' => 'array',
+            'default_billable' => 'boolean',
+            'default_hourly_rate' => 'decimal:2',
+            'default_cost_rate' => 'decimal:2',
             'active' => 'boolean',
             'synced_at' => 'datetime',
+            'change_feed_cursor_at' => 'datetime',
         ];
     }
 

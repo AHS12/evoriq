@@ -1,6 +1,6 @@
 # PIPE-12 — Pipeline i18n, states & retention
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** M
 - **Depends on:** PIPE-01 … PIPE-11
@@ -106,14 +106,14 @@ so observability does not become a database liability.
 
 ## 7. Acceptance criteria
 
-- [ ] `TranslationParityTest` passes with all pipeline keys in five locales.
-- [ ] No user-visible pipeline string is hard-coded English.
-- [ ] All surfaces implement loading/empty/error states per the table.
-- [ ] `pipeline:prune-events` deletes old events and is scheduled.
-- [ ] Deleting a run deletes its events.
-- [ ] Event caps prevent unbounded per-run growth without losing important
+- [x] `TranslationParityTest` passes with all pipeline keys in five locales.
+- [x] No user-visible pipeline string is hard-coded English.
+- [x] All surfaces implement loading/empty/error states per the table.
+- [x] `pipeline:prune-events` deletes old events and is scheduled.
+- [x] Deleting a run deletes its events.
+- [x] Event caps prevent unbounded per-run growth without losing important
       events.
-- [ ] `composer check` passes.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
@@ -131,3 +131,34 @@ so observability does not become a database liability.
 - Consider archiving very old completed runs' events to a cold file instead of
   deleting (defer).
 - The cap interacts with PIPE-01 coalescing; document precedence clearly.
+
+### Implemented notes
+
+- **Retention:** `pipeline:prune-events` (scheduled daily) deletes events older
+  than `pipeline.event_retention_days` (30); `--days` and `--dry-run` are
+  supported. Repository gained `countBefore()` / `deleteForRun()` /
+  `countForRun()`.
+- **Cascade:** `DataProcessingJobService::delete()` deletes the run's events
+  inside the same transaction (no FK on `run_id`).
+- **Cap:** `pipeline.max_events_per_run` (default 5000). Once reached, the
+  recorder drops only progress/debug/info events and writes a single
+  `WARNING` (`context.event_cap`) — stage, warning, error and terminal events
+  always persist. Precedence: coalescing (PIPE-01) runs first, then the cap.
+- **i18n:** all pipeline surfaces (list, run page, inspector, wizard,
+  indicator, PIPE-10 developer page) and every pipeline enum label
+  (`PipelineEventType`, `PipelineEventLevel`, `PipelineFailureReason`,
+  `DataProcessingJobStatus`, `PipelineRunType`, sync enums) are present in all
+  five `lang/app/*.json`; `TranslationParityTest` passes.
+- **States:** loading/empty/error states are provided by the existing FND-06
+  primitives across the run page, event stream, inspector tabs, indicator and
+  wizard (inspect error + retry).
+
+### Translator glossary
+
+- `type` — the run kind (import/export/report/sync); `stage` — a named phase
+  within a run (e.g. `read`, `write`, an entity name).
+- `attempt` — the number of times a run has been picked up (retries included).
+- `throughput` — records processed per minute; `ETA` — estimated time remaining;
+  `stale` — a running job whose heartbeat is older than the threshold.
+- Bangla transliteration choices: স্ট্যাটাস, ইমপোর্ট, এক্সপোর্ট, রোলস, জব, কিউ,
+  পাইপলাইন, ড্যাশবোর্ড.

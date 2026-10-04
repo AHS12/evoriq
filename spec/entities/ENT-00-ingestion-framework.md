@@ -1,6 +1,6 @@
 # ENT-00 — Ingestion framework (per-entity contract)
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** L
 - **Depends on:** ORG-01, SYNC-04, SYNC-05, SYNC-08, SYNC-07
@@ -104,11 +104,11 @@ across the whole dataset.
 - None.
 
 ## 7. Acceptance criteria
-- [ ] New entities are added with a single handler + registry binding.
-- [ ] All handlers share fetch/raw/upsert/counter behaviour.
-- [ ] Mapping failures are per-row and non-fatal.
-- [ ] Deletion/restore behaviour is uniform by class.
-- [ ] `composer check` passes.
+- [x] New entities are added with a single handler + registry binding.
+- [x] All handlers share fetch/raw/upsert/counter behaviour.
+- [x] Mapping failures are per-row and non-fatal.
+- [x] Deletion/restore behaviour is uniform by class.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `SyncHandlerRegistryTest` + a `FakeSyncHandler` test for the
@@ -119,3 +119,21 @@ across the whole dataset.
 - Foreign-key resolution may be temporarily unresolved on first import if
   parents arrive out of order; parents load in the reference phase first
   (SYNC-03) to minimize this.
+- **Implemented notes:**
+  - `AbstractSyncHandler` owns the page fetch (single `GET` with
+    `page`/`page-size` via `ClockifyClient::forConnection`), the mapping
+    template and the deletion policy. A concrete handler declares only
+    `entityType`, `phase`, `repositoryClass`, `endpoint`, `mapRow` (and
+    optionally `query`/`deletePolicy`).
+  - `SyncHandlerRegistry::registerFromConfig()` reads `clockify.handlers`
+    (`SyncEntityType` value → handler class), so an entity is one handler class
+    plus one config entry. `AppServiceProvider::boot()` applies it.
+  - A malformed row throws from `mapRow` and is caught per-row in
+    `SyncJobRunner::upsertPage`, which logs a warning and continues — the page
+    still commits its valid rows.
+  - Deletion policy (`App\Enums\SyncDeletePolicy`) is honoured by the base
+    `delete()`: `SOFT` sets `deleted_at`, `REPLACE` removes the row, `NONE`
+    leaves it. `SyncUpsertRepositoryInterface` gained
+    `softDeleteByClockifyId`/`deleteByClockifyId`, implemented by
+    `UpsertsByClockifyId` (soft falls back to a hard delete when the table has
+    no `deleted_at`).

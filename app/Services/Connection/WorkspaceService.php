@@ -8,6 +8,7 @@ use App\Models\ClockifyWorkspace;
 use App\Repositories\Contracts\ClockifyConnectionRepositoryInterface;
 use App\Repositories\Contracts\ClockifyWorkspaceRepositoryInterface;
 use App\Services\Audit\AuditLogService;
+use App\Support\Clockify\WorkspaceMapper;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -23,6 +24,7 @@ class WorkspaceService
         protected ClockifyWorkspaceRepositoryInterface $workspaces,
         protected ClockifyConnectionRepositoryInterface $connections,
         protected AuditLogService $audit,
+        protected WorkspaceMapper $mapper,
     ) {}
 
     /**
@@ -120,81 +122,14 @@ class WorkspaceService
      */
     private function normalize(array $workspace, ?string $activeId): array
     {
-        $id = (string) $workspace['id'];
+        $attributes = $this->mapper->map($workspace);
+        $id = $attributes['clockify_id'];
 
         return [
-            'clockify_id' => $id,
-            'name' => (string) ($workspace['name'] ?? 'Workspace'),
-            'subdomain' => $this->subdomain($workspace),
-            'currency' => $this->currency($workspace),
-            'time_zone' => $this->string($workspace['timeZone'] ?? null)
-                ?? $this->string(data_get($workspace, 'workspaceSettings.timeZone')),
-            'week_start' => $this->string($workspace['weekStart'] ?? null)
-                ?? $this->string(data_get($workspace, 'workspaceSettings.weekStart')),
-            'feature_subscription_type' => $this->string($workspace['featureSubscriptionType'] ?? null),
-            'features' => $this->stringList($workspace['features'] ?? null),
+            ...$attributes,
             'active' => $activeId === null || $id === $activeId,
             'raw_data' => $workspace,
             'synced_at' => now(),
         ];
-    }
-
-    /**
-     * Clockify returns `subdomain` as a string (older) or `{ name, enabled }`.
-     *
-     * @param  array<string, mixed>  $workspace
-     */
-    private function subdomain(array $workspace): ?string
-    {
-        $subdomain = $workspace['subdomain'] ?? null;
-
-        if (is_array($subdomain)) {
-            return $this->string($subdomain['name'] ?? null);
-        }
-
-        return $this->string($subdomain);
-    }
-
-    /**
-     * Prefer a top-level `currency`, else the default of the `currencies` list.
-     *
-     * @param  array<string, mixed>  $workspace
-     */
-    private function currency(array $workspace): ?string
-    {
-        $currency = $this->string($workspace['currency'] ?? null);
-
-        if ($currency !== null) {
-            return $currency;
-        }
-
-        $currencies = $workspace['currencies'] ?? null;
-
-        if (is_array($currencies)) {
-            foreach ($currencies as $entry) {
-                if (is_array($entry) && ($entry['isDefault'] ?? false) && isset($entry['code'])) {
-                    return (string) $entry['code'];
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private function string(mixed $value): ?string
-    {
-        return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    /**
-     * @return array<int, string>|null
-     */
-    private function stringList(mixed $value): ?array
-    {
-        if (! is_array($value)) {
-            return null;
-        }
-
-        return array_values(array_filter($value, static fn (mixed $item): bool => is_string($item)));
     }
 }

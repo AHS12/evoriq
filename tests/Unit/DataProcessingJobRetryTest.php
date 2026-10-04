@@ -8,17 +8,18 @@ use App\Jobs\RetryFailedDataProcessingJobs;
 use App\Models\DataProcessingJob;
 use App\Models\User;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
+use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\DataProcessingJob\DataProcessingJobService;
 use App\Services\Notification\NotificationService;
 use App\Services\Pipeline\FailureReasonResolver;
 use App\Services\Pipeline\PipelineEventRecorder;
 use App\Services\Pipeline\PipelineRunAggregator;
+use App\Services\Setting\NotificationPreferenceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -26,6 +27,7 @@ uses(TestCase::class, RefreshDatabase::class);
 beforeEach(function () {
     $this->repository = Mockery::mock(DataProcessingJobRepositoryInterface::class);
     $this->notifications = Mockery::mock(NotificationService::class);
+    $this->notifications->shouldReceive('create')->andReturn(null)->byDefault();
     $this->audit = Mockery::mock(AuditLogService::class);
     $this->audit->shouldReceive('record')->byDefault();
     $this->pipeline = Mockery::mock(PipelineEventRecorder::class);
@@ -36,6 +38,10 @@ beforeEach(function () {
     $this->runs = Mockery::mock(PipelineRunAggregator::class);
     $this->failures = Mockery::mock(FailureReasonResolver::class);
     $this->failures->shouldReceive('fromMessage')->andReturn(PipelineFailureReason::UNKNOWN)->byDefault();
+    $this->preferences = Mockery::mock(NotificationPreferenceService::class);
+    $this->preferences->shouldReceive('allows')->andReturn(true)->byDefault();
+    $this->pipelineEvents = Mockery::mock(PipelineEventRepositoryInterface::class);
+    $this->pipelineEvents->shouldReceive('deleteForRun')->andReturn(0)->byDefault();
 
     $this->service = new DataProcessingJobService(
         $this->repository,
@@ -44,6 +50,8 @@ beforeEach(function () {
         $this->pipeline,
         $this->runs,
         $this->failures,
+        $this->preferences,
+        $this->pipelineEvents,
     );
 });
 

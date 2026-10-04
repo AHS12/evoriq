@@ -1,6 +1,6 @@
 # SYNC-01 — Sync state schema
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** L
 - **Depends on:** ORG-01, CONN-01
@@ -142,18 +142,26 @@ Linkage to the pipeline UI: a sync run is surfaced through `PIPE-01` events with
 - None directly.
 
 ## 7. Acceptance criteria
-- [ ] Migrating creates all six tables with the stated indexes and uniqueness.
-- [ ] Every table carries `organization_id`; models use the org scope.
-- [ ] A run can hold many jobs; a job tracks a resumable `page` checkpoint.
-- [ ] `api_usage` windows are unique per connection/workspace/type/start.
-- [ ] `composer check` passes.
+- [x] Migrating creates all six tables with the stated indexes and uniqueness.
+- [x] Every table carries `organization_id`; models use the org scope.
+- [x] A run can hold many jobs; a job tracks a resumable `page` checkpoint.
+- [x] `api_usage` windows are unique per connection/workspace/type/start.
+- [x] `composer check` passes.
 
 ## 8. Tests
-- **Unit** model tests: casts, relations, scopes, unique constraints (SQLite).
-- **Feature** `SyncSchemaTest`: create a run with jobs, enforce uniqueness on
-  `api_usage` and `raw_records`.
+- **Unit** `SyncModelUnitTest`: casts, relations, status finality, enum labels.
+- **Feature** `SyncSchemaTest`: tables exist, a run holds jobs with a resumable
+  page, uniqueness on `api_usage` and `raw_records`, org scoping, and the
+  `advancePage`/`countsRecalculate` repository helpers.
 
 ## 9. Notes & open questions
 - `window_type` supports both Free (hour) and paid (second) accounting in one
   table (SYNC-02).
 - Keep `payload` compressed? Defer; revisit with OPS-03 retention.
+- **Implemented additions:** the inline fixed sets became enums (`SyncMode`,
+  `SyncPriority`, `SyncPhase`, `ApiUsageWindowType`) per `AGENTS.md` §7.6.
+  `ClockifyApiUsage` sets an explicit `$table = 'clockify_api_usage'` because the
+  inflector would otherwise pluralize it to `clockify_api_usages`.
+- The `workspace_id` columns are internal FKs to `clockify_workspaces` (not the
+  Clockify id), matching the natural key `(organization_id, workspace_id,
+  clockify_id)` used by the entity tables.

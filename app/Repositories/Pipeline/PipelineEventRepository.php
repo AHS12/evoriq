@@ -131,6 +131,27 @@ class PipelineEventRepository implements PipelineEventRepositoryInterface
             ->delete();
     }
 
+    public function countBefore(CarbonInterface $cutoff): int
+    {
+        return PipelineEvent::query()
+            ->where('occurred_at', '<', $cutoff)
+            ->count();
+    }
+
+    public function countForRun(PipelineRunType $type, string|int $runId): int
+    {
+        return PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->count();
+    }
+
+    public function deleteForRun(PipelineRunType $type, string|int $runId): int
+    {
+        return PipelineEvent::query()
+            ->forRun($type, $runId)
+            ->delete();
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      * @return Builder<PipelineEvent>

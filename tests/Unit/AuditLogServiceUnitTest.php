@@ -9,7 +9,6 @@ use App\Repositories\Contracts\AuditLogRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);

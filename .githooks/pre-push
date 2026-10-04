@@ -1,7 +1,9 @@
 #!/bin/sh
 set -e
 
-echo "==> pre-push: running the full quality gate (composer check)"
+# `composer check` runs the full gate, including the Pest suite in parallel
+# (`composer test` -> `php artisan test --parallel`).
+echo "==> pre-push: running the full quality gate (composer check, Pest in parallel)"
 composer check
 
 echo "All pre-push checks passed."

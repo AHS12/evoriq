@@ -8,7 +8,6 @@ use App\Repositories\Contracts\UploadRepositoryInterface;
 use App\Services\Upload\UploadService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Mockery;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Tests\Mock\UploadMockData;
 use Tests\TestCase;

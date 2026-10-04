@@ -24,12 +24,14 @@ use App\Models\DataProcessingJob;
 use App\Models\PipelineEvent;
 use App\Models\User;
 use App\Repositories\Contracts\DataProcessingJobRepositoryInterface;
+use App\Repositories\Contracts\PipelineEventRepositoryInterface;
 use App\Services\Audit\AuditLogService;
 use App\Services\Notification\NotificationService;
 use App\Services\Pipeline\FailureReasonResolver;
 use App\Services\Pipeline\PipelineEventRecorder;
 use App\Services\Pipeline\PipelineRunAggregator;
 use App\Services\Pipeline\PipelineStatusService;
+use App\Services\Setting\NotificationPreferenceService;
 use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
@@ -49,6 +51,8 @@ class DataProcessingJobService
         protected PipelineEventRecorder $pipeline,
         protected PipelineRunAggregator $runs,
         protected FailureReasonResolver $failures,
+        protected NotificationPreferenceService $preferences,
+        protected PipelineEventRepositoryInterface $pipelineEvents,
     ) {}
 
     /**
@@ -168,6 +172,12 @@ class DataProcessingJobService
         ]);
 
         DataProcessingJobDispatcher::dispatch($job);
+
+        // Long-running work (imports) gets a "queued" reassurance notification
+        // (PIPE-11); short jobs only notify on completion/failure.
+        if ($job->isImport()) {
+            $this->notifyQueued($job);
+        }
 
         return $job;
     }
@@ -459,6 +469,8 @@ class DataProcessingJobService
 
         DataProcessingJobDispatcher::dispatch($job);
 
+        $this->notifyRetrying($job);
+
         return $job;
     }
 
@@ -489,6 +501,8 @@ class DataProcessingJobService
         );
 
         DataProcessingJobDispatcher::dispatch($job);
+
+        $this->notifyRetrying($job);
 
         return $job;
     }
@@ -639,6 +653,9 @@ class DataProcessingJobService
         return DB::transaction(function () use ($job): bool {
             $this->deleteFile($job);
 
+            // Cascade the append-only event stream (no FK on run_id).
+            $this->pipelineEvents->deleteForRun($job->pipelineRunType(), $job->pipelineRunId());
+
             $deleted = $this->repository->delete($job);
 
             PipelineStatusService::forget($job->user_id);
@@ -678,6 +695,11 @@ class DataProcessingJobService
         }
 
         $type = NotificationType::forJob($job->type, $job->status);
+
+        if (! $this->preferences->allows($job->user, $type)) {
+            return;
+        }
+
         $entity = $job->entity_type?->label() ?? 'Data';
         $operation = strtolower($job->type->label());
         $count = $job->processed_items ?? 0;
@@ -708,6 +730,76 @@ class DataProcessingJobService
                 'job_id' => $job->job_id,
                 'type' => $job->type->value,
                 'downloadable' => $job->isDownloadable(),
+            ],
+            targets: [new NotificationTargetDTO(NotificationTargetType::USER, $job->user_id)],
+            createdBy: $job->user_id,
+        ), $job->user_id);
+    }
+
+    /**
+     * Notify the owner that a long-running job has been queued (PIPE-11).
+     */
+    public function notifyQueued(DataProcessingJob $job): void
+    {
+        if (! $this->preferences->allows($job->user, NotificationType::JOB_QUEUED)) {
+            return;
+        }
+
+        $entity = $job->entity_type?->label() ?? 'Data';
+
+        $this->createOwnerNotification(
+            $job,
+            NotificationType::JOB_QUEUED,
+            __(':entity :operation queued', ['entity' => $entity, 'operation' => strtolower($job->type->label())]),
+            __('This can take a while. You can leave this page — it keeps running in the background.'),
+        );
+    }
+
+    /**
+     * Notify the owner that a job is being retried/resumed (PIPE-11).
+     */
+    public function notifyRetrying(DataProcessingJob $job): void
+    {
+        if (! $this->preferences->allows($job->user, NotificationType::JOB_RETRYING)) {
+            return;
+        }
+
+        $entity = $job->entity_type?->label() ?? 'Data';
+
+        $this->createOwnerNotification(
+            $job,
+            NotificationType::JOB_RETRYING,
+            __(':entity :operation retrying', ['entity' => $entity, 'operation' => strtolower($job->type->label())]),
+            __('We are trying the job again.'),
+        );
+    }
+
+    /**
+     * Create an owner-targeted lifecycle notification with a deep link to the
+     * run on the activity page (PIPE-11).
+     */
+    private function createOwnerNotification(
+        DataProcessingJob $job,
+        NotificationType $type,
+        string $title,
+        string $body,
+    ): void {
+        if ($job->user_id === null) {
+            return;
+        }
+
+        $actionUrl = Route::has('activity.index')
+            ? route('activity.index', ['job_id' => $job->job_id])
+            : null;
+
+        $this->notifications->create(new NotificationDTO(
+            type: $type,
+            title: $title,
+            body: $body,
+            actionUrl: $actionUrl,
+            data: [
+                'job_id' => $job->job_id,
+                'type' => $job->type->value,
             ],
             targets: [new NotificationTargetDTO(NotificationTargetType::USER, $job->user_id)],
             createdBy: $job->user_id,

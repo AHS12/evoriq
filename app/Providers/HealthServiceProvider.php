@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Checks\DatabaseMigrationCheck;
+use App\Checks\PipelineHealthCheck;
 use App\Enums\QueueName;
 use Illuminate\Support\ServiceProvider;
 use Spatie\Health\Checks\Checks\CacheCheck;
@@ -32,6 +33,7 @@ class HealthServiceProvider extends ServiceProvider
                 ->warnWhenMoreConnectionsThan(50)
                 ->failWhenMoreConnectionsThan(100),
             DatabaseMigrationCheck::new(),
+            PipelineHealthCheck::new(),
             ScheduleCheck::new(),
         ];
 

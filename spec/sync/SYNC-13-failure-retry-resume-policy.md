@@ -1,6 +1,6 @@
 # SYNC-13 — Failure, retry, resume & reaper policy
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-04, SYNC-09
@@ -58,11 +58,11 @@ trustworthy.
 - `sync:reap-stale` command; run/job state via PIPE resource.
 
 ## 7. Acceptance criteria
-- [ ] A transient failure retries with backoff and resumes at the checkpoint.
-- [ ] A worker crash leaves no job "running" beyond `stale_after`.
-- [ ] Rate-limit failures wait for the window instead of burning attempts.
-- [ ] Every job reaches exactly one terminal state.
-- [ ] `composer check` passes.
+- [x] A transient failure retries with backoff and resumes at the checkpoint.
+- [x] A worker crash leaves no job "running" beyond `stale_after`.
+- [x] Rate-limit failures wait for the window instead of burning attempts.
+- [x] Every job reaches exactly one terminal state.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Feature** `SyncRetryResumeTest`: fail at page N, retry, assert no duplicates
@@ -73,3 +73,35 @@ trustworthy.
 ## 9. Notes & open questions
 - Align `clockify.stale_after` with the heavy channel timeout and the existing
   DPC `exports.stale_after` convention.
+
+### Implemented notes
+
+- **No blocking on budget (critical for Free mode).** `ClockifyClient` gained a
+  `deferBudget()` mode; sync jobs enable it for the duration of a run. When the
+  window cannot afford a request the client throws `SyncBudgetExhausted` instead
+  of sleeping (the previous blocking wait could exceed the heavy job timeout and
+  kill the worker). `SyncJobRunner` catches it and **parks** the job
+  (`status=pending`, `next_retry_at=window reset`, attempt restored) so the run
+  resumes at the next window without burning an attempt.
+- **Retry/backoff** lives in `SyncRetryPolicy` (rather than a trait): a
+  transient failure schedules `retry_scheduled` with exponential backoff + jitter
+  up to `clockify.sync_job.max_attempts`; on exhaustion the job reaches a single
+  terminal `failed`. `SyncEntityJob::failed()` applies the policy and re-dispatches
+  itself with the backoff delay when retrying.
+- **Resume** reuses the existing checkpoint (`job.page`); re-dispatched jobs
+  continue from the last completed page (SYNC-04), and re-running a page is safe
+  (SYNC-08).
+- **Reaper** `sync:reap-stale` (scheduled every five minutes) finds `running`
+  jobs whose heartbeat is older than `clockify.sync_job.stale_after` (900s),
+  reschedules them (or fails them when attempts are exhausted) and triggers run
+  finalization/resume.
+- **Resume safety net:** a parked run normally resumes through a delayed
+  `ResumeSyncRunJob`, but that depends on a worker being alive at the exact
+  reset. `sync:resume` (scheduled every minute) re-drives any non-final run that
+  still has dispatchable work (a pending job, or a due retry), so a Free-plan
+  import always continues after the window resets even if the worker restarted
+  or the delayed job was lost. `composer run dev` now also runs `schedule:work`,
+  so this works locally without extra setup.
+- **Config:** `clockify.sync_job.{max_attempts,retry_base_seconds,retry_max_seconds,stale_after}`.
+- **PIPE-11/14:** retry/park/failure writes the corresponding pipeline events
+  (`retry_scheduled`, `warning`, `error`, terminal) via `SyncEventEmitter`.

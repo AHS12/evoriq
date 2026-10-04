@@ -1,6 +1,6 @@
 # PIPE-11 — Pipeline lifecycle notifications
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** pipeline
 - **Estimate:** S
 - **Depends on:** PIPE-02
@@ -80,11 +80,11 @@ controllable, and reserves the Clockify sync cases.
 
 ## 7. Acceptance criteria
 
-- [ ] Completing, failing, retrying and (for long jobs) queuing a run creates
+- [x] Completing, failing, retrying and (for long jobs) queuing a run creates
       the correct notification for the owner with a working deep link.
-- [ ] Muting the Pipeline category suppresses these notifications.
-- [ ] No notification is emitted for progress ticks.
-- [ ] `composer check` passes.
+- [x] Muting the Pipeline category suppresses these notifications.
+- [x] No notification is emitted for progress ticks.
+- [x] `composer check` passes.
 
 ## 8. Tests
 
@@ -100,3 +100,25 @@ controllable, and reserves the Clockify sync cases.
   > 5 minutes); without an estimate, notify for imports over a size threshold.
 - Consider bundling many runs from one plan into a single notification summary
   (PIPE-09 umbrella run) — likely needed once sync is in.
+- **Implemented notes:**
+  - `JOB_QUEUED` and `JOB_RETRYING` were added to `NotificationType` (label,
+    priority, icon). The existing granular completion/failure types
+    (`EXPORT_`/`IMPORT_`/`REPORT_COMPLETED|FAILED`, `JOB_CANCELLED`) are kept —
+    they are more informative than a generic `JOB_COMPLETED`/`JOB_FAILED` and are
+    already wired through `NotificationType::forJob()`; all of them, plus the
+    `CLOCKIFY_SYNC_*` types, are grouped under one category.
+  - New `NotificationCategory` enum (Pipeline / Account / System) +
+    `NotificationType::category()`. A **muted category suppresses creation**
+    (`NotificationPreferenceService::allows()`), while an individual muted type
+    still only suppresses interruption — the existing behaviour.
+  - `DataProcessingJobService` gained `notifyQueued()` (called for imports at
+    dispatch) and `notifyRetrying()` (called on retry/resume); both deep-link to
+    `activity.index?job_id=…`. Completion/failure already notified; progress
+    never does.
+  - Preferences gained `muted_categories` (new `UserSettingKey` + DTO/request),
+    exposed as category switches on the notification settings page (grouped
+    types carry their `category`). New icons `list-clock` / `rotate-cw` render
+    in the notification item.
+  - "Long job" = an import (no reliable estimate exists at dispatch time); a
+    size/estimate threshold can refine this once SYNC-03 estimates are surfaced.
+  - i18n extraction of the new labels is covered by PIPE-12.

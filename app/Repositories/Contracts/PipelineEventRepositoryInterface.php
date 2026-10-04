@@ -91,4 +91,19 @@ interface PipelineEventRepositoryInterface
      * Delete events older than the cutoff. Returns the number deleted.
      */
     public function pruneBefore(CarbonInterface $cutoff): int;
+
+    /**
+     * Count the events that would be removed by {@see pruneBefore()}.
+     */
+    public function countBefore(CarbonInterface $cutoff): int;
+
+    /**
+     * How many events a run has recorded so far (drives the per-run cap).
+     */
+    public function countForRun(PipelineRunType $type, string|int $runId): int;
+
+    /**
+     * Delete every event of a run (cascade when the run row is deleted).
+     */
+    public function deleteForRun(PipelineRunType $type, string|int $runId): int;
 }

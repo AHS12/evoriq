@@ -1,6 +1,6 @@
 # SYNC-08 — Idempotent upsert conventions
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** sync
 - **Estimate:** M
 - **Depends on:** SYNC-01
@@ -59,11 +59,11 @@ creates-vs-updates.
 - None.
 
 ## 7. Acceptance criteria
-- [ ] Running the same page twice creates zero duplicates and reports 0 created.
-- [ ] `upsertMany` returns accurate created/updated/unchanged counts.
-- [ ] Natural key is `(organization_id, workspace_id, clockify_id)` on every
+- [x] Running the same page twice creates zero duplicates and reports 0 created.
+- [x] `upsertMany` returns accurate created/updated/unchanged counts.
+- [x] Natural key is `(organization_id, workspace_id, clockify_id)` on every
       entity.
-- [ ] `composer check` passes.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Unit** `UpsertConventionTest`: double-apply idempotency, count accuracy,
@@ -74,3 +74,10 @@ creates-vs-updates.
 - Bulk upsert performance: `updateOrCreate` per row is fine at our volumes; use
   `upsert()` for very large fact batches if needed, accepting the create/update
   count caveat.
+- **Implemented:** `UpsertsByClockifyId` holds the behaviour; entity repositories
+  extend `AbstractSyncUpsertRepository` and declare `syncModel()`. Created rows
+  are detected via `wasRecentlyCreated`; updated-vs-unchanged is decided by
+  comparing the incoming row against the pre-update snapshot, ignoring the key
+  columns and the always-refreshed `synced_at` (otherwise every re-run would look
+  "updated"). The base class also gives PHPStan an analysed usage of the trait
+  before the first entity lands.

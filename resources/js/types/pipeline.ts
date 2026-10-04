@@ -34,6 +34,23 @@ export type PipelineApiBudget = {
     resets_at: string | null;
 };
 
+/**
+ * SYNC-17 — the active connection's current API budget window for the navbar
+ * indicator/popover. `window_type` is `hour` on Free plans and `second` on paid.
+ */
+export type ApiUsage = {
+    window_type: 'hour' | 'second';
+    used: number;
+    limit: number;
+    remaining: number;
+    resets_at: string;
+    resets_in: number;
+    last_request_at: string | null;
+    plan: 'free' | 'paid';
+    low: boolean;
+    exhausted: boolean;
+};
+
 export type PipelineStatus = {
     active_count: number;
     queued_count: number;

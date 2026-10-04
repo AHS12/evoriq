@@ -1,6 +1,6 @@
 # ENT-13 — Deletions & restores across entities
 
-- **Status:** Draft
+- **Status:** Done
 - **Epic:** entities
 - **Estimate:** M
 - **Depends on:** SYNC-07, ENT-01…ENT-12
@@ -65,11 +65,11 @@ restores consistently. SYNC-07 defines the mechanism; this spec pins the
 - None.
 
 ## 7. Acceptance criteria
-- [ ] Every entity follows the policy table.
-- [ ] No cascade destroys historical facts.
-- [ ] Delete→restore converges; re-applying is a no-op.
-- [ ] Aggregations exclude soft-deleted rows by default.
-- [ ] `composer check` passes.
+- [x] Every entity follows the policy table.
+- [x] No cascade destroys historical facts.
+- [x] Delete→restore converges; re-applying is a no-op.
+- [x] Aggregations exclude soft-deleted rows by default.
+- [x] `composer check` passes.
 
 ## 8. Tests
 - **Feature** `EntityDeletionPolicyTest`: per-entity delete/restore; historical
@@ -78,3 +78,30 @@ restores consistently. SYNC-07 defines the mechanism; this spec pins the
 ## 9. Notes & open questions
 - Decide whether a deleted time entry should always be excluded from totals;
   Clockify treats deletion as gone, so default exclude.
+- **Implemented notes:**
+  - The generic policy is `AbstractSyncHandler::delete()` + `deletePolicy()`
+    (dimensions/facts `SOFT`, join rows `REPLACE`, workspace/rates `NONE`). This
+    spec filled the policy gaps:
+    - **Tag** → `TagSyncHandler::delete()` soft-deletes the tag **and** removes
+      its `clockify_time_entry_tags` rows (`TimeEntryTagRepository::deleteForTag`).
+    - **User group** → `UserGroupSyncHandler::delete()` soft-deletes the group
+      **and** removes its member rows (`UserGroupMemberRepository::deleteForGroup`).
+    - **User** → `UserSyncHandler::delete()` soft-deletes the user (entries keep
+      attributing to the name) and removes the ended memberships
+      (`ClockifyMembershipRepository::deleteForUser`).
+    - **Workspace** → `WorkspaceSyncHandler::delete()` marks the workspace
+      `active = false` only (there is no `deleted_at`), so syncing stops and
+      nothing cascades.
+  - **Cascade safety:** projects/clients/users are soft-deleted, never
+    hard-deleted, so time entries keep their FKs and historical names still
+    resolve via `withTrashed()`.
+  - **Idempotency:** `UpsertsByClockifyId::softDeleteByClockifyId()` now only
+    updates rows `whereNull('deleted_at')`, so re-applying a deletion is a
+    strict no-op.
+  - **Restore:** unchanged — re-upserting the same `clockify_id` clears
+    `deleted_at` and re-applies the payload (SYNC-07).
+  - **Aggregations:** dimensions/facts use `SoftDeletes`, so the default global
+    scope excludes deleted rows; ANA (still stub) will consume these scopes and
+    offer an include-deleted mode in ANA-05.
+  - Join-derived sub-facts (memberships, project members, CF values) follow
+    their parent/replace semantics rather than an independent delete.
